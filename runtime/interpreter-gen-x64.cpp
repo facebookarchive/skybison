@@ -227,9 +227,15 @@ int32_t heapObjectDisp(int32_t offset) {
   return -Object::kHeapObjectTag + offset;
 }
 
+void emitCurrentCacheIndex(EmitEnv* env, Register dst) {
+  __ movzwq(dst, Address(env->bytecode, env->pc, TIMES_1,
+                         heapObjectDisp(-kCodeUnitSize + 2)));
+}
+
 // Load the next opcode, advance PC, and jump to the appropriate handler.
 void emitNextOpcode(EmitEnv* env) {
   ScratchReg r_scratch(env);
+
   __ movzbl(r_scratch,
             Address(env->bytecode, env->pc, TIMES_1, heapObjectDisp(0)));
   env->register_state.assign(&env->oparg, kOpargReg);
@@ -496,16 +502,17 @@ void emitConvertFromSmallInt(EmitEnv* env, Register reg) {
 // Writes to r_dst, r_layout_id (to turn it into a SmallInt), r_caches, and
 // r_scratch.
 void emitIcLookupPolymorphic(EmitEnv* env, Label* not_found, Register r_dst,
-                             Register r_layout_id, Register r_caches,
-                             Register r_index) {
+                             Register r_layout_id, Register r_caches) {
   ScratchReg r_scratch(env);
-  // Set r_caches = r_caches + r_index * kPointerSize * kPointersPerEntry,
-  // without modifying r_index.
-  static_assert(kIcPointersPerEntry == 2, "Unexpected kIcPointersPerEntry");
+  // Load the cache index into r_scratch
+  emitCurrentCacheIndex(env, r_scratch);
+  // Set r_caches = r_caches + index * kPointerSize * kPointersPerEntry.
+  static_assert(kPointerSize * kIcPointersPerEntry == 1 << 4,
+                "Unexpected kIcPointersPerEntry");
   // Read the first value as the polymorphic cache.
-  __ leaq(r_scratch, Address(r_index, TIMES_2, 0));
+  __ shll(r_scratch, Immediate(4));
   __ movq(r_caches,
-          Address(r_caches, r_scratch, TIMES_8,
+          Address(r_caches, r_scratch, TIMES_1,
                   heapObjectDisp(0) + kIcEntryValueOffset * kPointerSize));
   __ leaq(r_caches, Address(r_caches, heapObjectDisp(0)));
   Label done;
@@ -527,13 +534,13 @@ void emitIcLookupPolymorphic(EmitEnv* env, Label* not_found, Register r_dst,
 }
 
 void emitIcLookupMonomorphic(EmitEnv* env, Label* not_found, Register r_dst,
-                             Register r_layout_id, Register r_caches,
-                             Register r_index) {
+                             Register r_layout_id, Register r_caches) {
   ScratchReg r_scratch(env);
-  // Set r_caches = r_caches + r_index * kPointerSize * kPointersPerEntry,
-  // without modifying r_index.
+  // Load the cache index into r_scratch
+  emitCurrentCacheIndex(env, r_scratch);
+  // Set r_caches = r_caches + index * kPointerSize * kPointersPerEntry.
   static_assert(kIcPointersPerEntry == 2, "Unexpected kIcPointersPerEntry");
-  __ leaq(r_scratch, Address(r_index, TIMES_2, 0));
+  __ leaq(r_scratch, Address(r_scratch, TIMES_2, 0));
   __ leaq(r_caches, Address(r_caches, r_scratch, TIMES_8, heapObjectDisp(0)));
   __ cmpl(Address(r_caches, kIcEntryKeyOffset * kPointerSize), r_layout_id);
   __ jcc(NOT_EQUAL, not_found, Assembler::kNearJump);
@@ -650,9 +657,10 @@ void emitHandler<BINARY_ADD_SMALLINT>(EmitEnv* env) {
   __ pushq(r_left);
   __ pushq(r_right);
   __ movq(kArgRegs[0], env->thread);
-  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+  emitCurrentCacheIndex(env, kArgRegs[2]);
+  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
+  emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::binaryOpUpdateCache);
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
@@ -676,9 +684,10 @@ void emitHandler<BINARY_AND_SMALLINT>(EmitEnv* env) {
   __ pushq(r_left);
   __ pushq(r_right);
   __ movq(kArgRegs[0], env->thread);
-  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+  emitCurrentCacheIndex(env, kArgRegs[2]);
+  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
+  emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::binaryOpUpdateCache);
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
@@ -704,9 +713,10 @@ void emitHandler<BINARY_SUB_SMALLINT>(EmitEnv* env) {
   __ pushq(r_left);
   __ pushq(r_right);
   __ movq(kArgRegs[0], env->thread);
-  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+  emitCurrentCacheIndex(env, kArgRegs[2]);
+  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
+  emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::binaryOpUpdateCache);
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
@@ -730,9 +740,10 @@ void emitHandler<BINARY_OR_SMALLINT>(EmitEnv* env) {
   __ pushq(r_left);
   __ pushq(r_right);
   __ movq(kArgRegs[0], env->thread);
-  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+  emitCurrentCacheIndex(env, kArgRegs[2]);
+  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
+  emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::binaryOpUpdateCache);
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
@@ -777,8 +788,8 @@ void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
   __ pushq(r_container);
   __ pushq(r_key);
   __ movq(kArgRegs[0], env->thread);
-  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCurrentCacheIndex(env, kArgRegs[1]);
   emitCall<Interpreter::Continue (*)(Thread*, word)>(
       env, Interpreter::binarySubscrUpdateCache);
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
@@ -788,8 +799,8 @@ template <>
 void emitHandler<BINARY_SUBSCR_MONOMORPHIC>(EmitEnv* env) {
   ScratchReg r_receiver(env);
   ScratchReg r_layout_id(env);
-  ScratchReg r_caches(env);
   ScratchReg r_key(env);
+  ScratchReg r_caches(env);
 
   Label slow_path;
   __ popq(r_key);
@@ -797,8 +808,8 @@ void emitHandler<BINARY_SUBSCR_MONOMORPHIC>(EmitEnv* env) {
   emitGetLayoutId(env, r_layout_id, r_receiver);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
   env->register_state.assign(&env->callable, kCallableReg);
-  emitIcLookupMonomorphic(env, &slow_path, env->callable, r_layout_id, r_caches,
-                          env->oparg);
+  emitIcLookupMonomorphic(env, &slow_path, env->callable, r_layout_id,
+                          r_caches);
 
   // Call __getitem__(receiver, key)
   __ pushq(env->callable);
@@ -856,8 +867,8 @@ void emitHandler<STORE_SUBSCR_LIST>(EmitEnv* env) {
   __ pushq(r_container);
   __ pushq(r_key);
   __ movq(kArgRegs[0], env->thread);
-  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCurrentCacheIndex(env, kArgRegs[1]);
   emitCall<Interpreter::Continue (*)(Thread*, word)>(
       env, Interpreter::storeSubscrUpdateCache);
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
@@ -874,8 +885,7 @@ void emitHandler<LOAD_ATTR_INSTANCE>(EmitEnv* env) {
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
-  emitIcLookupMonomorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
-                          env->oparg);
+  emitIcLookupMonomorphic(env, &slow_path, r_scratch, r_layout_id, r_caches);
 
   Label next;
   emitAttrWithOffset(env, &Assembler::pushq, &next, r_base, r_scratch,
@@ -897,8 +907,7 @@ void emitHandler<LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD>(EmitEnv* env) {
     ScratchReg r_layout_id(env);
     emitGetLayoutId(env, r_layout_id, r_base);
     __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
-    emitIcLookupMonomorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
-                            env->oparg);
+    emitIcLookupMonomorphic(env, &slow_path, r_scratch, r_layout_id, r_caches);
   }
   emitPushBoundMethod(env, &slow_path, r_base, r_scratch, r_caches);
   emitNextOpcode(env);
@@ -922,8 +931,7 @@ void emitHandler<LOAD_ATTR_POLYMORPHIC>(EmitEnv* env) {
     ScratchReg r_layout_id(env);
     emitGetLayoutId(env, r_layout_id, r_base);
     __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
-    emitIcLookupPolymorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
-                            env->oparg);
+    emitIcLookupPolymorphic(env, &slow_path, r_scratch, r_layout_id, r_caches);
 
     emitJumpIfNotSmallInt(env, r_scratch, &is_function);
     emitAttrWithOffset(env, &Assembler::pushq, &next, r_base, r_scratch,
@@ -950,8 +958,8 @@ void emitHandler<LOAD_ATTR_INSTANCE_PROPERTY>(EmitEnv* env) {
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
   env->register_state.assign(&env->callable, kCallableReg);
-  emitIcLookupMonomorphic(env, &slow_path, env->callable, r_layout_id, r_caches,
-                          env->oparg);
+  emitIcLookupMonomorphic(env, &slow_path, env->callable, r_layout_id,
+                          r_caches);
   // Call getter(receiver)
   __ pushq(env->callable);
   __ pushq(r_base);
@@ -1038,8 +1046,7 @@ void emitHandler<LOAD_METHOD_INSTANCE_FUNCTION>(EmitEnv* env) {
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
-  emitIcLookupMonomorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
-                          env->oparg);
+  emitIcLookupMonomorphic(env, &slow_path, r_scratch, r_layout_id, r_caches);
 
   // Only functions are cached.
   __ pushq(r_scratch);
@@ -1062,8 +1069,7 @@ void emitHandler<LOAD_METHOD_POLYMORPHIC>(EmitEnv* env) {
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
-  emitIcLookupPolymorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
-                          env->oparg);
+  emitIcLookupPolymorphic(env, &slow_path, r_scratch, r_layout_id, r_caches);
 
   // Only functions are cached.
   __ pushq(r_scratch);
@@ -1086,8 +1092,8 @@ void emitHandler<STORE_ATTR_INSTANCE>(EmitEnv* env) {
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
-  emitIcLookupMonomorphic(env, &slow_path, r_cache_value, r_layout_id, r_caches,
-                          env->oparg);
+  emitIcLookupMonomorphic(env, &slow_path, r_cache_value, r_layout_id,
+                          r_caches);
   emitConvertFromSmallInt(env, r_cache_value);
   __ popq(Address(r_base, r_cache_value, TIMES_1, heapObjectDisp(0)));
   emitNextOpcode(env);
@@ -1102,21 +1108,24 @@ void emitHandler<STORE_ATTR_INSTANCE_OVERFLOW>(EmitEnv* env) {
   ScratchReg r_base(env);
   ScratchReg r_layout_id(env);
   ScratchReg r_cache_value(env);
-  ScratchReg r_scratch(env);
   ScratchReg r_caches(env);
   Label slow_path;
 
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
-  emitIcLookupMonomorphic(env, &slow_path, r_cache_value, r_layout_id, r_caches,
-                          env->oparg);
+  emitIcLookupMonomorphic(env, &slow_path, r_cache_value, r_layout_id,
+                          r_caches);
   emitConvertFromSmallInt(env, r_cache_value);
-  emitLoadOverflowTuple(env, r_scratch, r_layout_id, r_base);
-  // The real tuple index is -offset - 1, which is the same as ~offset.
-  __ notq(r_cache_value);
-  __ popq(Address(r_scratch, r_cache_value, TIMES_8, heapObjectDisp(0)));
-  emitNextOpcode(env);
+
+  {
+    ScratchReg r_scratch(env);
+    emitLoadOverflowTuple(env, r_scratch, r_layout_id, r_base);
+    // The real tuple index is -offset - 1, which is the same as ~offset.
+    __ notq(r_cache_value);
+    __ popq(Address(r_scratch, r_cache_value, TIMES_8, heapObjectDisp(0)));
+    emitNextOpcode(env);
+  }
 
   __ bind(&slow_path);
   __ pushq(r_base);
@@ -1134,8 +1143,7 @@ void emitHandler<STORE_ATTR_POLYMORPHIC>(EmitEnv* env) {
   __ popq(r_base);
   emitGetLayoutId(env, r_layout_id, r_base);
   __ movq(r_caches, Address(env->frame, Frame::kCachesOffset));
-  emitIcLookupPolymorphic(env, &slow_path, r_scratch, r_layout_id, r_caches,
-                          env->oparg);
+  emitIcLookupPolymorphic(env, &slow_path, r_scratch, r_layout_id, r_caches);
 
   Label next;
   // We only cache SmallInt values for STORE_ATTR.
@@ -1554,18 +1562,6 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
   __ jmp(&env->call_handler, Assembler::kFarJump);
 }
 
-// Loads result of originalArg() (bytecode.h) in `r_output`.
-static void emitOriginalArg(EmitEnv* env, Register r_output) {
-  __ movq(r_output, Address(env->frame, Frame::kLocalsOffsetOffset));
-  __ movq(r_output, Address(env->frame, r_output, TIMES_1,
-                            Frame::kFunctionOffsetFromLocals * kPointerSize));
-  __ movq(
-      r_output,
-      Address(r_output, heapObjectDisp(Function::kOriginalArgumentsOffset)));
-  __ movq(r_output, Address(r_output, env->oparg, TIMES_8, heapObjectDisp(0)));
-  emitConvertFromSmallInt(env, r_output);
-}
-
 template <>
 void emitHandler<FOR_ITER_LIST>(EmitEnv* env) {
   ScratchReg r_iter(env);
@@ -1601,16 +1597,11 @@ void emitHandler<FOR_ITER_LIST>(EmitEnv* env) {
     emitNextOpcode(env);
   }
 
-  {
-    ScratchReg r_original_arg(env);
-    __ bind(&terminate);
-    // frame->setVirtualPC(frame->virtualPC()+originalArg(frame->function(),
-    // arg))
-    emitOriginalArg(env, r_original_arg);
-    static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
-    __ leaq(env->pc, Address(env->pc, r_original_arg, TIMES_2, 0));
-    __ jmp(&next_opcode, Assembler::kNearJump);
-  }
+  __ bind(&terminate);
+  // frame->setVirtualPC(frame->virtualPC()+arg*2);
+  static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
+  __ leaq(env->pc, Address(env->pc, env->oparg, TIMES_2, 0));
+  __ jmp(&next_opcode, Assembler::kNearJump);
 
   __ bind(&slow_path);
   __ pushq(r_iter);
@@ -1659,17 +1650,12 @@ void emitHandler<FOR_ITER_RANGE>(EmitEnv* env) {
     emitNextOpcode(env);
   }
 
-  {
-    ScratchReg r_original_arg(env);
-    __ bind(&terminate);
-    // length == 0.
-    // frame->setVirtualPC(frame->virtualPC()+originalArg(frame->function(),
-    // arg))
-    emitOriginalArg(env, r_original_arg);
-    static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
-    __ leaq(env->pc, Address(env->pc, r_original_arg, TIMES_2, 0));
-    __ jmp(&next_opcode, Assembler::kNearJump);
-  }
+  __ bind(&terminate);
+  // length == 0.
+  // frame->setVirtualPC(frame->virtualPC()+arg*2);
+  static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
+  __ leaq(env->pc, Address(env->pc, env->oparg, TIMES_2, 0));
+  __ jmp(&next_opcode, Assembler::kNearJump);
 
   __ bind(&slow_path);
   __ pushq(r_iter);
@@ -1866,7 +1852,7 @@ template <>
 void emitHandler<EXTENDED_ARG>(EmitEnv* env) {
   ScratchReg r_scratch(env);
 
-  __ shll(env->oparg, Immediate(8));
+  __ shll(env->oparg, Immediate(kBitsPerByte));
   __ movzbl(r_scratch,
             Address(env->bytecode, env->pc, TIMES_1, heapObjectDisp(0)));
   __ movb(env->oparg,
@@ -1874,6 +1860,7 @@ void emitHandler<EXTENDED_ARG>(EmitEnv* env) {
   __ shll(r_scratch, Immediate(kHandlerSizeShift));
   __ addl(env->pc, Immediate(kCodeUnitSize));
   __ addq(r_scratch, env->handlers_base);
+  env->register_state.check(env->handler_assignment);
   __ jmp(r_scratch);
   // Hint to the branch predictor that the indirect jmp never falls through to
   // here.
@@ -1939,9 +1926,10 @@ static void emitCompareOpSmallIntHandler(EmitEnv* env, Condition cond) {
   __ pushq(r_left);
   __ pushq(r_right);
   __ movq(kArgRegs[0], env->thread);
-  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+  emitCurrentCacheIndex(env, kArgRegs[2]);
+  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
+  emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::compareOpUpdateCache);
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
@@ -2007,9 +1995,10 @@ void emitHandler<INPLACE_ADD_SMALLINT>(EmitEnv* env) {
   __ pushq(r_left);
   __ pushq(r_right);
   __ movq(kArgRegs[0], env->thread);
-  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+  emitCurrentCacheIndex(env, kArgRegs[2]);
+  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
+  emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::inplaceOpUpdateCache);
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }
@@ -2034,9 +2023,10 @@ void emitHandler<INPLACE_SUB_SMALLINT>(EmitEnv* env) {
   __ pushq(r_left);
   __ pushq(r_right);
   __ movq(kArgRegs[0], env->thread);
-  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
-  emitCall<Interpreter::Continue (*)(Thread*, word)>(
+  emitCurrentCacheIndex(env, kArgRegs[2]);
+  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
+  emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::inplaceOpUpdateCache);
   emitHandleContinue(env, /*may_change_frame_pc=*/true);
 }

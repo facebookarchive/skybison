@@ -9,29 +9,29 @@
 namespace py {
 
 // Looks for a cache entry for an attribute with a `layout_id` key in the
-// polymorphic cache at `index`.
+// polymorphic cache at `cache`.
 // Returns the cached value. Returns `ErrorNotFound` if none was found.
-RawObject icLookupPolymorphic(RawMutableTuple caches, word index,
+RawObject icLookupPolymorphic(RawMutableTuple caches, word cache,
                               LayoutId layout_id, bool* is_found);
 
-// Returns the cached value in the monomorphic cache at `index`.
+// Returns the cached value in the monomorphic cache at `cache`.
 // Returns `ErrorNotFound` if none was found, and set *is_found to false.
-RawObject icLookupMonomorphic(RawMutableTuple caches, word index,
+RawObject icLookupMonomorphic(RawMutableTuple caches, word cache,
                               LayoutId layout_id, bool* is_found);
 
-// Returns the current state of the cache at caches[index].
-ICState icCurrentState(RawTuple caches, word index);
+// Returns the current state of the cache at caches[cache].
+ICState icCurrentState(RawTuple caches, word cache);
 
 // Looks for a cache entry with `left_layout_id` and `right_layout_id` as key.
 // Returns the cached value comprising of an object reference and flags. Returns
 // `ErrorNotFound` if none was found.
-RawObject icLookupBinOpPolymorphic(RawMutableTuple caches, word index,
+RawObject icLookupBinOpPolymorphic(RawMutableTuple caches, word cache,
                                    LayoutId left_layout_id,
                                    LayoutId right_layout_id,
                                    BinaryOpFlags* flags_out);
 
-// Same as icLookupBinaryOp, but looks at only one entry pointed by index.
-RawObject icLookupBinOpMonomorphic(RawMutableTuple caches, word index,
+// Same as icLookupBinaryOp, but looks at only one entry pointed by cache.
+RawObject icLookupBinOpMonomorphic(RawMutableTuple caches, word cache,
                                    LayoutId left_layout_id,
                                    LayoutId right_layout_id,
                                    BinaryOpFlags* flags_out);
@@ -49,17 +49,17 @@ RawSmallInt encodeBinaryOpKey(LayoutId left_layout_id, LayoutId right_layout_id,
 
 // Sets a cache entry for an attribute to the given `layout_id` as key and
 // `value` as value.
-ICState icUpdateAttr(Thread* thread, const MutableTuple& caches, word index,
+ICState icUpdateAttr(Thread* thread, const MutableTuple& caches, word cache,
                      LayoutId layout_id, const Object& value,
                      const Object& name, const Function& dependent);
 
-bool icIsCacheEmpty(const MutableTuple& caches, word index);
+bool icIsCacheEmpty(const MutableTuple& caches, word cache);
 
-void icUpdateAttrModule(Thread* thread, const MutableTuple& caches, word index,
+void icUpdateAttrModule(Thread* thread, const MutableTuple& caches, word cache,
                         const Object& receiver, const ValueCell& value_cell,
                         const Function& dependent);
 
-void icUpdateAttrType(Thread* thread, const MutableTuple& caches, word index,
+void icUpdateAttrType(Thread* thread, const MutableTuple& caches, word cache,
                       const Object& receiver, const Object& selector,
                       const Object& value, const Function& dependent);
 
@@ -223,7 +223,7 @@ void icInvalidateAttr(Thread* thread, const Type& type, const Object& attr_name,
 
 // Sets a cache entry to a `left_layout_id` and `right_layout_id` key with
 // the given `value` and `flags` as value.
-ICState icUpdateBinOp(Thread* thread, const MutableTuple& caches, word index,
+ICState icUpdateBinOp(Thread* thread, const MutableTuple& caches, word cache,
                       LayoutId left_layout_id, LayoutId right_layout_id,
                       const Object& value, BinaryOpFlags flags);
 
@@ -301,7 +301,7 @@ class IcIterator {
       BytecodeOp op = nextBytecodeOp(bytecode_, &codeunit_index_);
       if (!isByteCodeWithCache(op.bc)) continue;
       bytecode_op_ = op;
-      cache_index_ = bytecode_op_.arg * kIcPointersPerEntry;
+      cache_index_ = bytecode_op_.cache * kIcPointersPerEntry;
       end_cache_index_ = cache_index_ + kIcPointersPerEntry;
       cache_index_ =
           findNextFilledCacheIndex(caches_, cache_index_, end_cache_index_);
@@ -486,13 +486,13 @@ class IcIterator {
   DISALLOW_HEAP_ALLOCATION();
 };
 
-inline RawObject icLookupPolymorphic(RawMutableTuple caches, word index,
+inline RawObject icLookupPolymorphic(RawMutableTuple caches, word cache,
                                      LayoutId layout_id, bool* is_found) {
-  word i = index * kIcPointersPerEntry;
-  DCHECK(caches.at(i + kIcEntryKeyOffset).isUnbound(),
+  word index = cache * kIcPointersPerEntry;
+  DCHECK(caches.at(index + kIcEntryKeyOffset).isUnbound(),
          "cache.at(index) is expected to be polymorphic");
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
-  caches = MutableTuple::cast(caches.at(i + kIcEntryValueOffset));
+  caches = MutableTuple::cast(caches.at(index + kIcEntryValueOffset));
   for (word j = 0; j < kIcPointersPerPolyCache; j += kIcPointersPerEntry) {
     if (caches.at(j + kIcEntryKeyOffset) == key) {
       *is_found = true;
@@ -503,33 +503,33 @@ inline RawObject icLookupPolymorphic(RawMutableTuple caches, word index,
   return Error::notFound();
 }
 
-inline RawObject icLookupMonomorphic(RawMutableTuple caches, word index,
+inline RawObject icLookupMonomorphic(RawMutableTuple caches, word cache,
                                      LayoutId layout_id, bool* is_found) {
-  word i = index * kIcPointersPerEntry;
-  DCHECK(!caches.at(i + kIcEntryKeyOffset).isUnbound(),
+  word index = cache * kIcPointersPerEntry;
+  DCHECK(!caches.at(index + kIcEntryKeyOffset).isUnbound(),
          "cache.at(index) is expected to be monomorphic");
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
-  if (caches.at(i + kIcEntryKeyOffset) == key) {
+  if (caches.at(index + kIcEntryKeyOffset) == key) {
     *is_found = true;
-    return caches.at(i + kIcEntryValueOffset);
+    return caches.at(index + kIcEntryValueOffset);
   }
   *is_found = false;
   return Error::notFound();
 }
 
-inline RawObject icLookupBinOpPolymorphic(RawMutableTuple caches, word index,
+inline RawObject icLookupBinOpPolymorphic(RawMutableTuple caches, word cache,
                                           LayoutId left_layout_id,
                                           LayoutId right_layout_id,
                                           BinaryOpFlags* flags_out) {
   static_assert(Header::kLayoutIdBits * 2 + kBitsPerByte <= SmallInt::kBits,
                 "Two layout ids and flags overflow a SmallInt");
-  word i = index * kIcPointersPerEntry;
-  DCHECK(caches.at(i + kIcEntryKeyOffset).isUnbound(),
+  word index = cache * kIcPointersPerEntry;
+  DCHECK(caches.at(index + kIcEntryKeyOffset).isUnbound(),
          "cache.at(index) is expected to be polymorphic");
   word key_high_bits = static_cast<word>(left_layout_id)
                            << Header::kLayoutIdBits |
                        static_cast<word>(right_layout_id);
-  caches = MutableTuple::cast(caches.at(i + kIcEntryValueOffset));
+  caches = MutableTuple::cast(caches.at(index + kIcEntryValueOffset));
   for (word j = 0; j < kIcPointersPerPolyCache; j += kIcPointersPerEntry) {
     RawObject entry_key = caches.at(j + kIcEntryKeyOffset);
     // Stop the search if we found an empty entry.
@@ -545,7 +545,7 @@ inline RawObject icLookupBinOpPolymorphic(RawMutableTuple caches, word index,
   return Error::notFound();
 }
 
-inline RawObject icLookupBinOpMonomorphic(RawMutableTuple caches, word index,
+inline RawObject icLookupBinOpMonomorphic(RawMutableTuple caches, word cache,
                                           LayoutId left_layout_id,
                                           LayoutId right_layout_id,
                                           BinaryOpFlags* flags_out) {
@@ -554,10 +554,10 @@ inline RawObject icLookupBinOpMonomorphic(RawMutableTuple caches, word index,
   word key_high_bits = static_cast<word>(left_layout_id)
                            << Header::kLayoutIdBits |
                        static_cast<word>(right_layout_id);
-  word i = index * kIcPointersPerEntry;
-  DCHECK(!caches.at(i + kIcEntryKeyOffset).isUnbound(),
+  word index = cache * kIcPointersPerEntry;
+  DCHECK(!caches.at(index + kIcEntryKeyOffset).isUnbound(),
          "cache.at(index) is expected to be monomorphic");
-  RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
+  RawObject entry_key = caches.at(index + kIcEntryKeyOffset);
   // Stop the search if we found an empty entry.
   if (entry_key.isNoneType()) {
     return Error::notFound();
@@ -565,7 +565,7 @@ inline RawObject icLookupBinOpMonomorphic(RawMutableTuple caches, word index,
   word entry_key_value = SmallInt::cast(entry_key).value();
   if (entry_key_value >> kBitsPerByte == key_high_bits) {
     *flags_out = static_cast<BinaryOpFlags>(entry_key_value & 0xff);
-    return caches.at(i + kIcEntryValueOffset);
+    return caches.at(index + kIcEntryValueOffset);
   }
   return Error::notFound();
 }

@@ -180,7 +180,7 @@ class Interpreter {
 
   static RawObject binaryOperation(Thread* thread, BinaryOp op,
                                    const Object& left, const Object& right);
-  static Continue binaryOpUpdateCache(Thread* thread, word arg);
+  static Continue binaryOpUpdateCache(Thread* thread, word arg, word cache);
 
   // Lookup and invoke a binary operation (like `__add__`, `__sub__`, ...).
   // Sets `method_out` and `flags_out` to the lookup result if it is possible
@@ -213,18 +213,18 @@ class Interpreter {
   // Slow path for the BINARY_SUBSCR opcode that updates the cache at the given
   // index when appropriate. May also be used as a non-caching slow path by
   // passing a negative index.
-  static Continue binarySubscrUpdateCache(Thread* thread, word index);
+  static Continue binarySubscrUpdateCache(Thread* thread, word cache);
 
   // Slow path for the STORE_SUBSCR opcode that updates the cache at the given
   // index when appropriate. May also be used as a non-caching slow path by
   // passing a negative index.
-  static Continue storeSubscrUpdateCache(Thread* thread, word arg);
+  static Continue storeSubscrUpdateCache(Thread* thread, word cache);
 
-  static Continue compareInUpdateCache(Thread* thread, word arg);
+  static Continue compareInUpdateCache(Thread* thread, word cache);
 
   static RawObject inplaceOperation(Thread* thread, BinaryOp op,
                                     const Object& left, const Object& right);
-  static Continue inplaceOpUpdateCache(Thread* thread, word arg);
+  static Continue inplaceOpUpdateCache(Thread* thread, word arg, word cache);
 
   static RawObject inplaceOperationSetMethod(Thread* thread, BinaryOp op,
                                              const Object& left,
@@ -245,7 +245,7 @@ class Interpreter {
 
   static RawObject compareOperation(Thread* thread, CompareOp op,
                                     const Object& left, const Object& right);
-  static Continue compareOpUpdateCache(Thread* thread, word arg);
+  static Continue compareOpUpdateCache(Thread* thread, word arg, word cache);
 
   static RawObject createIterator(Thread* thread, const Object& iterable);
 
@@ -542,7 +542,7 @@ class Interpreter {
   // Slow path for the FOR_ITER opcode that updates the cache at the given index
   // when appropriate. May also be used as a non-caching slow path by passing a
   // negative index.
-  static Continue forIterUpdateCache(Thread* thread, word arg, word index);
+  static Continue forIterUpdateCache(Thread* thread, word arg, word cache);
   static Continue forIter(Thread* thread, RawObject next_method, word arg);
 
   // Slow path for isTrue check. Does a __bool__ method call, etc.
@@ -591,12 +591,12 @@ class Interpreter {
   static Continue callTrampoline(Thread* thread, Function::Entry entry,
                                  word nargs, RawObject* post_call_sp);
 
-  static Continue retryLoadAttrCached(Thread* thread, word arg);
-  static Continue loadAttrUpdateCache(Thread* thread, word arg);
-  static Continue storeAttrUpdateCache(Thread* thread, word arg);
+  static Continue retryLoadAttrCached(Thread* thread, word arg, word cache);
+  static Continue loadAttrUpdateCache(Thread* thread, word arg, word cache);
+  static Continue storeAttrUpdateCache(Thread* thread, word arg, word cache);
   static Continue storeSubscr(Thread* thread, RawObject set_item_method);
 
-  static Continue loadMethodUpdateCache(Thread* thread, word arg);
+  static Continue loadMethodUpdateCache(Thread* thread, word arg, word cache);
 
   using BinaryOpFallbackHandler = Continue (*)(Thread* thread, word arg,
                                                BinaryOpFlags flags);

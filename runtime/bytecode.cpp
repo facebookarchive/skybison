@@ -137,7 +137,7 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op,
         case CompareOp::GE:
           return RewrittenOp{COMPARE_OP_ANAMORPHIC, op.arg, true};
         case CompareOp::IN:
-          return RewrittenOp{COMPARE_IN_ANAMORPHIC, op.arg, true};
+          return RewrittenOp{COMPARE_IN_ANAMORPHIC, 0, true};
         // TODO(T61327107): Implement COMPARE_NOT_IN.
         case CompareOp::IS:
           return RewrittenOp{COMPARE_IS, 0, false};
@@ -238,6 +238,8 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op,
   return RewrittenOp{UNUSED_BYTECODE_0, 0, false};
 }
 
+static const word kMaxCaches = 65536;
+
 void rewriteBytecode(Thread* thread, const Function& function) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -255,14 +257,14 @@ void rewriteBytecode(Thread* thread, const Function& function) {
       caches.fill(NoneType::object());
       function.setCaches(*caches);
     }
-    function.setOriginalArguments(runtime->emptyTuple());
     return;
   }
-  word num_caches = num_global_caches;
-  // Scan bytecode to figure out how many caches we need.
   MutableBytes bytecode(&scope, function.rewrittenBytecode());
   word num_opcodes = rewrittenBytecodeLength(bytecode);
   bool use_load_fast_reverse_unchecked = true;
+  // Scan bytecode to figure out how many caches we need and if we can use
+  // LOAD_FAST_REVERSE_UNCHECKED.
+  word num_caches = num_global_caches;
   for (word i = 0; i < num_opcodes;) {
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
     if (op.bc == DELETE_FAST) {
@@ -274,9 +276,7 @@ void rewriteBytecode(Thread* thread, const Function& function) {
       num_caches++;
     }
   }
-
-  // Replace opcode arg with a cache index and zero EXTENDED_ARG args.
-  if (num_caches >= 256) {
+  if (num_caches > kMaxCaches) {
     // Populate global variable caches unconditionally since the interpreter
     // assumes their existence.
     if (num_global_caches > 0) {
@@ -285,51 +285,34 @@ void rewriteBytecode(Thread* thread, const Function& function) {
       caches.fill(NoneType::object());
       function.setCaches(*caches);
     }
-    function.setOriginalArguments(runtime->emptyTuple());
     return;
   }
-  Object original_arguments(&scope, NoneType::object());
-  if (num_caches > 0) {
-    original_arguments = runtime->newMutableTuple(num_caches);
-  }
-  for (word i = 0, cache = num_global_caches; i < num_opcodes;) {
-    word begin = i;
+  word cache = num_global_caches;
+  for (word i = 0; i < num_opcodes;) {
     BytecodeOp op = nextBytecodeOp(bytecode, &i);
     word previous_index = i - 1;
     RewrittenOp rewritten =
         rewriteOperation(function, op, use_load_fast_reverse_unchecked);
     if (rewritten.bc == UNUSED_BYTECODE_0) continue;
     if (rewritten.needs_inline_cache) {
-      for (word j = begin; j < previous_index; j++) {
-        rewrittenBytecodeOpAtPut(bytecode, j, Bytecode::EXTENDED_ARG);
-        rewrittenBytecodeArgAtPut(bytecode, j, 0);
-      }
       rewrittenBytecodeOpAtPut(bytecode, previous_index, rewritten.bc);
       rewrittenBytecodeArgAtPut(bytecode, previous_index,
-                                static_cast<byte>(cache));
+                                static_cast<byte>(rewritten.arg));
+      rewrittenBytecodeCacheAtPut(bytecode, previous_index, cache);
 
-      // Remember original arg.
-      MutableTuple::cast(*original_arguments)
-          .atPut(cache, SmallInt::fromWord(rewritten.arg));
       cache++;
     } else if (rewritten.arg != op.arg || rewritten.bc != op.bc) {
-      for (word j = begin; j < previous_index; j++) {
-        rewrittenBytecodeOpAtPut(bytecode, j, Bytecode::EXTENDED_ARG);
-        rewrittenBytecodeArgAtPut(bytecode, j, 0);
-      }
       rewrittenBytecodeOpAtPut(bytecode, previous_index, rewritten.bc);
       rewrittenBytecodeArgAtPut(bytecode, previous_index,
                                 static_cast<byte>(rewritten.arg));
     }
   }
-
-  if (num_caches > 0) {
-    MutableTuple caches(
-        &scope, runtime->newMutableTuple(num_caches * kIcPointersPerEntry));
+  DCHECK(cache == num_caches, "cache size mismatch");
+  if (cache > 0) {
+    MutableTuple caches(&scope,
+                        runtime->newMutableTuple(cache * kIcPointersPerEntry));
     caches.fill(NoneType::object());
     function.setCaches(*caches);
-    function.setOriginalArguments(
-        MutableTuple::cast(*original_arguments).becomeImmutable());
   }
 }
 

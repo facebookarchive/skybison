@@ -701,7 +701,8 @@ static RawObject testingFunctionCachingAttributes(
   MutableBytes rewritten_bytecode(&scope,
                                   runtime->newMutableBytesUninitialized(8));
   rewrittenBytecodeOpAtPut(rewritten_bytecode, 0, LOAD_ATTR_ANAMORPHIC);
-  rewrittenBytecodeArgAtPut(rewritten_bytecode, 0, 1);
+  rewrittenBytecodeArgAtPut(rewritten_bytecode, 0, 0);
+  rewrittenBytecodeCacheAtPut(rewritten_bytecode, 0, 1);
 
   Module module(&scope, findMainModule(runtime));
   Function function(&scope,
@@ -709,9 +710,6 @@ static RawObject testingFunctionCachingAttributes(
   function.setRewrittenBytecode(*rewritten_bytecode);
 
   Object none(&scope, NoneType::object());
-  Object zero(&scope, SmallInt::fromWord(0));
-  Tuple original_arguments(&scope, runtime->newTupleWith2(none, zero));
-  function.setOriginalArguments(*original_arguments);
 
   Tuple names(&scope, runtime->newTupleWith2(attribute_name, none));
   code.setNames(*names);
@@ -1713,35 +1711,36 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
       &scope, runtime_->newMutableBytesUninitialized(10 * kCodeUnitSize));
   rewrittenBytecodeOpAtPut(bytecode, 0, LOAD_GLOBAL);
   rewrittenBytecodeArgAtPut(bytecode, 0, 100);
+  rewrittenBytecodeCacheAtPut(bytecode, 0, 0);
   rewrittenBytecodeOpAtPut(bytecode, 1, LOAD_ATTR_ANAMORPHIC);
   rewrittenBytecodeArgAtPut(bytecode, 1, 0);
+  rewrittenBytecodeCacheAtPut(bytecode, 1, 0);
   rewrittenBytecodeOpAtPut(bytecode, 2, LOAD_GLOBAL);
   rewrittenBytecodeArgAtPut(bytecode, 2, 100);
+  rewrittenBytecodeCacheAtPut(bytecode, 2, 0);
   rewrittenBytecodeOpAtPut(bytecode, 3, LOAD_METHOD_ANAMORPHIC);
   rewrittenBytecodeArgAtPut(bytecode, 3, 1);
+  rewrittenBytecodeCacheAtPut(bytecode, 3, 1);
   rewrittenBytecodeOpAtPut(bytecode, 4, LOAD_GLOBAL);
   rewrittenBytecodeArgAtPut(bytecode, 4, 100);
+  rewrittenBytecodeCacheAtPut(bytecode, 4, 0);
   rewrittenBytecodeOpAtPut(bytecode, 5, LOAD_ATTR_ANAMORPHIC);
   rewrittenBytecodeArgAtPut(bytecode, 5, 2);
+  rewrittenBytecodeCacheAtPut(bytecode, 5, 2);
   rewrittenBytecodeOpAtPut(bytecode, 6, STORE_ATTR_ANAMORPHIC);
   rewrittenBytecodeArgAtPut(bytecode, 6, 3);
+  rewrittenBytecodeCacheAtPut(bytecode, 6, 3);
   rewrittenBytecodeOpAtPut(bytecode, 7, FOR_ITER_ANAMORPHIC);
-  rewrittenBytecodeArgAtPut(bytecode, 7, 4);
+  rewrittenBytecodeArgAtPut(bytecode, 7, -1);
+  rewrittenBytecodeCacheAtPut(bytecode, 7, 4);
   rewrittenBytecodeOpAtPut(bytecode, 8, BINARY_SUBSCR_ANAMORPHIC);
-  rewrittenBytecodeArgAtPut(bytecode, 8, 5);
+  rewrittenBytecodeArgAtPut(bytecode, 8, -1);
+  rewrittenBytecodeCacheAtPut(bytecode, 8, 5);
   rewrittenBytecodeOpAtPut(bytecode, 9, LOAD_GLOBAL);
   rewrittenBytecodeArgAtPut(bytecode, 9, 100);
+  rewrittenBytecodeCacheAtPut(bytecode, 9, 0);
 
   word num_caches = 6;
-  Object obj1(&scope, SmallInt::fromWord(0));
-  Object obj2(&scope, SmallInt::fromWord(1));
-  Object obj3(&scope, SmallInt::fromWord(2));
-  Object obj4(&scope, SmallInt::fromWord(3));
-  Object obj5(&scope, SmallInt::fromWord(-1));
-  Object obj6(&scope, SmallInt::fromWord(-1));
-  Tuple original_args(
-      &scope, runtime_->newTupleWithN(num_caches, &obj1, &obj2, &obj3, &obj4,
-                                      &obj5, &obj6));
 
   Object name1(&scope, Runtime::internStrFromCStr(
                            thread_, "load_attr_cached_attr_name"));
@@ -1787,7 +1786,6 @@ TEST_F(IcTest, IcIteratorIteratesOverAttrCaches) {
   function.setRewrittenBytecode(*bytecode);
   function.setCaches(*caches);
   Code::cast(function.code()).setNames(*names);
-  function.setOriginalArguments(*original_args);
 
   IcIterator it(&scope, runtime_, *function);
   ASSERT_TRUE(it.hasNext());
@@ -1873,22 +1871,21 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
       &scope, runtime_->newMutableBytesUninitialized(4 * kCodeUnitSize));
   rewrittenBytecodeOpAtPut(bytecode, 0, LOAD_GLOBAL);
   rewrittenBytecodeArgAtPut(bytecode, 0, 100);
+  rewrittenBytecodeCacheAtPut(bytecode, 0, 0);
   rewrittenBytecodeOpAtPut(bytecode, 1, COMPARE_OP_ANAMORPHIC);
-  rewrittenBytecodeArgAtPut(bytecode, 1, 0);
+  rewrittenBytecodeArgAtPut(bytecode, 1, CompareOp::GE);
+  rewrittenBytecodeCacheAtPut(bytecode, 1, 0);
   rewrittenBytecodeOpAtPut(bytecode, 2, BINARY_OP_ANAMORPHIC);
-  rewrittenBytecodeArgAtPut(bytecode, 2, 1);
+  rewrittenBytecodeArgAtPut(bytecode, 2,
+                            static_cast<word>(Interpreter::BinaryOp::ADD));
+  rewrittenBytecodeCacheAtPut(bytecode, 2, 1);
   rewrittenBytecodeOpAtPut(bytecode, 3, LOAD_GLOBAL);
   rewrittenBytecodeArgAtPut(bytecode, 3, 100);
+  rewrittenBytecodeCacheAtPut(bytecode, 3, 0);
 
   word num_caches = 2;
-  Object ge(&scope, SmallInt::fromWord(CompareOp::GE));
-  Object add(&scope,
-             SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::ADD)));
-  Tuple original_args(&scope, runtime_->newTupleWith2(ge, add));
-
   MutableTuple caches(
       &scope, runtime_->newMutableTuple(num_caches * kIcPointersPerEntry));
-  caches.fill(NoneType::object());
 
   // Caches for COMPARE_OP_ANAMORPHIC at 2.
   word compare_op_cached_index =
@@ -1919,7 +1916,6 @@ TEST_F(IcTest, IcIteratorIteratesOverBinaryOpCaches) {
   Function function(&scope, newEmptyFunction());
   function.setRewrittenBytecode(*bytecode);
   function.setCaches(*caches);
-  function.setOriginalArguments(*original_args);
 
   IcIterator it(&scope, runtime_, *function);
   ASSERT_TRUE(it.hasNext());
@@ -1961,19 +1957,18 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
       &scope, runtime_->newMutableBytesUninitialized(4 * kCodeUnitSize));
   rewrittenBytecodeOpAtPut(bytecode, 0, LOAD_GLOBAL);
   rewrittenBytecodeArgAtPut(bytecode, 0, 100);
+  rewrittenBytecodeCacheAtPut(bytecode, 0, 0);
   rewrittenBytecodeOpAtPut(bytecode, 1, INPLACE_OP_ANAMORPHIC);
-  rewrittenBytecodeArgAtPut(bytecode, 1, 0);
+  rewrittenBytecodeArgAtPut(bytecode, 1,
+                            static_cast<word>(Interpreter::BinaryOp::MUL));
+  rewrittenBytecodeCacheAtPut(bytecode, 1, 0);
   rewrittenBytecodeOpAtPut(bytecode, 2, LOAD_GLOBAL);
   rewrittenBytecodeArgAtPut(bytecode, 2, 100);
+  rewrittenBytecodeCacheAtPut(bytecode, 2, 0);
 
   word num_caches = 1;
-  Object mul(&scope,
-             SmallInt::fromWord(static_cast<word>(Interpreter::BinaryOp::MUL)));
-  Tuple original_args(&scope, runtime_->newTupleWith1(mul));
-
   MutableTuple caches(
       &scope, runtime_->newMutableTuple(num_caches * kIcPointersPerEntry));
-  caches.fill(NoneType::object());
 
   // Caches for BINARY_OP_ANAMORPHIC at 2.
   word inplace_op_cached_index =
@@ -1991,7 +1986,6 @@ TEST_F(IcTest, IcIteratorIteratesOverInplaceOpCaches) {
   Function function(&scope, newEmptyFunction());
   function.setRewrittenBytecode(*bytecode);
   function.setCaches(*caches);
-  function.setOriginalArguments(*original_args);
 
   IcIterator it(&scope, runtime_, *function);
   ASSERT_TRUE(it.hasNext());

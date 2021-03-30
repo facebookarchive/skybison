@@ -148,7 +148,7 @@ TEST_F(DebuggingTests, DumpExtendedFunction) {
        4 RETURN_VALUE 0
   Rewritten bytecode:
      0 [   0] LOAD_CONST 0
-     4 [   0] LOAD_ATTR_ANAMORPHIC 1
+     4 [   1] LOAD_ATTR_ANAMORPHIC 0
      8 [   0] RETURN_VALUE 0
 )");
 }
@@ -213,9 +213,8 @@ TEST_F(DebuggingTests, DumpExtendedInstanceWithOverflowDict) {
   (in-object) "_function__entry_ex" = 100
   (in-object) "_function__entry_asm" = )"
            << entry_asm << R"(
-  (in-object) "_function__rewritten_bytecode" = b'd\x00\x00\x00\xff\x01\x00\x00S\x00\x00\x00'
+  (in-object) "_function__rewritten_bytecode" = b'd\x00\x00\x00\xff\x00\x01\x00S\x00\x00\x00'
   (in-object) "_function__caches" = mutabletuple(None, None, None, None)
-  (in-object) "_function__original_arguments" = (0, 0)
   (in-object) "_function__dict" = {"funcattr0": 4}
   (in-object) "_function__intrinsic" = 37280
   overflow dict: {"funcattr0": 4}

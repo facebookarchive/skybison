@@ -2541,10 +2541,6 @@ class RawFunction : public RawInstance {
   RawObject caches() const;
   void setCaches(RawObject cache) const;
 
-  // Original arguments for bytecode operations using the inline cache.
-  RawObject originalArguments() const;
-  void setOriginalArguments(RawObject original_arguments) const;
-
   // The function's dictionary
   RawObject dict() const;
   void setDict(RawObject dict) const;
@@ -2571,8 +2567,7 @@ class RawFunction : public RawInstance {
   static const int kEntryAsmOffset = kEntryExOffset + kPointerSize;
   static const int kRewrittenBytecodeOffset = kEntryAsmOffset + kPointerSize;
   static const int kCachesOffset = kRewrittenBytecodeOffset + kPointerSize;
-  static const int kOriginalArgumentsOffset = kCachesOffset + kPointerSize;
-  static const int kDictOffset = kOriginalArgumentsOffset + kPointerSize;
+  static const int kDictOffset = kCachesOffset + kPointerSize;
   static const int kIntrinsicOffset = kDictOffset + kPointerSize;
   static const int kSize = kIntrinsicOffset + kPointerSize;
 
@@ -6762,15 +6757,6 @@ inline RawObject RawFunction::caches() const {
 
 inline void RawFunction::setCaches(RawObject cache) const {
   instanceVariableAtPut(kCachesOffset, cache);
-}
-
-inline RawObject RawFunction::originalArguments() const {
-  return instanceVariableAt(kOriginalArgumentsOffset);
-}
-
-inline void RawFunction::setOriginalArguments(
-    RawObject original_arguments) const {
-  instanceVariableAtPut(kOriginalArgumentsOffset, original_arguments);
 }
 
 inline RawObject RawFunction::dict() const {

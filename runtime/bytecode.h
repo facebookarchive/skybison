@@ -424,11 +424,4 @@ inline RawObject objectFromOparg(word arg) {
 // tuple to `function`.
 void rewriteBytecode(Thread* thread, const Function& function);
 
-// Returns the original argument of bytecode operations that were rewritten by
-// `rewriteBytecode()`.
-inline word originalArg(RawFunction function, word index) {
-  return SmallInt::cast(RawTuple::cast(function.originalArguments()).at(index))
-      .value();
-}
-
 }  // namespace py

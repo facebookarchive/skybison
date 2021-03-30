@@ -61,7 +61,7 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
   static const int cache_limit = 65536;
   byte bytecode[(cache_limit + 2) * kCompilerCodeUnitSize];
   std::memset(bytecode, 0, sizeof bytecode);
-  for (int i = 0; i < cache_limit; i++) {
+  for (word i = 0; i < cache_limit; i++) {
     bytecode[i * kCompilerCodeUnitSize] = LOAD_ATTR;
     bytecode[(i * kCompilerCodeUnitSize) + 1] = i * 3;
   }
@@ -71,9 +71,10 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
   bytecode[(cache_limit + 1) * kCompilerCodeUnitSize] = LOAD_GLOBAL;
   bytecode[(cache_limit + 1) * kCompilerCodeUnitSize + 1] = 15;
 
+  // Expanded bytecode, as if by Runtime::expandBytecode
   byte rewritten_bytecode[(cache_limit + 2) * kCodeUnitSize];
   std::memset(rewritten_bytecode, 0, sizeof rewritten_bytecode);
-  for (int i = 0; i < cache_limit; i++) {
+  for (word i = 0; i < cache_limit; i++) {
     rewritten_bytecode[i * kCodeUnitSize] = LOAD_ATTR;
     rewritten_bytecode[(i * kCodeUnitSize) + 1] = i * 3;
   }
@@ -122,11 +123,11 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
       0,
       0,
       EXTENDED_ARG,
-      0,
+      0xca,
       0,
       0,
       LOAD_ATTR_ANAMORPHIC,
-      0,
+      0xfe,
       0,
       0,
       NOP,
@@ -134,24 +135,24 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
       0,
       0,
       EXTENDED_ARG,
-      0,
-      0,
-      0,
-      EXTENDED_ARG,
-      0,
-      0,
-      0,
-      EXTENDED_ARG,
-      0,
-      0,
-      0,
-      LOAD_ATTR_ANAMORPHIC,
       1,
       0,
       0,
-      LOAD_ATTR_ANAMORPHIC,
+      EXTENDED_ARG,
       2,
       0,
+      0,
+      EXTENDED_ARG,
+      3,
+      0,
+      0,
+      LOAD_ATTR_ANAMORPHIC,
+      4,
+      1,
+      0,
+      LOAD_ATTR_ANAMORPHIC,
+      77,
+      2,
       0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
@@ -163,10 +164,6 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
   for (word i = 0, length = caches.length(); i < length; i++) {
     EXPECT_TRUE(caches.at(i).isNoneType()) << "index " << i;
   }
-
-  EXPECT_EQ(originalArg(*function, 0), 0xcafe);
-  EXPECT_EQ(originalArg(*function, 1), 0x01020304);
-  EXPECT_EQ(originalArg(*function, 2), 77);
 }
 
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
@@ -264,11 +261,11 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadMethodOperations) {
       0,
       0,
       EXTENDED_ARG,
-      0,
+      0xca,
       0,
       0,
       LOAD_METHOD_ANAMORPHIC,
-      0,
+      0xfe,
       0,
       0,
       NOP,
@@ -276,24 +273,24 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadMethodOperations) {
       0,
       0,
       EXTENDED_ARG,
-      0,
-      0,
-      0,
-      EXTENDED_ARG,
-      0,
-      0,
-      0,
-      EXTENDED_ARG,
-      0,
-      0,
-      0,
-      LOAD_METHOD_ANAMORPHIC,
       1,
       0,
       0,
-      LOAD_METHOD_ANAMORPHIC,
+      EXTENDED_ARG,
       2,
       0,
+      0,
+      EXTENDED_ARG,
+      3,
+      0,
+      0,
+      LOAD_METHOD_ANAMORPHIC,
+      4,
+      1,
+      0,
+      LOAD_METHOD_ANAMORPHIC,
+      77,
+      2,
       0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
@@ -305,10 +302,6 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadMethodOperations) {
   for (word i = 0, length = caches.length(); i < length; i++) {
     EXPECT_TRUE(caches.at(i).isNoneType()) << "index " << i;
   }
-
-  EXPECT_EQ(originalArg(*function, 0), 0xcafe);
-  EXPECT_EQ(originalArg(*function, 1), 0x01020304);
-  EXPECT_EQ(originalArg(*function, 2), 77);
 }
 
 TEST_F(BytecodeTest, RewriteBytecodeRewritesStoreAttr) {
@@ -324,14 +317,12 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesStoreAttr) {
 
   byte expected[] = {
       STORE_ATTR_ANAMORPHIC,
-      0,
+      48,
       0,
       0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
-
-  EXPECT_EQ(originalArg(*function, 0), 48);
 }
 
 TEST_F(BytecodeTest, RewriteBytecodeRewritesBinaryOpcodes) {
@@ -373,43 +364,61 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesBinaryOpcodes) {
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
-      BINARY_OP_ANAMORPHIC, 0,  0, 0, BINARY_OP_ANAMORPHIC, 1,  0, 0,
-      BINARY_OP_ANAMORPHIC, 2,  0, 0, BINARY_OP_ANAMORPHIC, 3,  0, 0,
-      BINARY_OP_ANAMORPHIC, 4,  0, 0, BINARY_OP_ANAMORPHIC, 5,  0, 0,
-      BINARY_OP_ANAMORPHIC, 6,  0, 0, BINARY_OP_ANAMORPHIC, 7,  0, 0,
-      BINARY_OP_ANAMORPHIC, 8,  0, 0, BINARY_OP_ANAMORPHIC, 9,  0, 0,
-      BINARY_OP_ANAMORPHIC, 10, 0, 0, BINARY_OP_ANAMORPHIC, 11, 0, 0,
-      BINARY_OP_ANAMORPHIC, 12, 0, 0,
+      BINARY_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::MATMUL),
+      0,
+      0,
+      BINARY_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::POW),
+      1,
+      0,
+      BINARY_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::MUL),
+      2,
+      0,
+      BINARY_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::MOD),
+      3,
+      0,
+      BINARY_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::ADD),
+      4,
+      0,
+      BINARY_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::SUB),
+      5,
+      0,
+      BINARY_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::FLOORDIV),
+      6,
+      0,
+      BINARY_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::TRUEDIV),
+      7,
+      0,
+      BINARY_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::LSHIFT),
+      8,
+      0,
+      BINARY_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::RSHIFT),
+      9,
+      0,
+      BINARY_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::AND),
+      10,
+      0,
+      BINARY_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::XOR),
+      11,
+      0,
+      BINARY_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::OR),
+      12,
+      0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
-
-  EXPECT_EQ(originalArg(*function, 0),
-            static_cast<word>(Interpreter::BinaryOp::MATMUL));
-  EXPECT_EQ(originalArg(*function, 1),
-            static_cast<word>(Interpreter::BinaryOp::POW));
-  EXPECT_EQ(originalArg(*function, 2),
-            static_cast<word>(Interpreter::BinaryOp::MUL));
-  EXPECT_EQ(originalArg(*function, 3),
-            static_cast<word>(Interpreter::BinaryOp::MOD));
-  EXPECT_EQ(originalArg(*function, 4),
-            static_cast<word>(Interpreter::BinaryOp::ADD));
-  EXPECT_EQ(originalArg(*function, 5),
-            static_cast<word>(Interpreter::BinaryOp::SUB));
-  EXPECT_EQ(originalArg(*function, 6),
-            static_cast<word>(Interpreter::BinaryOp::FLOORDIV));
-  EXPECT_EQ(originalArg(*function, 7),
-            static_cast<word>(Interpreter::BinaryOp::TRUEDIV));
-  EXPECT_EQ(originalArg(*function, 8),
-            static_cast<word>(Interpreter::BinaryOp::LSHIFT));
-  EXPECT_EQ(originalArg(*function, 9),
-            static_cast<word>(Interpreter::BinaryOp::RSHIFT));
-  EXPECT_EQ(originalArg(*function, 10),
-            static_cast<word>(Interpreter::BinaryOp::AND));
-  EXPECT_EQ(originalArg(*function, 11),
-            static_cast<word>(Interpreter::BinaryOp::XOR));
-  EXPECT_EQ(originalArg(*function, 12),
-            static_cast<word>(Interpreter::BinaryOp::OR));
 }
 
 TEST_F(BytecodeTest, RewriteBytecodeRewritesInplaceOpcodes) {
@@ -451,43 +460,61 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesInplaceOpcodes) {
   // newFunctionWithCode() calls rewriteBytecode().
 
   byte expected[] = {
-      INPLACE_OP_ANAMORPHIC, 0,  0, 0, INPLACE_OP_ANAMORPHIC, 1,  0, 0,
-      INPLACE_OP_ANAMORPHIC, 2,  0, 0, INPLACE_OP_ANAMORPHIC, 3,  0, 0,
-      INPLACE_OP_ANAMORPHIC, 4,  0, 0, INPLACE_OP_ANAMORPHIC, 5,  0, 0,
-      INPLACE_OP_ANAMORPHIC, 6,  0, 0, INPLACE_OP_ANAMORPHIC, 7,  0, 0,
-      INPLACE_OP_ANAMORPHIC, 8,  0, 0, INPLACE_OP_ANAMORPHIC, 9,  0, 0,
-      INPLACE_OP_ANAMORPHIC, 10, 0, 0, INPLACE_OP_ANAMORPHIC, 11, 0, 0,
-      INPLACE_OP_ANAMORPHIC, 12, 0, 0,
+      INPLACE_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::MATMUL),
+      0,
+      0,
+      INPLACE_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::POW),
+      1,
+      0,
+      INPLACE_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::MUL),
+      2,
+      0,
+      INPLACE_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::MOD),
+      3,
+      0,
+      INPLACE_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::ADD),
+      4,
+      0,
+      INPLACE_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::SUB),
+      5,
+      0,
+      INPLACE_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::FLOORDIV),
+      6,
+      0,
+      INPLACE_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::TRUEDIV),
+      7,
+      0,
+      INPLACE_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::LSHIFT),
+      8,
+      0,
+      INPLACE_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::RSHIFT),
+      9,
+      0,
+      INPLACE_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::AND),
+      10,
+      0,
+      INPLACE_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::XOR),
+      11,
+      0,
+      INPLACE_OP_ANAMORPHIC,
+      static_cast<word>(Interpreter::BinaryOp::OR),
+      12,
+      0,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
-
-  EXPECT_EQ(originalArg(*function, 0),
-            static_cast<word>(Interpreter::BinaryOp::MATMUL));
-  EXPECT_EQ(originalArg(*function, 1),
-            static_cast<word>(Interpreter::BinaryOp::POW));
-  EXPECT_EQ(originalArg(*function, 2),
-            static_cast<word>(Interpreter::BinaryOp::MUL));
-  EXPECT_EQ(originalArg(*function, 3),
-            static_cast<word>(Interpreter::BinaryOp::MOD));
-  EXPECT_EQ(originalArg(*function, 4),
-            static_cast<word>(Interpreter::BinaryOp::ADD));
-  EXPECT_EQ(originalArg(*function, 5),
-            static_cast<word>(Interpreter::BinaryOp::SUB));
-  EXPECT_EQ(originalArg(*function, 6),
-            static_cast<word>(Interpreter::BinaryOp::FLOORDIV));
-  EXPECT_EQ(originalArg(*function, 7),
-            static_cast<word>(Interpreter::BinaryOp::TRUEDIV));
-  EXPECT_EQ(originalArg(*function, 8),
-            static_cast<word>(Interpreter::BinaryOp::LSHIFT));
-  EXPECT_EQ(originalArg(*function, 9),
-            static_cast<word>(Interpreter::BinaryOp::RSHIFT));
-  EXPECT_EQ(originalArg(*function, 10),
-            static_cast<word>(Interpreter::BinaryOp::AND));
-  EXPECT_EQ(originalArg(*function, 11),
-            static_cast<word>(Interpreter::BinaryOp::XOR));
-  EXPECT_EQ(originalArg(*function, 12),
-            static_cast<word>(Interpreter::BinaryOp::OR));
 }
 
 TEST_F(BytecodeTest, RewriteBytecodeRewritesCompareOpOpcodes) {
@@ -510,32 +537,32 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesCompareOpOpcodes) {
 
   byte expected[] = {
       COMPARE_OP_ANAMORPHIC,
-      0,
+      CompareOp::LT,
       0,
       0,
       COMPARE_OP_ANAMORPHIC,
+      CompareOp::LE,
       1,
       0,
-      0,
       COMPARE_OP_ANAMORPHIC,
+      CompareOp::EQ,
       2,
       0,
-      0,
       COMPARE_OP_ANAMORPHIC,
+      CompareOp::NE,
       3,
       0,
-      0,
       COMPARE_OP_ANAMORPHIC,
+      CompareOp::GT,
       4,
       0,
-      0,
       COMPARE_OP_ANAMORPHIC,
+      CompareOp::GE,
       5,
       0,
-      0,
       COMPARE_IN_ANAMORPHIC,
-      6,
       0,
+      6,
       0,
       COMPARE_OP,
       CompareOp::NOT_IN,
@@ -556,13 +583,6 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesCompareOpOpcodes) {
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
-
-  EXPECT_EQ(originalArg(*function, 0), static_cast<word>(CompareOp::LT));
-  EXPECT_EQ(originalArg(*function, 1), static_cast<word>(CompareOp::LE));
-  EXPECT_EQ(originalArg(*function, 2), static_cast<word>(CompareOp::EQ));
-  EXPECT_EQ(originalArg(*function, 3), static_cast<word>(CompareOp::NE));
-  EXPECT_EQ(originalArg(*function, 4), static_cast<word>(CompareOp::GT));
-  EXPECT_EQ(originalArg(*function, 5), static_cast<word>(CompareOp::GE));
 }
 
 TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
@@ -574,7 +594,8 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
       STORE_NAME,  3, DELETE_NAME,  4, LOAD_ATTR, 9, LOAD_NAME,     5,
   };
   code.setCode(runtime_->newBytesWithAll(bytecode));
-  code.setNames(newTupleWithNone(12));
+  code.setNames(
+      MutableTuple::cast(runtime_->newMutableTuple(12)).becomeImmutable());
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
@@ -592,8 +613,8 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
       // Note that LOAD_ATTR's cache index starts at 6 to reserve the first 6
       // cache lines for 12 global variables.
       LOAD_ATTR_ANAMORPHIC,
+      9,
       6,
-      0,
       0,
       DELETE_GLOBAL,
       2,
@@ -608,8 +629,8 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
       0,
       0,
       LOAD_ATTR_ANAMORPHIC,
+      9,
       7,
-      0,
       0,
       LOAD_NAME,
       5,
@@ -667,7 +688,6 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
-  EXPECT_EQ(Tuple::cast(function.originalArguments()).length(), 0);
   EXPECT_TRUE(function.caches().isNoneType());
 }
 
@@ -714,7 +734,6 @@ TEST_F(BytecodeTest,
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
-  EXPECT_EQ(Tuple::cast(function.originalArguments()).length(), 0);
   EXPECT_TRUE(function.caches().isNoneType());
 }
 
@@ -763,7 +782,6 @@ TEST_F(
   };
   Object rewritten_bytecode(&scope, function.rewrittenBytecode());
   EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
-  EXPECT_EQ(Tuple::cast(function.originalArguments()).length(), 0);
   EXPECT_TRUE(function.caches().isNoneType());
 }
 

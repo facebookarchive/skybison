@@ -374,7 +374,6 @@ class Runtime;
   V(_function__entry_kw)                                                       \
   V(_function__flags)                                                          \
   V(_function__kw_defaults)                                                    \
-  V(_function__original_arguments)                                             \
   V(_function__rewritten_bytecode)                                             \
   V(_function__stack_size)                                                     \
   V(_function__total_args)                                                     \

@@ -1381,6 +1381,11 @@ static Bytecode currentBytecode(Thread* thread) {
   return static_cast<Bytecode>(frame->bytecode().byteAt(pc));
 }
 
+static inline word currentCacheIndex(Frame* frame) {
+  word pc = frame->virtualPC() - kCodeUnitSize;
+  return frame->bytecode().uint16At(pc + 2);
+}
+
 static void rewriteCurrentBytecode(Frame* frame, Bytecode bytecode) {
   word pc = frame->virtualPC() - kCodeUnitSize;
   MutableBytes::cast(frame->bytecode()).byteAtPut(pc, bytecode);
@@ -1490,7 +1495,7 @@ HANDLER_INLINE Continue Interpreter::doBinarySubtract(Thread* thread, word) {
   return doBinaryOperation(BinaryOp::SUB, thread);
 }
 
-Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
+Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word cache) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Object container(&scope, thread->stackPeek(1));
@@ -1517,13 +1522,13 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word index) {
     thread->stackSetAt(1, *getitem);
     return tailcall(thread, 1);
   }
-  if (index >= 0) {
+  if (cache >= 0) {
     // TODO(T55274956): Make this into a separate function to be shared.
     MutableTuple caches(&scope, frame->caches());
     Str get_item_name(&scope, runtime->symbols()->at(ID(__getitem__)));
     Function dependent(&scope, frame->function());
     ICState next_cache_state =
-        icUpdateAttr(thread, caches, index, container.layoutId(), getitem,
+        icUpdateAttr(thread, caches, cache, container.layoutId(), getitem,
                      get_item_name, dependent);
     rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
                                       ? BINARY_SUBSCR_MONOMORPHIC
@@ -1538,12 +1543,12 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscr(Thread* thread, word) {
   return binarySubscrUpdateCache(thread, -1);
 }
 
-HANDLER_INLINE Continue Interpreter::doBinarySubscrDict(Thread* thread,
-                                                        word arg) {
+HANDLER_INLINE Continue Interpreter::doBinarySubscrDict(Thread* thread, word) {
   RawObject container = thread->stackPeek(1);
   if (!container.isDict()) {
     EVENT_CACHE(BINARY_SUBSCR_DICT);
-    return binarySubscrUpdateCache(thread, arg);
+    word cache = currentCacheIndex(thread->currentFrame());
+    return binarySubscrUpdateCache(thread, cache);
   }
   HandleScope scope(thread);
   Dict dict(&scope, container);
@@ -1569,8 +1574,7 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrDict(Thread* thread,
   return Continue::NEXT;
 }
 
-HANDLER_INLINE Continue Interpreter::doBinarySubscrList(Thread* thread,
-                                                        word arg) {
+HANDLER_INLINE Continue Interpreter::doBinarySubscrList(Thread* thread, word) {
   RawObject container = thread->stackPeek(1);
   RawObject key = thread->stackPeek(0);
   if (container.isList() && key.isSmallInt()) {
@@ -1584,11 +1588,11 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrList(Thread* thread,
     }
   }
   EVENT_CACHE(BINARY_SUBSCR_LIST);
-  return binarySubscrUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return binarySubscrUpdateCache(thread, cache);
 }
 
-HANDLER_INLINE Continue Interpreter::doBinarySubscrTuple(Thread* thread,
-                                                         word arg) {
+HANDLER_INLINE Continue Interpreter::doBinarySubscrTuple(Thread* thread, word) {
   RawObject container = thread->stackPeek(1);
   RawObject key = thread->stackPeek(0);
   if (container.isTuple() && key.isSmallInt()) {
@@ -1602,35 +1606,38 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrTuple(Thread* thread,
     }
   }
   EVENT_CACHE(BINARY_SUBSCR_TUPLE);
-  return binarySubscrUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return binarySubscrUpdateCache(thread, cache);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrMonomorphic(Thread* thread,
-                                                               word arg) {
+                                                               word) {
   Frame* frame = thread->currentFrame();
+  word cache = currentCacheIndex(frame);
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   LayoutId receiver_layout_id = thread->stackPeek(1).layoutId();
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, receiver_layout_id, &is_found);
+      icLookupMonomorphic(caches, cache, receiver_layout_id, &is_found);
   if (!is_found) {
     EVENT_CACHE(BINARY_SUBSCR_MONOMORPHIC);
-    return binarySubscrUpdateCache(thread, arg);
+    return binarySubscrUpdateCache(thread, cache);
   }
   thread->stackInsertAt(2, cached);
   return tailcallFunction(thread, 2, cached);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinarySubscrPolymorphic(Thread* thread,
-                                                               word arg) {
+                                                               word) {
   Frame* frame = thread->currentFrame();
   LayoutId container_layout_id = thread->stackPeek(1).layoutId();
   bool is_found;
+  word cache = currentCacheIndex(frame);
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
-                                         arg, container_layout_id, &is_found);
+                                         cache, container_layout_id, &is_found);
   if (!is_found) {
     EVENT_CACHE(BINARY_SUBSCR_POLYMORPHIC);
-    return binarySubscrUpdateCache(thread, arg);
+    return binarySubscrUpdateCache(thread, cache);
   }
   thread->stackInsertAt(2, cached);
   return tailcallFunction(thread, 2, cached);
@@ -1660,7 +1667,8 @@ HANDLER_INLINE Continue Interpreter::doBinarySubscrAnamorphic(Thread* thread,
     default:
       break;
   }
-  return binarySubscrUpdateCache(thread, arg);
+  word cache = currentCacheIndex(frame);
+  return binarySubscrUpdateCache(thread, cache);
 }
 
 HANDLER_INLINE Continue Interpreter::doBinaryFloorDivide(Thread* thread, word) {
@@ -1803,8 +1811,7 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscr(Thread* thread, word) {
   return Continue::NEXT;
 }
 
-HANDLER_INLINE Continue Interpreter::doStoreSubscrList(Thread* thread,
-                                                       word arg) {
+HANDLER_INLINE Continue Interpreter::doStoreSubscrList(Thread* thread, word) {
   RawObject container = thread->stackPeek(1);
   RawObject key = thread->stackPeek(0);
   if (container.isList() && key.isSmallInt()) {
@@ -1818,14 +1825,17 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrList(Thread* thread,
       return Continue::NEXT;
     }
   }
-  return storeSubscrUpdateCache(thread, arg);
+  EVENT_CACHE(STORE_SUBSCR_LIST);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return storeSubscrUpdateCache(thread, cache);
 }
 
-HANDLER_INLINE Continue Interpreter::doStoreSubscrDict(Thread* thread,
-                                                       word arg) {
+HANDLER_INLINE Continue Interpreter::doStoreSubscrDict(Thread* thread, word) {
   RawObject container = thread->stackPeek(1);
   if (!container.isDict()) {
-    return storeSubscrUpdateCache(thread, arg);
+    EVENT_CACHE(STORE_SUBSCR_DICT);
+    word cache = currentCacheIndex(thread->currentFrame());
+    return storeSubscrUpdateCache(thread, cache);
   }
   HandleScope scope(thread);
   Dict dict(&scope, container);
@@ -1844,7 +1854,7 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrDict(Thread* thread,
 }
 
 NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
-                                                          word arg) {
+                                                          word cache) {
   HandleScope scope(thread);
   Object key(&scope, thread->stackPop());
   Object container(&scope, thread->stackPop());
@@ -1867,7 +1877,7 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
                       thread->runtime()->symbols()->at(ID(__setitem__)));
     Function dependent(&scope, frame->function());
     ICState next_cache_state =
-        icUpdateAttr(thread, caches, arg, container.layoutId(), setitem,
+        icUpdateAttr(thread, caches, cache, container.layoutId(), setitem,
                      set_item_name, dependent);
     rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
                                       ? STORE_SUBSCR_MONOMORPHIC
@@ -1905,31 +1915,33 @@ ALWAYS_INLINE Continue Interpreter::storeSubscr(Thread* thread,
 }
 
 HANDLER_INLINE Continue Interpreter::doStoreSubscrMonomorphic(Thread* thread,
-                                                              word arg) {
+                                                              word) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   LayoutId container_layout_id = thread->stackPeek(1).layoutId();
+  word cache = currentCacheIndex(frame);
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, container_layout_id, &is_found);
+      icLookupMonomorphic(caches, cache, container_layout_id, &is_found);
   if (!is_found) {
     EVENT_CACHE(STORE_SUBSCR_MONOMORPHIC);
-    return storeSubscrUpdateCache(thread, arg);
+    return storeSubscrUpdateCache(thread, cache);
   }
   return storeSubscr(thread, cached);
 }
 
 HANDLER_INLINE Continue Interpreter::doStoreSubscrPolymorphic(Thread* thread,
-                                                              word arg) {
+                                                              word) {
   Frame* frame = thread->currentFrame();
   RawObject container_raw = thread->stackPeek(1);
   LayoutId container_layout_id = container_raw.layoutId();
+  word cache = currentCacheIndex(frame);
   bool is_found;
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
-                                         arg, container_layout_id, &is_found);
+                                         cache, container_layout_id, &is_found);
   if (!is_found) {
     EVENT_CACHE(STORE_SUBSCR_POLYMORPHIC);
-    return storeSubscrUpdateCache(thread, arg);
+    return storeSubscrUpdateCache(thread, cache);
   }
   return storeSubscr(thread, cached);
 }
@@ -1951,7 +1963,8 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrAnamorphic(Thread* thread,
     default:
       break;
   }
-  return storeSubscrUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return storeSubscrUpdateCache(thread, cache);
 }
 
 HANDLER_INLINE Continue Interpreter::doDeleteSubscr(Thread* thread, word) {
@@ -2748,7 +2761,7 @@ HANDLER_INLINE Continue Interpreter::doForIter(Thread* thread, word arg) {
   return forIterUpdateCache(thread, arg, -1);
 }
 
-Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
+Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word cache) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
   Object iter(&scope, thread->stackTop());
@@ -2761,12 +2774,12 @@ Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word index) {
 
   Object result(&scope, NoneType::object());
   if (next.isFunction()) {
-    if (index >= 0) {
+    if (cache >= 0) {
       MutableTuple caches(&scope, frame->caches());
       Str next_name(&scope, thread->runtime()->symbols()->at(ID(__next__)));
       Function dependent(&scope, frame->function());
       ICState next_cache_state = icUpdateAttr(
-          thread, caches, index, iter.layoutId(), next, next_name, dependent);
+          thread, caches, cache, iter.layoutId(), next, next_name, dependent);
       rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
                                         ? FOR_ITER_MONOMORPHIC
                                         : FOR_ITER_POLYMORPHIC);
@@ -2827,8 +2840,7 @@ ALWAYS_INLINE Continue Interpreter::forIter(Thread* thread,
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
       thread->stackPop();
-      frame->setVirtualPC(frame->virtualPC() +
-                          originalArg(frame->function(), arg) * kCodeUnitScale);
+      frame->setVirtualPC(frame->virtualPC() + arg * kCodeUnitScale);
       return Continue::NEXT;
     }
     return Continue::UNWIND;
@@ -2857,8 +2869,7 @@ HANDLER_INLINE Continue Interpreter::doForIterList(Thread* thread, word arg) {
   RawList underlying = iter.iterable().rawCast<RawList>();
   if (idx >= underlying.numItems()) {
     thread->stackPop();
-    frame->setVirtualPC(frame->virtualPC() +
-                        originalArg(frame->function(), arg) * kCodeUnitScale);
+    frame->setVirtualPC(frame->virtualPC() + arg * kCodeUnitScale);
   } else {
     thread->stackPush(underlying.at(idx));
     iter.setIndex(idx + 1);
@@ -2888,8 +2899,7 @@ HANDLER_INLINE Continue Interpreter::doForIterDict(Thread* thread, word arg) {
     // We hit the end.
     iter.setIndex(i);
     thread->stackPop();
-    frame->setVirtualPC(frame->virtualPC() +
-                        originalArg(frame->function(), arg) * kCodeUnitScale);
+    frame->setVirtualPC(frame->virtualPC() + arg * kCodeUnitScale);
   }
   return Continue::NEXT;
 }
@@ -2909,8 +2919,7 @@ HANDLER_INLINE Continue Interpreter::doForIterGenerator(Thread* thread,
   if (result.isErrorException()) {
     if (thread->clearPendingStopIteration()) {
       thread->stackPop();
-      frame->setVirtualPC(frame->virtualPC() +
-                          originalArg(frame->function(), arg) * kCodeUnitScale);
+      frame->setVirtualPC(frame->virtualPC() + arg * kCodeUnitScale);
       return Continue::NEXT;
     }
     return Continue::UNWIND;
@@ -2931,8 +2940,7 @@ HANDLER_INLINE Continue Interpreter::doForIterTuple(Thread* thread, word arg) {
   word idx = iter.index();
   if (idx == iter.length()) {
     thread->stackPop();
-    frame->setVirtualPC(frame->virtualPC() +
-                        originalArg(frame->function(), arg) * kCodeUnitScale);
+    frame->setVirtualPC(frame->virtualPC() + arg * kCodeUnitScale);
   } else {
     RawTuple underlying = iter.iterable().rawCast<RawTuple>();
     RawObject item = underlying.at(idx);
@@ -2954,8 +2962,7 @@ HANDLER_INLINE Continue Interpreter::doForIterRange(Thread* thread, word arg) {
   word length = iter.length();
   if (length == 0) {
     thread->stackPop();
-    frame->setVirtualPC(frame->virtualPC() +
-                        originalArg(frame->function(), arg) * kCodeUnitScale);
+    frame->setVirtualPC(frame->virtualPC() + arg * kCodeUnitScale);
   } else {
     iter.setLength(length - 1);
     word next = iter.next();
@@ -2981,8 +2988,7 @@ HANDLER_INLINE Continue Interpreter::doForIterStr(Thread* thread, word arg) {
   RawStr underlying = iter.iterable().rawCast<RawStr>();
   if (byte_offset == underlying.length()) {
     thread->stackPop();
-    frame->setVirtualPC(frame->virtualPC() +
-                        originalArg(frame->function(), arg) * kCodeUnitScale);
+    frame->setVirtualPC(frame->virtualPC() + arg * kCodeUnitScale);
   } else {
     word num_bytes = 0;
     word code_point = underlying.codePointAt(byte_offset, &num_bytes);
@@ -2995,14 +3001,15 @@ HANDLER_INLINE Continue Interpreter::doForIterStr(Thread* thread, word arg) {
 HANDLER_INLINE Continue Interpreter::doForIterMonomorphic(Thread* thread,
                                                           word arg) {
   Frame* frame = thread->currentFrame();
+  word cache = currentCacheIndex(frame);
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   LayoutId iter_layout_id = thread->stackTop().layoutId();
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, iter_layout_id, &is_found);
+      icLookupMonomorphic(caches, cache, iter_layout_id, &is_found);
   if (!is_found) {
     EVENT_CACHE(FOR_ITER_MONOMORPHIC);
-    return forIterUpdateCache(thread, originalArg(frame->function(), arg), arg);
+    return forIterUpdateCache(thread, arg, cache);
   }
   return forIter(thread, cached, arg);
 }
@@ -3010,14 +3017,15 @@ HANDLER_INLINE Continue Interpreter::doForIterMonomorphic(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doForIterPolymorphic(Thread* thread,
                                                           word arg) {
   Frame* frame = thread->currentFrame();
+  word cache = currentCacheIndex(frame);
   RawObject iter = thread->stackTop();
   LayoutId iter_layout_id = iter.layoutId();
   bool is_found;
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
-                                         arg, iter_layout_id, &is_found);
+                                         cache, iter_layout_id, &is_found);
   if (!is_found) {
     EVENT_CACHE(FOR_ITER_POLYMORPHIC);
-    return forIterUpdateCache(thread, originalArg(frame->function(), arg), arg);
+    return forIterUpdateCache(thread, arg, cache);
   }
   return forIter(thread, cached, arg);
 }
@@ -3049,7 +3057,8 @@ HANDLER_INLINE Continue Interpreter::doForIterAnamorphic(Thread* thread,
     default:
       break;
   }
-  return forIterUpdateCache(thread, originalArg(frame->function(), arg), arg);
+  word cache = currentCacheIndex(frame);
+  return forIterUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE Continue Interpreter::doUnpackEx(Thread* thread, word arg) {
@@ -3161,13 +3170,12 @@ RawObject Interpreter::storeAttrSetLocation(Thread* thread,
   return *result;
 }
 
-Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
+Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg,
+                                           word cache) {
   Frame* frame = thread->currentFrame();
-  word original_arg = originalArg(frame->function(), arg);
   HandleScope scope(thread);
   Object receiver(&scope, thread->stackPop());
-  Str name(&scope,
-           Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
+  Str name(&scope, Tuple::cast(Code::cast(frame->code()).names()).at(arg));
   Object value(&scope, thread->stackPop());
 
   Object location(&scope, NoneType::object());
@@ -3180,7 +3188,7 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
   bool is_in_object = SmallInt::cast(*location).value() >= 0;
 
   MutableTuple caches(&scope, frame->caches());
-  ICState ic_state = icCurrentState(*caches, arg);
+  ICState ic_state = icCurrentState(*caches, cache);
   Function dependent(&scope, frame->function());
   LayoutId receiver_layout_id = receiver.layoutId();
   // TODO(T59400994): Clean up when storeAttrSetLocation can return a
@@ -3190,11 +3198,11 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
       // No layout transition.
       if (is_in_object) {
         rewriteCurrentBytecode(frame, STORE_ATTR_INSTANCE);
-        icUpdateAttr(thread, caches, arg, saved_layout_id, location, name,
+        icUpdateAttr(thread, caches, cache, saved_layout_id, location, name,
                      dependent);
       } else {
         rewriteCurrentBytecode(frame, STORE_ATTR_INSTANCE_OVERFLOW);
-        icUpdateAttr(thread, caches, arg, saved_layout_id, location, name,
+        icUpdateAttr(thread, caches, cache, saved_layout_id, location, name,
                      dependent);
       }
     } else {
@@ -3208,12 +3216,12 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
           SmallInt::fromWord(offset << Header::kLayoutIdBits | new_layout_id));
       if (is_in_object) {
         rewriteCurrentBytecode(frame, STORE_ATTR_INSTANCE_UPDATE);
-        icUpdateAttr(thread, caches, arg, saved_layout_id, layout_offset, name,
-                     dependent);
+        icUpdateAttr(thread, caches, cache, saved_layout_id, layout_offset,
+                     name, dependent);
       } else {
         rewriteCurrentBytecode(frame, STORE_ATTR_INSTANCE_OVERFLOW_UPDATE);
-        icUpdateAttr(thread, caches, arg, saved_layout_id, layout_offset, name,
-                     dependent);
+        icUpdateAttr(thread, caches, cache, saved_layout_id, layout_offset,
+                     name, dependent);
       }
     }
   } else {
@@ -3223,7 +3231,7 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
            "unexpected opcode");
     if (saved_layout_id == receiver_layout_id) {
       rewriteCurrentBytecode(frame, STORE_ATTR_POLYMORPHIC);
-      icUpdateAttr(thread, caches, arg, saved_layout_id, location, name,
+      icUpdateAttr(thread, caches, cache, saved_layout_id, location, name,
                    dependent);
     }
   }
@@ -3232,7 +3240,8 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doStoreAttrAnamorphic(Thread* thread,
                                                            word arg) {
-  return storeAttrUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return storeAttrUpdateCache(thread, arg, cache);
 }
 
 // This code cleans-up a monomorphic cache and prepares it for its potential
@@ -3240,12 +3249,12 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrAnamorphic(Thread* thread,
 // structure of our caches directly accessible from a function to be monomophic
 // and to allocate the relatively uncommon polymorphic caches in a separate
 // object.
-static Continue retryStoreAttrCached(Thread* thread, word arg) {
+static Continue retryStoreAttrCached(Thread* thread, word arg, word cache) {
   // Revert the opcode, clear the cache, and retry the attribute lookup.
   Frame* frame = thread->currentFrame();
   rewriteCurrentBytecode(frame, STORE_ATTR_ANAMORPHIC);
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  word index = arg * kIcPointersPerEntry;
+  word index = cache * kIcPointersPerEntry;
   caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
   caches.atPut(index + kIcEntryValueOffset, NoneType::object());
   return Interpreter::doStoreAttrAnamorphic(thread, arg);
@@ -3256,12 +3265,13 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstance(Thread* thread,
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   RawObject receiver = thread->stackTop();
+  word cache = currentCacheIndex(frame);
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
+      icLookupMonomorphic(caches, cache, receiver.layoutId(), &is_found);
   if (!is_found) {
     EVENT_CACHE(STORE_ATTR_INSTANCE);
-    return storeAttrUpdateCache(thread, arg);
+    return storeAttrUpdateCache(thread, arg, cache);
   }
   word offset = SmallInt::cast(cached).value();
   DCHECK(offset >= 0, "unexpected offset");
@@ -3276,12 +3286,13 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstanceOverflow(Thread* thread,
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   RawObject receiver = thread->stackTop();
+  word cache = currentCacheIndex(frame);
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
+      icLookupMonomorphic(caches, cache, receiver.layoutId(), &is_found);
   if (!is_found) {
     EVENT_CACHE(STORE_ATTR_INSTANCE_OVERFLOW);
-    return storeAttrUpdateCache(thread, arg);
+    return storeAttrUpdateCache(thread, arg, cache);
   }
   word offset = SmallInt::cast(cached).value();
   DCHECK(offset < 0, "unexpected offset");
@@ -3299,12 +3310,13 @@ Interpreter::doStoreAttrInstanceOverflowUpdate(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   RawObject receiver = thread->stackTop();
+  word cache = currentCacheIndex(frame);
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
+      icLookupMonomorphic(caches, cache, receiver.layoutId(), &is_found);
   if (!is_found) {
     EVENT_CACHE(STORE_ATTR_INSTANCE_OVERFLOW_UPDATE);
-    return retryStoreAttrCached(thread, arg);
+    return retryStoreAttrCached(thread, arg, cache);
   }
   // Set the value in an overflow tuple that needs expansion.
   word offset_and_new_offset_id = SmallInt::cast(cached).value();
@@ -3332,12 +3344,13 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrInstanceUpdate(Thread* thread,
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   RawObject receiver = thread->stackTop();
+  word cache = currentCacheIndex(frame);
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
+      icLookupMonomorphic(caches, cache, receiver.layoutId(), &is_found);
   if (!is_found) {
     EVENT_CACHE(STORE_ATTR_INSTANCE_UPDATE);
-    return retryStoreAttrCached(thread, arg);
+    return retryStoreAttrCached(thread, arg, cache);
   }
   // Set the value in object at offset.
   // TODO(T59462341): Encapsulate this in a function.
@@ -3358,12 +3371,13 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrPolymorphic(Thread* thread,
   Frame* frame = thread->currentFrame();
   RawObject receiver = thread->stackTop();
   LayoutId layout_id = receiver.layoutId();
+  word cache = currentCacheIndex(frame);
   bool is_found;
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
-                                         arg, layout_id, &is_found);
+                                         cache, layout_id, &is_found);
   if (!is_found) {
     EVENT_CACHE(STORE_ATTR_POLYMORPHIC);
-    return storeAttrUpdateCache(thread, arg);
+    return storeAttrUpdateCache(thread, arg, cache);
   }
   RawObject value = thread->stackPeek(1);
   thread->stackDrop(2);
@@ -3568,13 +3582,12 @@ HANDLER_INLINE Continue Interpreter::doLoadAttr(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
-Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
+Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg,
+                                          word cache) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  word original_arg = originalArg(frame->function(), arg);
   Object receiver(&scope, thread->stackTop());
-  Str name(&scope,
-           Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
+  Str name(&scope, Tuple::cast(Code::cast(frame->code()).names()).at(arg));
 
   Object location(&scope, NoneType::object());
   LoadAttrKind kind;
@@ -3588,49 +3601,49 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
 
   // Cache the attribute load
   MutableTuple caches(&scope, frame->caches());
-  ICState ic_state = icCurrentState(*caches, arg);
+  ICState ic_state = icCurrentState(*caches, cache);
   Function dependent(&scope, frame->function());
   LayoutId receiver_layout_id = receiver.layoutId();
   if (ic_state == ICState::kAnamorphic) {
     switch (kind) {
       case LoadAttrKind::kInstanceOffset:
         rewriteCurrentBytecode(frame, LOAD_ATTR_INSTANCE);
-        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+        icUpdateAttr(thread, caches, cache, receiver_layout_id, location, name,
                      dependent);
         break;
       case LoadAttrKind::kInstanceFunction:
         rewriteCurrentBytecode(frame, LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD);
-        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+        icUpdateAttr(thread, caches, cache, receiver_layout_id, location, name,
                      dependent);
         break;
       case LoadAttrKind::kInstanceProperty:
         rewriteCurrentBytecode(frame, LOAD_ATTR_INSTANCE_PROPERTY);
-        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+        icUpdateAttr(thread, caches, cache, receiver_layout_id, location, name,
                      dependent);
         break;
       case LoadAttrKind::kInstanceSlotDescr:
         rewriteCurrentBytecode(frame, LOAD_ATTR_INSTANCE_SLOT_DESCR);
-        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+        icUpdateAttr(thread, caches, cache, receiver_layout_id, location, name,
                      dependent);
         break;
       case LoadAttrKind::kInstanceType:
         rewriteCurrentBytecode(frame, LOAD_ATTR_INSTANCE_TYPE);
-        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+        icUpdateAttr(thread, caches, cache, receiver_layout_id, location, name,
                      dependent);
         break;
       case LoadAttrKind::kInstanceTypeDescr:
         rewriteCurrentBytecode(frame, LOAD_ATTR_INSTANCE_TYPE_DESCR);
-        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+        icUpdateAttr(thread, caches, cache, receiver_layout_id, location, name,
                      dependent);
         break;
       case LoadAttrKind::kModule: {
         ValueCell value_cell(&scope, *location);
         DCHECK(location.isValueCell(), "location must be ValueCell");
-        icUpdateAttrModule(thread, caches, arg, receiver, value_cell,
+        icUpdateAttrModule(thread, caches, cache, receiver, value_cell,
                            dependent);
       } break;
       case LoadAttrKind::kType:
-        icUpdateAttrType(thread, caches, arg, receiver, name, location,
+        icUpdateAttrType(thread, caches, cache, receiver, name, location,
                          dependent);
         break;
       default:
@@ -3646,7 +3659,7 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg) {
       case LoadAttrKind::kInstanceOffset:
       case LoadAttrKind::kInstanceFunction:
         rewriteCurrentBytecode(frame, LOAD_ATTR_POLYMORPHIC);
-        icUpdateAttr(thread, caches, arg, receiver_layout_id, location, name,
+        icUpdateAttr(thread, caches, cache, receiver_layout_id, location, name,
                      dependent);
         break;
       default:
@@ -3682,20 +3695,22 @@ HANDLER_INLINE USED RawObject Interpreter::loadAttrWithLocation(
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrAnamorphic(Thread* thread,
                                                           word arg) {
-  return loadAttrUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return loadAttrUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstance(Thread* thread,
                                                         word arg) {
   Frame* frame = thread->currentFrame();
+  word cache = currentCacheIndex(frame);
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
+      icLookupMonomorphic(caches, cache, receiver.layoutId(), &is_found);
   if (!is_found) {
     EVENT_CACHE(LOAD_ATTR_INSTANCE);
-    return Interpreter::loadAttrUpdateCache(thread, arg);
+    return Interpreter::loadAttrUpdateCache(thread, arg, cache);
   }
   RawObject result = loadAttrWithLocation(thread, receiver, cached);
   thread->stackSetTop(result);
@@ -3705,14 +3720,15 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstance(Thread* thread,
 HANDLER_INLINE Continue
 Interpreter::doLoadAttrInstanceTypeBoundMethod(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
+  word cache = currentCacheIndex(frame);
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
+      icLookupMonomorphic(caches, cache, receiver.layoutId(), &is_found);
   if (!is_found) {
     EVENT_CACHE(LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD);
-    return Interpreter::loadAttrUpdateCache(thread, arg);
+    return Interpreter::loadAttrUpdateCache(thread, arg, cache);
   }
   HandleScope scope(thread);
   Object self(&scope, receiver);
@@ -3726,29 +3742,30 @@ Interpreter::doLoadAttrInstanceTypeBoundMethod(Thread* thread, word arg) {
 // structure of our caches directly accessible from a function to be monomophic
 // and to allocate the relatively uncommon polymorphic caches in a separate
 // object.
-NEVER_INLINE Continue Interpreter::retryLoadAttrCached(Thread* thread,
-                                                       word arg) {
+NEVER_INLINE Continue Interpreter::retryLoadAttrCached(Thread* thread, word arg,
+                                                       word cache) {
   // Revert the opcode, clear the cache, and retry the attribute lookup.
   Frame* frame = thread->currentFrame();
   rewriteCurrentBytecode(frame, LOAD_ATTR_ANAMORPHIC);
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  word index = arg * kIcPointersPerEntry;
+  word index = cache * kIcPointersPerEntry;
   caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
   caches.atPut(index + kIcEntryValueOffset, NoneType::object());
-  return Interpreter::loadAttrUpdateCache(thread, arg);
+  return Interpreter::loadAttrUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
                                                                 word arg) {
   Frame* frame = thread->currentFrame();
+  word cache = currentCacheIndex(frame);
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
+      icLookupMonomorphic(caches, cache, receiver.layoutId(), &is_found);
   if (!is_found) {
     EVENT_CACHE(LOAD_ATTR_INSTANCE_PROPERTY);
-    return retryLoadAttrCached(thread, arg);
+    return retryLoadAttrCached(thread, arg, cache);
   }
   thread->stackPush(receiver);
   thread->stackSetAt(1, cached);
@@ -3758,14 +3775,15 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceProperty(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceSlotDescr(Thread* thread,
                                                                  word arg) {
   Frame* frame = thread->currentFrame();
+  word cache = currentCacheIndex(frame);
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
+      icLookupMonomorphic(caches, cache, receiver.layoutId(), &is_found);
   if (!is_found) {
     EVENT_CACHE(LOAD_ATTR_INSTANCE_SLOT_DESCR);
-    return retryLoadAttrCached(thread, arg);
+    return retryLoadAttrCached(thread, arg, cache);
   }
   word offset = SmallInt::cast(cached).value();
   RawObject value = Instance::cast(receiver).instanceVariableAt(offset);
@@ -3775,20 +3793,21 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceSlotDescr(Thread* thread,
   }
   // If the value is unbound, we remove the cached slot descriptor.
   EVENT_CACHE(LOAD_ATTR_INSTANCE_SLOT_DESCR);
-  return retryLoadAttrCached(thread, arg);
+  return retryLoadAttrCached(thread, arg, cache);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceTypeDescr(Thread* thread,
                                                                  word arg) {
   Frame* frame = thread->currentFrame();
+  word cache = currentCacheIndex(frame);
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
+      icLookupMonomorphic(caches, cache, receiver.layoutId(), &is_found);
   if (!is_found) {
     EVENT_CACHE(LOAD_ATTR_INSTANCE_TYPE_DESCR);
-    return retryLoadAttrCached(thread, arg);
+    return retryLoadAttrCached(thread, arg, cache);
   }
   HandleScope scope(thread);
   Object descr(&scope, cached);
@@ -3804,14 +3823,15 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceTypeDescr(Thread* thread,
 HANDLER_INLINE Continue Interpreter::doLoadAttrInstanceType(Thread* thread,
                                                             word arg) {
   Frame* frame = thread->currentFrame();
+  word cache = currentCacheIndex(frame);
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   RawObject receiver = thread->stackTop();
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
+      icLookupMonomorphic(caches, cache, receiver.layoutId(), &is_found);
   if (!is_found) {
     EVENT_CACHE(LOAD_ATTR_INSTANCE_TYPE);
-    return retryLoadAttrCached(thread, arg);
+    return retryLoadAttrCached(thread, arg, cache);
   }
   thread->stackSetTop(cached);
   return Continue::NEXT;
@@ -3822,7 +3842,8 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrModule(Thread* thread,
   Frame* frame = thread->currentFrame();
   RawObject receiver = thread->stackTop();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  word index = arg * kIcPointersPerEntry;
+  word cache = currentCacheIndex(frame);
+  word index = cache * kIcPointersPerEntry;
   RawObject cache_key = caches.at(index + kIcEntryKeyOffset);
   // isInstanceOfModule() should be just as fast as isModule() in the common
   // case. If code size or quality is an issue we can adjust this as needed
@@ -3837,7 +3858,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrModule(Thread* thread,
     return Continue::NEXT;
   }
   EVENT_CACHE(LOAD_ATTR_MODULE);
-  return retryLoadAttrCached(thread, arg);
+  return retryLoadAttrCached(thread, arg, cache);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadAttrPolymorphic(Thread* thread,
@@ -3845,12 +3866,13 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrPolymorphic(Thread* thread,
   Frame* frame = thread->currentFrame();
   RawObject receiver = thread->stackTop();
   LayoutId layout_id = receiver.layoutId();
+  word cache = currentCacheIndex(frame);
   bool is_found;
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
-                                         arg, layout_id, &is_found);
+                                         cache, layout_id, &is_found);
   if (!is_found) {
     EVENT_CACHE(LOAD_ATTR_POLYMORPHIC);
-    return loadAttrUpdateCache(thread, arg);
+    return loadAttrUpdateCache(thread, arg, cache);
   }
   RawObject result = loadAttrWithLocation(thread, receiver, cached);
   thread->stackSetTop(result);
@@ -3861,7 +3883,8 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrType(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawObject receiver = thread->stackTop();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
-  word index = arg * kIcPointersPerEntry;
+  word cache = currentCacheIndex(frame);
+  word index = cache * kIcPointersPerEntry;
   RawObject layout_id = caches.at(index + kIcEntryKeyOffset);
   Runtime* runtime = thread->runtime();
   if (runtime->isInstanceOfType(receiver)) {
@@ -3874,7 +3897,7 @@ HANDLER_INLINE Continue Interpreter::doLoadAttrType(Thread* thread, word arg) {
     }
   }
   EVENT_CACHE(LOAD_ATTR_TYPE);
-  return retryLoadAttrCached(thread, arg);
+  return retryLoadAttrCached(thread, arg, cache);
 }
 
 HANDLER_INLINE Continue Interpreter::doLoadBool(Thread* thread, word arg) {
@@ -4971,13 +4994,12 @@ HANDLER_INLINE Continue Interpreter::doLoadMethod(Thread* thread, word arg) {
   return doLoadAttr(thread, arg);
 }
 
-Continue Interpreter::loadMethodUpdateCache(Thread* thread, word arg) {
+Continue Interpreter::loadMethodUpdateCache(Thread* thread, word arg,
+                                            word cache) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
-  word original_arg = originalArg(frame->function(), arg);
   Object receiver(&scope, thread->stackTop());
-  Str name(&scope,
-           Tuple::cast(Code::cast(frame->code()).names()).at(original_arg));
+  Str name(&scope, Tuple::cast(Code::cast(frame->code()).names()).at(arg));
 
   Object location(&scope, NoneType::object());
   LoadAttrKind kind;
@@ -4993,8 +5015,8 @@ Continue Interpreter::loadMethodUpdateCache(Thread* thread, word arg) {
   // Cache the attribute load.
   MutableTuple caches(&scope, frame->caches());
   Function dependent(&scope, frame->function());
-  ICState next_ic_state = icUpdateAttr(thread, caches, arg, receiver.layoutId(),
-                                       location, name, dependent);
+  ICState next_ic_state = icUpdateAttr(
+      thread, caches, cache, receiver.layoutId(), location, name, dependent);
 
   switch (next_ic_state) {
     case ICState::kMonomorphic:
@@ -5013,7 +5035,8 @@ Continue Interpreter::loadMethodUpdateCache(Thread* thread, word arg) {
 
 HANDLER_INLINE Continue Interpreter::doLoadMethodAnamorphic(Thread* thread,
                                                             word arg) {
-  return loadMethodUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return loadMethodUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE Continue
@@ -5021,12 +5044,13 @@ Interpreter::doLoadMethodInstanceFunction(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   RawObject receiver = thread->stackTop();
+  word cache = currentCacheIndex(frame);
   bool is_found;
   RawObject cached =
-      icLookupMonomorphic(caches, arg, receiver.layoutId(), &is_found);
+      icLookupMonomorphic(caches, cache, receiver.layoutId(), &is_found);
   if (!is_found) {
     EVENT_CACHE(LOAD_METHOD_INSTANCE_FUNCTION);
-    return loadMethodUpdateCache(thread, arg);
+    return loadMethodUpdateCache(thread, arg, cache);
   }
   DCHECK(cached.isFunction(), "cached is expected to be a function");
   thread->stackInsertAt(1, cached);
@@ -5037,12 +5061,13 @@ HANDLER_INLINE Continue Interpreter::doLoadMethodPolymorphic(Thread* thread,
                                                              word arg) {
   Frame* frame = thread->currentFrame();
   RawObject receiver = thread->stackTop();
+  word cache = currentCacheIndex(frame);
   bool is_found;
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
-                                         arg, receiver.layoutId(), &is_found);
+                                         cache, receiver.layoutId(), &is_found);
   if (!is_found) {
     EVENT_CACHE(LOAD_METHOD_POLYMORPHIC);
-    return loadMethodUpdateCache(thread, arg);
+    return loadMethodUpdateCache(thread, arg, cache);
   }
   DCHECK(cached.isFunction(), "cached is expected to be a function");
   thread->stackInsertAt(1, cached);
@@ -5062,7 +5087,7 @@ HANDLER_INLINE Continue Interpreter::doCallMethod(Thread* thread, word arg) {
 }
 
 NEVER_INLINE
-Continue Interpreter::compareInUpdateCache(Thread* thread, word arg) {
+Continue Interpreter::compareInUpdateCache(Thread* thread, word cache) {
   HandleScope scope(thread);
   Object container(&scope, thread->stackPop());
   Object value(&scope, thread->stackPop());
@@ -5076,7 +5101,7 @@ Continue Interpreter::compareInUpdateCache(Thread* thread, word arg) {
         &scope, thread->runtime()->symbols()->at(ID(__contains__)));
     Function dependent(&scope, frame->function());
     ICState next_cache_state =
-        icUpdateAttr(thread, caches, arg, container.layoutId(), method,
+        icUpdateAttr(thread, caches, cache, container.layoutId(), method,
                      dunder_contains_name, dependent);
     rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
                                       ? COMPARE_IN_MONOMORPHIC
@@ -5098,7 +5123,10 @@ HANDLER_INLINE Continue Interpreter::doCompareInAnamorphic(Thread* thread,
         rewriteCurrentBytecode(frame, COMPARE_IN_STR);
         return doCompareInStr(thread, arg);
       }
-      return compareInUpdateCache(thread, arg);
+      {
+        word cache = currentCacheIndex(frame);
+        return compareInUpdateCache(thread, cache);
+      }
     case LayoutId::kTuple:
       rewriteCurrentBytecode(frame, COMPARE_IN_TUPLE);
       return doCompareInTuple(thread, arg);
@@ -5108,16 +5136,19 @@ HANDLER_INLINE Continue Interpreter::doCompareInAnamorphic(Thread* thread,
     case LayoutId::kList:
       rewriteCurrentBytecode(frame, COMPARE_IN_LIST);
       return doCompareInList(thread, arg);
-    default:
-      return compareInUpdateCache(thread, arg);
+    default: {
+      word cache = currentCacheIndex(frame);
+      return compareInUpdateCache(thread, cache);
+    }
   }
 }
 
-HANDLER_INLINE Continue Interpreter::doCompareInDict(Thread* thread, word arg) {
+HANDLER_INLINE Continue Interpreter::doCompareInDict(Thread* thread, word) {
   RawObject container = thread->stackPeek(0);
   if (!container.isDict()) {
     EVENT_CACHE(COMPARE_IN_DICT);
-    return compareInUpdateCache(thread, arg);
+    word cache = currentCacheIndex(thread->currentFrame());
+    return compareInUpdateCache(thread, cache);
   }
   HandleScope scope(thread);
   Dict dict(&scope, container);
@@ -5136,11 +5167,12 @@ HANDLER_INLINE Continue Interpreter::doCompareInDict(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
-HANDLER_INLINE Continue Interpreter::doCompareInList(Thread* thread, word arg) {
+HANDLER_INLINE Continue Interpreter::doCompareInList(Thread* thread, word) {
   RawObject container = thread->stackPeek(0);
   if (!container.isList()) {
     EVENT_CACHE(COMPARE_IN_LIST);
-    return compareInUpdateCache(thread, arg);
+    word cache = currentCacheIndex(thread->currentFrame());
+    return compareInUpdateCache(thread, cache);
   }
   HandleScope scope(thread);
   List list(&scope, container);
@@ -5153,12 +5185,13 @@ HANDLER_INLINE Continue Interpreter::doCompareInList(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
-HANDLER_INLINE Continue Interpreter::doCompareInStr(Thread* thread, word arg) {
+HANDLER_INLINE Continue Interpreter::doCompareInStr(Thread* thread, word) {
   RawObject container = thread->stackPeek(0);
   RawObject value = thread->stackPeek(1);
   if (!(container.isStr() && value.isStr())) {
     EVENT_CACHE(COMPARE_IN_STR);
-    return compareInUpdateCache(thread, arg);
+    word cache = currentCacheIndex(thread->currentFrame());
+    return compareInUpdateCache(thread, cache);
   }
   HandleScope scope(thread);
   Str haystack(&scope, container);
@@ -5168,12 +5201,12 @@ HANDLER_INLINE Continue Interpreter::doCompareInStr(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
-HANDLER_INLINE Continue Interpreter::doCompareInTuple(Thread* thread,
-                                                      word arg) {
+HANDLER_INLINE Continue Interpreter::doCompareInTuple(Thread* thread, word) {
   RawObject container = thread->stackPeek(0);
   if (!container.isTuple()) {
     EVENT_CACHE(COMPARE_IN_TUPLE);
-    return compareInUpdateCache(thread, arg);
+    word cache = currentCacheIndex(thread->currentFrame());
+    return compareInUpdateCache(thread, cache);
   }
   HandleScope scope(thread);
   Tuple tuple(&scope, container);
@@ -5188,17 +5221,18 @@ HANDLER_INLINE Continue Interpreter::doCompareInTuple(Thread* thread,
 }
 
 HANDLER_INLINE Continue Interpreter::doCompareInMonomorphic(Thread* thread,
-                                                            word arg) {
+                                                            word) {
   Frame* frame = thread->currentFrame();
   RawObject container = thread->stackPeek(0);
   RawObject value = thread->stackPeek(1);
   LayoutId container_layout_id = container.layoutId();
+  word cache = currentCacheIndex(frame);
   bool is_found;
   RawObject cached = icLookupMonomorphic(MutableTuple::cast(frame->caches()),
-                                         arg, container_layout_id, &is_found);
+                                         cache, container_layout_id, &is_found);
   if (!is_found) {
     EVENT_CACHE(COMPARE_IN_MONOMORPHIC);
-    return compareInUpdateCache(thread, arg);
+    return compareInUpdateCache(thread, cache);
   }
   thread->stackDrop(2);
   thread->stackPush(cached);
@@ -5212,17 +5246,18 @@ HANDLER_INLINE Continue Interpreter::doCompareInMonomorphic(Thread* thread,
 }
 
 HANDLER_INLINE Continue Interpreter::doCompareInPolymorphic(Thread* thread,
-                                                            word arg) {
+                                                            word) {
   Frame* frame = thread->currentFrame();
   RawObject container = thread->stackPeek(0);
   RawObject value = thread->stackPeek(1);
   LayoutId container_layout_id = container.layoutId();
+  word cache = currentCacheIndex(frame);
   bool is_found;
   RawObject cached = icLookupPolymorphic(MutableTuple::cast(frame->caches()),
-                                         arg, container_layout_id, &is_found);
+                                         cache, container_layout_id, &is_found);
   if (!is_found) {
     EVENT_CACHE(COMPARE_IN_POLYMORPHIC);
-    return compareInUpdateCache(thread, arg);
+    return compareInUpdateCache(thread, cache);
   }
   thread->stackDrop(2);
   thread->stackPush(cached);
@@ -5235,13 +5270,14 @@ HANDLER_INLINE Continue Interpreter::doCompareInPolymorphic(Thread* thread,
   return Continue::NEXT;
 }
 
-Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg) {
+Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg,
+                                           word cache) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object right(&scope, thread->stackPop());
   Object left(&scope, thread->stackPop());
   Function function(&scope, frame->function());
-  CompareOp op = static_cast<CompareOp>(originalArg(*function, arg));
+  CompareOp op = static_cast<CompareOp>(arg);
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
   RawObject result =
@@ -5252,7 +5288,7 @@ Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg) {
     LayoutId left_layout_id = left.layoutId();
     LayoutId right_layout_id = right.layoutId();
     ICState next_cache_state = icUpdateBinOp(
-        thread, caches, arg, left_layout_id, right_layout_id, method, flags);
+        thread, caches, cache, left_layout_id, right_layout_id, method, flags);
     icInsertCompareOpDependencies(thread, function, left_layout_id,
                                   right_layout_id, op);
     rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
@@ -5267,9 +5303,8 @@ Continue Interpreter::compareOpFallback(Thread* thread, word arg,
                                         BinaryOpFlags flags) {
   // Slow-path: We may need to call the reversed op when the first method
   // returned `NotImplemented`.
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  CompareOp op = static_cast<CompareOp>(originalArg(frame->function(), arg));
+  CompareOp op = static_cast<CompareOp>(arg);
   Object right(&scope, thread->stackPop());
   Object left(&scope, thread->stackPop());
   Object result(&scope, compareOperationRetry(thread, op, flags, left, right));
@@ -5290,7 +5325,8 @@ Continue Interpreter::doCompareEqSmallInt(Thread* thread, word arg) {
     return Continue::NEXT;
   }
   EVENT_CACHE(COMPARE_EQ_SMALLINT);
-  return compareOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return compareOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5305,7 +5341,8 @@ Continue Interpreter::doCompareGtSmallInt(Thread* thread, word arg) {
     return Continue::NEXT;
   }
   EVENT_CACHE(COMPARE_GT_SMALLINT);
-  return compareOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return compareOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5320,7 +5357,8 @@ Continue Interpreter::doCompareLtSmallInt(Thread* thread, word arg) {
     return Continue::NEXT;
   }
   EVENT_CACHE(COMPARE_LT_SMALLINT);
-  return compareOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return compareOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5335,7 +5373,8 @@ Continue Interpreter::doCompareGeSmallInt(Thread* thread, word arg) {
     return Continue::NEXT;
   }
   EVENT_CACHE(COMPARE_GE_SMALLINT);
-  return compareOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return compareOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5350,7 +5389,8 @@ Continue Interpreter::doCompareNeSmallInt(Thread* thread, word arg) {
     return Continue::NEXT;
   }
   EVENT_CACHE(COMPARE_NE_SMALLINT);
-  return compareOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return compareOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5365,7 +5405,8 @@ Continue Interpreter::doCompareLeSmallInt(Thread* thread, word arg) {
     return Continue::NEXT;
   }
   EVENT_CACHE(COMPARE_LE_SMALLINT);
-  return compareOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return compareOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5379,7 +5420,8 @@ Continue Interpreter::doCompareEqStr(Thread* thread, word arg) {
     return Continue::NEXT;
   }
   EVENT_CACHE(COMPARE_EQ_STR);
-  return compareOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return compareOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5393,7 +5435,8 @@ Continue Interpreter::doCompareNeStr(Thread* thread, word arg) {
     return Continue::NEXT;
   }
   EVENT_CACHE(COMPARE_NE_STR);
-  return compareOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return compareOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5404,12 +5447,13 @@ Continue Interpreter::doCompareOpMonomorphic(Thread* thread, word arg) {
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
+  word cache = currentCacheIndex(frame);
   RawObject method =
-      icLookupBinOpMonomorphic(MutableTuple::cast(frame->caches()), arg,
+      icLookupBinOpMonomorphic(MutableTuple::cast(frame->caches()), cache,
                                left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
     EVENT_CACHE(COMPARE_OP_MONOMORPHIC);
-    return compareOpUpdateCache(thread, arg);
+    return compareOpUpdateCache(thread, arg, cache);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
                   compareOpFallback);
@@ -5423,12 +5467,13 @@ Continue Interpreter::doCompareOpPolymorphic(Thread* thread, word arg) {
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
+  word cache = currentCacheIndex(frame);
   RawObject method =
-      icLookupBinOpPolymorphic(MutableTuple::cast(frame->caches()), arg,
+      icLookupBinOpPolymorphic(MutableTuple::cast(frame->caches()), cache,
                                left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
     EVENT_CACHE(COMPARE_OP_POLYMORPHIC);
-    return compareOpUpdateCache(thread, arg);
+    return compareOpUpdateCache(thread, arg, cache);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
                   compareOpFallback);
@@ -5440,7 +5485,7 @@ Continue Interpreter::doCompareOpAnamorphic(Thread* thread, word arg) {
   RawObject left = thread->stackPeek(1);
   RawObject right = thread->stackPeek(0);
   if (left.isSmallInt() && right.isSmallInt()) {
-    switch (static_cast<CompareOp>(originalArg(frame->function(), arg))) {
+    switch (static_cast<CompareOp>(arg)) {
       case CompareOp::EQ:
         rewriteCurrentBytecode(frame, COMPARE_EQ_SMALLINT);
         return doCompareEqSmallInt(thread, arg);
@@ -5459,32 +5504,38 @@ Continue Interpreter::doCompareOpAnamorphic(Thread* thread, word arg) {
       case CompareOp::LE:
         rewriteCurrentBytecode(frame, COMPARE_LE_SMALLINT);
         return doCompareLeSmallInt(thread, arg);
-      default:
-        return compareOpUpdateCache(thread, arg);
+      default: {
+        word cache = currentCacheIndex(frame);
+        return compareOpUpdateCache(thread, arg, cache);
+      }
     }
   }
   if (left.isStr() && right.isStr()) {
-    switch (static_cast<CompareOp>(originalArg(frame->function(), arg))) {
+    switch (static_cast<CompareOp>(arg)) {
       case CompareOp::EQ:
         rewriteCurrentBytecode(frame, COMPARE_EQ_STR);
         return doCompareEqStr(thread, arg);
       case CompareOp::NE:
         rewriteCurrentBytecode(frame, COMPARE_NE_STR);
         return doCompareNeStr(thread, arg);
-      default:
-        return compareOpUpdateCache(thread, arg);
+      default: {
+        word cache = currentCacheIndex(frame);
+        return compareOpUpdateCache(thread, arg, cache);
+      }
     }
   }
-  return compareOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(frame);
+  return compareOpUpdateCache(thread, arg, cache);
 }
 
-Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg) {
+Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg,
+                                           word cache) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object right(&scope, thread->stackPop());
   Object left(&scope, thread->stackPop());
   Function function(&scope, frame->function());
-  BinaryOp op = static_cast<BinaryOp>(originalArg(*function, arg));
+  BinaryOp op = static_cast<BinaryOp>(arg);
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
   RawObject result =
@@ -5494,7 +5545,7 @@ Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg) {
     LayoutId left_layout_id = left.layoutId();
     LayoutId right_layout_id = right.layoutId();
     ICState next_cache_state = icUpdateBinOp(
-        thread, caches, arg, left_layout_id, right_layout_id, method, flags);
+        thread, caches, cache, left_layout_id, right_layout_id, method, flags);
     icInsertInplaceOpDependencies(thread, function, left_layout_id,
                                   right_layout_id, op);
     rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
@@ -5510,9 +5561,8 @@ Continue Interpreter::inplaceOpFallback(Thread* thread, word arg,
                                         BinaryOpFlags flags) {
   // Slow-path: We may need to try other ways to resolve things when the first
   // call returned `NotImplemented`.
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  BinaryOp op = static_cast<BinaryOp>(originalArg(frame->function(), arg));
+  BinaryOp op = static_cast<BinaryOp>(arg);
   Object right(&scope, thread->stackPop());
   Object left(&scope, thread->stackPop());
   Object result(&scope, NoneType::object());
@@ -5538,12 +5588,13 @@ Continue Interpreter::doInplaceOpMonomorphic(Thread* thread, word arg) {
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
+  word cache = currentCacheIndex(frame);
   RawObject method =
-      icLookupBinOpMonomorphic(MutableTuple::cast(frame->caches()), arg,
+      icLookupBinOpMonomorphic(MutableTuple::cast(frame->caches()), cache,
                                left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
     EVENT_CACHE(INPLACE_OP_MONOMORPHIC);
-    return inplaceOpUpdateCache(thread, arg);
+    return inplaceOpUpdateCache(thread, arg, cache);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
                   inplaceOpFallback);
@@ -5557,12 +5608,13 @@ Continue Interpreter::doInplaceOpPolymorphic(Thread* thread, word arg) {
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
+  word cache = currentCacheIndex(frame);
   RawObject method =
-      icLookupBinOpPolymorphic(MutableTuple::cast(frame->caches()), arg,
+      icLookupBinOpPolymorphic(MutableTuple::cast(frame->caches()), cache,
                                left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
     EVENT_CACHE(INPLACE_OP_POLYMORPHIC);
-    return inplaceOpUpdateCache(thread, arg);
+    return inplaceOpUpdateCache(thread, arg, cache);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
                   inplaceOpFallback);
@@ -5583,7 +5635,8 @@ Continue Interpreter::doInplaceAddSmallInt(Thread* thread, word arg) {
     }
   }
   EVENT_CACHE(INPLACE_ADD_SMALLINT);
-  return inplaceOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return inplaceOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5600,34 +5653,40 @@ Continue Interpreter::doInplaceSubSmallInt(Thread* thread, word arg) {
       return Continue::NEXT;
     }
   }
-  return inplaceOpUpdateCache(thread, arg);
+  EVENT_CACHE(INPLACE_SUB_SMALLINT);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return inplaceOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
 Continue Interpreter::doInplaceOpAnamorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   if (thread->stackPeek(0).isSmallInt() && thread->stackPeek(1).isSmallInt()) {
-    switch (static_cast<BinaryOp>(originalArg(frame->function(), arg))) {
+    switch (static_cast<BinaryOp>(arg)) {
       case BinaryOp::ADD:
         rewriteCurrentBytecode(frame, INPLACE_ADD_SMALLINT);
         return doInplaceAddSmallInt(thread, arg);
       case BinaryOp::SUB:
         rewriteCurrentBytecode(frame, INPLACE_SUB_SMALLINT);
         return doInplaceSubSmallInt(thread, arg);
-      default:
-        return inplaceOpUpdateCache(thread, arg);
+      default: {
+        word cache = currentCacheIndex(frame);
+        return inplaceOpUpdateCache(thread, arg, cache);
+      }
     }
   }
-  return inplaceOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(frame);
+  return inplaceOpUpdateCache(thread, arg, cache);
 }
 
-Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg) {
+Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg,
+                                          word cache) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
   Object right(&scope, thread->stackPop());
   Object left(&scope, thread->stackPop());
   Function function(&scope, frame->function());
-  BinaryOp op = static_cast<BinaryOp>(originalArg(*function, arg));
+  BinaryOp op = static_cast<BinaryOp>(arg);
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
   Object result(&scope, binaryOperationSetMethod(thread, op, left, right,
@@ -5637,7 +5696,7 @@ Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg) {
     LayoutId left_layout_id = left.layoutId();
     LayoutId right_layout_id = right.layoutId();
     ICState next_cache_state = icUpdateBinOp(
-        thread, caches, arg, left_layout_id, right_layout_id, method, flags);
+        thread, caches, cache, left_layout_id, right_layout_id, method, flags);
     icInsertBinaryOpDependencies(thread, function, left_layout_id,
                                  right_layout_id, op);
     rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
@@ -5653,9 +5712,8 @@ Continue Interpreter::binaryOpFallback(Thread* thread, word arg,
                                        BinaryOpFlags flags) {
   // Slow-path: We may need to call the reversed op when the first method
   // returned `NotImplemented`.
-  Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
-  BinaryOp op = static_cast<BinaryOp>(originalArg(frame->function(), arg));
+  BinaryOp op = static_cast<BinaryOp>(arg);
   Object right(&scope, thread->stackPop());
   Object left(&scope, thread->stackPop());
   Object result(&scope, binaryOperationRetry(thread, op, flags, left, right));
@@ -5689,12 +5747,13 @@ Continue Interpreter::doBinaryOpMonomorphic(Thread* thread, word arg) {
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
+  word cache = currentCacheIndex(frame);
   RawObject method =
-      icLookupBinOpMonomorphic(MutableTuple::cast(frame->caches()), arg,
+      icLookupBinOpMonomorphic(MutableTuple::cast(frame->caches()), cache,
                                left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
     EVENT_CACHE(BINARY_OP_MONOMORPHIC);
-    return binaryOpUpdateCache(thread, arg);
+    return binaryOpUpdateCache(thread, arg, cache);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
                   binaryOpFallback);
@@ -5708,12 +5767,13 @@ Continue Interpreter::doBinaryOpPolymorphic(Thread* thread, word arg) {
   LayoutId left_layout_id = left_raw.layoutId();
   LayoutId right_layout_id = right_raw.layoutId();
   BinaryOpFlags flags = kBinaryOpNone;
+  word cache = currentCacheIndex(frame);
   RawObject method =
-      icLookupBinOpPolymorphic(MutableTuple::cast(frame->caches()), arg,
+      icLookupBinOpPolymorphic(MutableTuple::cast(frame->caches()), cache,
                                left_layout_id, right_layout_id, &flags);
   if (method.isErrorNotFound()) {
     EVENT_CACHE(BINARY_OP_POLYMORPHIC);
-    return binaryOpUpdateCache(thread, arg);
+    return binaryOpUpdateCache(thread, arg, cache);
   }
   return binaryOp(thread, arg, method, flags, left_raw, right_raw,
                   binaryOpFallback);
@@ -5734,7 +5794,8 @@ Continue Interpreter::doBinaryAddSmallInt(Thread* thread, word arg) {
     }
   }
   EVENT_CACHE(BINARY_ADD_SMALLINT);
-  return binaryOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return binaryOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5751,7 +5812,8 @@ Continue Interpreter::doBinaryAndSmallInt(Thread* thread, word arg) {
     return Continue::NEXT;
   }
   EVENT_CACHE(BINARY_AND_SMALLINT);
-  return binaryOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return binaryOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5769,7 +5831,8 @@ Continue Interpreter::doBinaryMulSmallInt(Thread* thread, word arg) {
     }
   }
   EVENT_CACHE(BINARY_MUL_SMALLINT);
-  return binaryOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return binaryOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5791,7 +5854,8 @@ Continue Interpreter::doBinaryFloordivSmallInt(Thread* thread, word arg) {
     return Continue::NEXT;
   }
   EVENT_CACHE(BINARY_FLOORDIV_SMALLINT);
-  return binaryOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return binaryOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5809,7 +5873,8 @@ Continue Interpreter::doBinarySubSmallInt(Thread* thread, word arg) {
     }
   }
   EVENT_CACHE(BINARY_SUB_SMALLINT);
-  return binaryOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return binaryOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
@@ -5826,14 +5891,15 @@ Continue Interpreter::doBinaryOrSmallInt(Thread* thread, word arg) {
     return Continue::NEXT;
   }
   EVENT_CACHE(BINARY_OR_SMALLINT);
-  return binaryOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(thread->currentFrame());
+  return binaryOpUpdateCache(thread, arg, cache);
 }
 
 HANDLER_INLINE
 Continue Interpreter::doBinaryOpAnamorphic(Thread* thread, word arg) {
   Frame* frame = thread->currentFrame();
   if (thread->stackPeek(0).isSmallInt() && thread->stackPeek(1).isSmallInt()) {
-    switch (static_cast<BinaryOp>(originalArg(frame->function(), arg))) {
+    switch (static_cast<BinaryOp>(arg)) {
       case BinaryOp::ADD:
         rewriteCurrentBytecode(frame, BINARY_ADD_SMALLINT);
         return doBinaryAddSmallInt(thread, arg);
@@ -5852,11 +5918,14 @@ Continue Interpreter::doBinaryOpAnamorphic(Thread* thread, word arg) {
       case BinaryOp::OR:
         rewriteCurrentBytecode(frame, BINARY_OR_SMALLINT);
         return doBinaryOrSmallInt(thread, arg);
-      default:
-        return binaryOpUpdateCache(thread, arg);
+      default: {
+        word cache = currentCacheIndex(frame);
+        return binaryOpUpdateCache(thread, arg, cache);
+      }
     }
   }
-  return binaryOpUpdateCache(thread, arg);
+  word cache = currentCacheIndex(frame);
+  return binaryOpUpdateCache(thread, arg, cache);
 }
 
 RawObject Interpreter::execute(Thread* thread) {

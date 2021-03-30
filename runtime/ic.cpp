@@ -11,9 +11,9 @@
 
 namespace py {
 
-ICState icCurrentState(RawTuple caches, word index) {
-  word i = index * kIcPointersPerEntry;
-  RawObject key = caches.at(i + kIcEntryKeyOffset);
+ICState icCurrentState(RawTuple caches, word cache) {
+  word index = cache * kIcPointersPerEntry;
+  RawObject key = caches.at(index + kIcEntryKeyOffset);
   if (key.isNoneType()) {
     return ICState::kAnamorphic;
   }
@@ -50,35 +50,35 @@ static void insertDependencyForTypeLookupInMro(Thread* thread,
   }
 }
 
-ICState icUpdateAttr(Thread* thread, const MutableTuple& caches, word index,
+ICState icUpdateAttr(Thread* thread, const MutableTuple& caches, word cache,
                      LayoutId layout_id, const Object& value,
                      const Object& name, const Function& dependent) {
   Runtime* runtime = thread->runtime();
   RawSmallInt key = SmallInt::fromWord(static_cast<word>(layout_id));
-  word i = index * kIcPointersPerEntry;
-  RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
+  word index = cache * kIcPointersPerEntry;
+  RawObject entry_key = caches.at(index + kIcEntryKeyOffset);
   if (entry_key.isNoneType() || entry_key == key) {
-    caches.atPut(i + kIcEntryKeyOffset, key);
-    caches.atPut(i + kIcEntryValueOffset, *value);
+    caches.atPut(index + kIcEntryKeyOffset, key);
+    caches.atPut(index + kIcEntryValueOffset, *value);
     insertDependencyForTypeLookupInMro(thread, layout_id, name, dependent);
     return ICState::kMonomorphic;
   }
-  if (!caches.at(i + kIcEntryKeyOffset).isUnbound()) {
+  if (!caches.at(index + kIcEntryKeyOffset).isUnbound()) {
     // This is currently not a polymorphic cache.
     HandleScope scope(thread);
     MutableTuple polymorphic_cache(
         &scope, runtime->newMutableTuple(kIcPointersPerPolyCache));
     polymorphic_cache.fill(NoneType::object());
     polymorphic_cache.atPut(kIcEntryKeyOffset,
-                            caches.at(i + kIcEntryKeyOffset));
+                            caches.at(index + kIcEntryKeyOffset));
     polymorphic_cache.atPut(kIcEntryValueOffset,
-                            caches.at(i + kIcEntryValueOffset));
+                            caches.at(index + kIcEntryValueOffset));
     // Mark this entry as a polymorphic cache.
-    caches.atPut(i + kIcEntryKeyOffset, Unbound::object());
-    caches.atPut(i + kIcEntryValueOffset, *polymorphic_cache);
+    caches.atPut(index + kIcEntryKeyOffset, Unbound::object());
+    caches.atPut(index + kIcEntryValueOffset, *polymorphic_cache);
   }
   RawMutableTuple polymorphic_cache =
-      MutableTuple::cast(caches.at(i + kIcEntryValueOffset));
+      MutableTuple::cast(caches.at(index + kIcEntryValueOffset));
   for (word j = 0; j < kIcPointersPerPolyCache; j += kIcPointersPerEntry) {
     entry_key = polymorphic_cache.at(j + kIcEntryKeyOffset);
     if (entry_key.isNoneType() || entry_key == key) {
@@ -91,20 +91,20 @@ ICState icUpdateAttr(Thread* thread, const MutableTuple& caches, word index,
   return ICState::kPolymorphic;
 }
 
-bool icIsCacheEmpty(const MutableTuple& caches, word index) {
-  word i = index * kIcPointersPerEntry;
-  return caches.at(i + kIcEntryKeyOffset).isNoneType();
+bool icIsCacheEmpty(const MutableTuple& caches, word cache) {
+  word index = cache * kIcPointersPerEntry;
+  return caches.at(index + kIcEntryKeyOffset).isNoneType();
 }
 
-void icUpdateAttrModule(Thread* thread, const MutableTuple& caches, word index,
+void icUpdateAttrModule(Thread* thread, const MutableTuple& caches, word cache,
                         const Object& receiver, const ValueCell& value_cell,
                         const Function& dependent) {
-  DCHECK(icIsCacheEmpty(caches, index), "cache must be empty\n");
+  DCHECK(icIsCacheEmpty(caches, cache), "cache must be empty\n");
   HandleScope scope(thread);
-  word i = index * kIcPointersPerEntry;
+  word index = cache * kIcPointersPerEntry;
   Module module(&scope, *receiver);
-  caches.atPut(i + kIcEntryKeyOffset, SmallInt::fromWord(module.id()));
-  caches.atPut(i + kIcEntryValueOffset, *value_cell);
+  caches.atPut(index + kIcEntryKeyOffset, SmallInt::fromWord(module.id()));
+  caches.atPut(index + kIcEntryValueOffset, *value_cell);
   RawMutableBytes bytecode =
       RawMutableBytes::cast(dependent.rewrittenBytecode());
   word pc = thread->currentFrame()->virtualPC() - kCodeUnitSize;
@@ -114,16 +114,16 @@ void icUpdateAttrModule(Thread* thread, const MutableTuple& caches, word index,
   icInsertDependentToValueCellDependencyLink(thread, dependent, value_cell);
 }
 
-void icUpdateAttrType(Thread* thread, const MutableTuple& caches, word index,
+void icUpdateAttrType(Thread* thread, const MutableTuple& caches, word cache,
                       const Object& receiver, const Object& selector,
                       const Object& value, const Function& dependent) {
-  DCHECK(icIsCacheEmpty(caches, index), "cache must be empty\n");
-  word i = index * kIcPointersPerEntry;
+  DCHECK(icIsCacheEmpty(caches, cache), "cache must be empty\n");
+  word index = cache * kIcPointersPerEntry;
   HandleScope scope(thread);
   Type type(&scope, *receiver);
   word id = static_cast<word>(type.instanceLayoutId());
-  caches.atPut(i + kIcEntryKeyOffset, SmallInt::fromWord(id));
-  caches.atPut(i + kIcEntryValueOffset, *value);
+  caches.atPut(index + kIcEntryKeyOffset, SmallInt::fromWord(id));
+  caches.atPut(index + kIcEntryValueOffset, *value);
   RawMutableBytes bytecode =
       RawMutableBytes::cast(dependent.rewrittenBytecode());
   word pc = thread->currentFrame()->virtualPC() - kCodeUnitSize;
@@ -656,7 +656,7 @@ RawSmallInt encodeBinaryOpKey(LayoutId left_layout_id, LayoutId right_layout_id,
                             static_cast<word>(flags));
 }
 
-ICState icUpdateBinOp(Thread* thread, const MutableTuple& caches, word index,
+ICState icUpdateBinOp(Thread* thread, const MutableTuple& caches, word cache,
                       LayoutId left_layout_id, LayoutId right_layout_id,
                       const Object& value, BinaryOpFlags flags) {
   static_assert(Header::kLayoutIdBits * 2 + kBitsPerByte <= SmallInt::kBits,
@@ -664,33 +664,33 @@ ICState icUpdateBinOp(Thread* thread, const MutableTuple& caches, word index,
   word key_high_bits = static_cast<word>(left_layout_id)
                            << Header::kLayoutIdBits |
                        static_cast<word>(right_layout_id);
-  word i = index * kIcPointersPerEntry;
+  word index = cache * kIcPointersPerEntry;
   RawObject new_key = encodeBinaryOpKey(left_layout_id, right_layout_id, flags);
-  RawObject entry_key = caches.at(i + kIcEntryKeyOffset);
+  RawObject entry_key = caches.at(index + kIcEntryKeyOffset);
   if (entry_key.isNoneType() ||
       (entry_key.isSmallInt() &&
        SmallInt::cast(entry_key).value() >> kBitsPerByte == key_high_bits)) {
-    caches.atPut(i + kIcEntryKeyOffset, new_key);
-    caches.atPut(i + kIcEntryValueOffset, *value);
+    caches.atPut(index + kIcEntryKeyOffset, new_key);
+    caches.atPut(index + kIcEntryValueOffset, *value);
     return ICState::kMonomorphic;
   }
 
-  if (!caches.at(i + kIcEntryKeyOffset).isUnbound()) {
+  if (!caches.at(index + kIcEntryKeyOffset).isUnbound()) {
     // Upgrade this cache to a polymorphic cache.
     HandleScope scope(thread);
     MutableTuple polymorphic_cache(
         &scope, thread->runtime()->newMutableTuple(kIcPointersPerPolyCache));
     polymorphic_cache.fill(NoneType::object());
     polymorphic_cache.atPut(kIcEntryKeyOffset,
-                            caches.at(i + kIcEntryKeyOffset));
+                            caches.at(index + kIcEntryKeyOffset));
     polymorphic_cache.atPut(kIcEntryValueOffset,
-                            caches.at(i + kIcEntryValueOffset));
+                            caches.at(index + kIcEntryValueOffset));
     // Mark this entry as a polymorphic cache.
-    caches.atPut(i + kIcEntryKeyOffset, Unbound::object());
-    caches.atPut(i + kIcEntryValueOffset, *polymorphic_cache);
+    caches.atPut(index + kIcEntryKeyOffset, Unbound::object());
+    caches.atPut(index + kIcEntryValueOffset, *polymorphic_cache);
   }
   RawMutableTuple polymorphic_cache =
-      MutableTuple::cast(caches.at(i + kIcEntryValueOffset));
+      MutableTuple::cast(caches.at(index + kIcEntryValueOffset));
   for (word j = 0; j < kIcPointersPerPolyCache; j += kIcPointersPerEntry) {
     entry_key = polymorphic_cache.at(j + kIcEntryKeyOffset);
     if (entry_key.isNoneType() ||
@@ -784,7 +784,7 @@ void icInvalidateGlobalVar(Thread* thread, const ValueCell& value_cell) {
       switch (op.bc) {
         case LOAD_ATTR_MODULE: {
           original_bc = LOAD_ATTR_ANAMORPHIC;
-          word index = op.arg * kIcPointersPerEntry;
+          word index = op.cache * kIcPointersPerEntry;
           if (caches.at(index + kIcEntryValueOffset) == *value_cell) {
             caches.atPut(index + kIcEntryKeyOffset, NoneType::object());
             caches.atPut(index + kIcEntryValueOffset, NoneType::object());
@@ -826,7 +826,7 @@ bool IcIterator::isAttrNameEqualTo(const Object& attr_name) const {
     case STORE_SUBSCR_ANAMORPHIC:
       return attr_name == runtime_->symbols()->at(ID(__setitem__));
     default:
-      return attr_name == names_.at(originalArg(*function_, bytecode_op_.arg));
+      return attr_name == names_.at(bytecode_op_.arg);
   }
 }
 
@@ -847,7 +847,7 @@ static bool isBinaryOpOrInplaceOp(Bytecode bc) {
 RawObject IcIterator::leftMethodName() const {
   DCHECK(isBinaryOpCache() || isInplaceOpCache(),
          "should be only called for binop or inplace-ops");
-  int32_t arg = originalArg(*function_, bytecode_op_.arg);
+  int32_t arg = bytecode_op_.arg;
   SymbolId method;
   if (isBinaryOpOrInplaceOp(bytecode_op_.bc)) {
     Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
@@ -867,7 +867,7 @@ RawObject IcIterator::leftMethodName() const {
 RawObject IcIterator::rightMethodName() const {
   DCHECK(isBinaryOpCache() || isInplaceOpCache(),
          "should be only called for binop or inplace-ops");
-  int32_t arg = originalArg(*function_, bytecode_op_.arg);
+  int32_t arg = bytecode_op_.arg;
   SymbolId method;
   if (isBinaryOpOrInplaceOp(bytecode_op_.bc)) {
     Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
@@ -889,7 +889,7 @@ RawObject IcIterator::inplaceMethodName() const {
              bytecode_op_.bc == INPLACE_OP_POLYMORPHIC ||
              bytecode_op_.bc == INPLACE_OP_ANAMORPHIC,
          "should only be called for INPLACE_OP_*");
-  int32_t arg = originalArg(*function_, bytecode_op_.arg);
+  int32_t arg = bytecode_op_.arg;
   Interpreter::BinaryOp binary_op = static_cast<Interpreter::BinaryOp>(arg);
   SymbolId method = Interpreter::inplaceOperationSelector(binary_op);
   return runtime_->symbols()->at(method);
