@@ -579,6 +579,20 @@ class FloatTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             float.hex("")
 
+    def test_float_with_str_trims_whitespace(self):
+        self.assertEqual(float("\t 14.2\n"), 14.2)
+        self.assertEqual(float("\t 14"), 14.0)
+        self.assertEqual(float(" 14.21    "), 14.21)
+        self.assertEqual(float("1  "), 1.0)
+        with self.assertRaises(ValueError):
+            float("  14.2.1 ")
+        with self.assertRaises(ValueError):
+            float("")
+
+    def test_float_with_bytes_trims_whitespace(self):
+        self.assertEqual(float(b"\t 14.2\n"), 14.2)
+        self.assertEqual(float(b" 14.21    "), 14.21)
+
 
 class FloatDunderFormatTests(unittest.TestCase):
     def test_empty_format_returns_str(self):

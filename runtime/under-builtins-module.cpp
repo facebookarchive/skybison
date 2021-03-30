@@ -2448,8 +2448,20 @@ static RawObject floatNew(Thread* thread, const Type& type, RawObject flt) {
 
 static RawObject floatNewFromDigits(Thread* thread, const Type& type,
                                     const char* str, word length) {
-  RawObject float_obj = floatFromDigits(thread, str, length);
-  if (float_obj.isErrorException()) return float_obj;
+  const char* last = str + length - 1;
+  // strip spaces
+  while (str < last && ASCII::isSpace(*str)) {
+    str++;
+  }
+  while (last > str && ASCII::isSpace(*last)) {
+    last--;
+  }
+
+  RawObject float_obj = floatFromDigits(thread, str, last - str + 1);
+  if (float_obj.isErrorException()) {
+    return float_obj;
+  }
+
   return floatNew(thread, type, float_obj);
 }
 
