@@ -145,6 +145,8 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op,
           return RewrittenOp{COMPARE_IS_NOT, 0, false};
       }
       break;
+    case CALL_FUNCTION:
+      return RewrittenOp{CALL_FUNCTION_ANAMORPHIC, op.arg, false};
     case FOR_ITER:
       return RewrittenOp{FOR_ITER_ANAMORPHIC, op.arg, true};
     case INPLACE_ADD:

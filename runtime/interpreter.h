@@ -353,6 +353,7 @@ class Interpreter {
   static Continue doCallFunctionEx(Thread* thread, word arg);
   static Continue doCallFunctionKw(Thread* thread, word arg);
   static Continue doCallMethod(Thread* thread, word arg);
+  static Continue doCallFunctionAnamorphic(Thread* thread, word arg);
   static Continue doCompareInAnamorphic(Thread* thread, word arg);
   static Continue doCompareInStr(Thread* thread, word arg);
   static Continue doCompareInTuple(Thread* thread, word arg);

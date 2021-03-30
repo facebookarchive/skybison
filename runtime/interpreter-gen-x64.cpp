@@ -329,6 +329,7 @@ SaveRestoreFlags mayChangeFramePC(Bytecode bc) {
     case LOAD_METHOD_POLYMORPHIC:
       return kHandlerWithoutFrameChange;
     case CALL_FUNCTION:
+    case CALL_FUNCTION_ANAMORPHIC:
       return kAllState;
     default:
       return kGenericHandler;

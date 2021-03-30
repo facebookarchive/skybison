@@ -4474,6 +4474,13 @@ HANDLER_INLINE Continue Interpreter::doCallFunction(Thread* thread, word arg) {
   return handleCall(thread, arg, arg, preparePositionalCall, &Function::entry);
 }
 
+HANDLER_INLINE Continue Interpreter::doCallFunctionAnamorphic(Thread* thread,
+                                                              word arg) {
+  Frame* frame = thread->currentFrame();
+  rewriteCurrentBytecode(frame, CALL_FUNCTION);
+  return doCallFunction(thread, arg);
+}
+
 HANDLER_INLINE Continue Interpreter::doMakeFunction(Thread* thread, word arg) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
