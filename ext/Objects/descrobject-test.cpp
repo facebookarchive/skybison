@@ -167,6 +167,21 @@ TEST_F(DescrExtensionApiTest, DictProxyNewWithNonMappingReturnsMappingProxy) {
   EXPECT_NE(PyErr_Occurred(), nullptr);
 }
 
+TEST_F(DescrExtensionApiTest, GetSetAsDescriptorReturnsProperty) {
+  ASSERT_NO_FATAL_FAILURE(createEmptyBarType());
+  getter get = [](PyObject*, void*) { return Py_None; };
+  static PyGetSetDef getset_def;
+  getset_def = {"foo", get, nullptr, nullptr, nullptr};
+  PyObjectPtr type(mainModuleGet("Bar"));
+  PyObjectPtr descriptor(PyDescr_NewGetSet(type.asTypeObject(), &getset_def));
+  ASSERT_NE(descriptor, nullptr);
+  PyObject_SetAttrString(type, "foo", descriptor);
+  PyObjectPtr instance(PyObject_CallObject(type, nullptr));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_GetAttrString(instance, "foo"));
+  ASSERT_EQ(result, Py_None);
+}
+
 TEST_F(DescrExtensionApiTest, MethodAsDescriptorReturnsFunction) {
   ASSERT_NO_FATAL_FAILURE(createEmptyBarType());
   binaryfunc meth = [](PyObject* self, PyObject* args) {
@@ -199,6 +214,45 @@ r1 = bar.foo()
   ASSERT_NE(arg1, nullptr);
   ASSERT_EQ(PyTuple_Check(arg1), 1);
   EXPECT_EQ(PyTuple_Size(arg1), 0);
+}
+
+TEST_F(DescrExtensionApiTest, NameWithClassMethodReturnsName) {
+  ASSERT_NO_FATAL_FAILURE(createEmptyBarType());
+  binaryfunc meth = [](PyObject* self, PyObject* args) {
+    return PyTuple_Pack(2, self, args);
+  };
+  static PyMethodDef method_def;
+  method_def = {"foo", meth, METH_VARARGS};
+  PyObjectPtr type(mainModuleGet("Bar"));
+  PyObjectPtr descriptor(
+      PyDescr_NewClassMethod(type.asTypeObject(), &method_def));
+  PyObject* name = PyDescr_NAME(descriptor.get());
+  ASSERT_TRUE(isUnicodeEqualsCStr(name, "foo"));
+}
+
+TEST_F(DescrExtensionApiTest, NameWithGetSetReturnsName) {
+  ASSERT_NO_FATAL_FAILURE(createEmptyBarType());
+  getter get = [](PyObject*, void*) { return Py_None; };
+  setter set = [](PyObject*, PyObject*, void*) { return 0; };
+  static PyGetSetDef getset_def;
+  getset_def = {"foo", get, set, nullptr, nullptr};
+  PyObjectPtr type(mainModuleGet("Bar"));
+  PyObjectPtr descriptor(PyDescr_NewGetSet(type.asTypeObject(), &getset_def));
+  PyObject* name = PyDescr_NAME(descriptor.get());
+  ASSERT_TRUE(isUnicodeEqualsCStr(name, "foo"));
+}
+
+TEST_F(DescrExtensionApiTest, NameWithMethodReturnsName) {
+  ASSERT_NO_FATAL_FAILURE(createEmptyBarType());
+  binaryfunc meth = [](PyObject* self, PyObject* args) {
+    return PyTuple_Pack(2, self, args);
+  };
+  static PyMethodDef method_def;
+  method_def = {"foo", meth, METH_VARARGS};
+  PyObjectPtr type(mainModuleGet("Bar"));
+  PyObjectPtr descriptor(PyDescr_NewMethod(type.asTypeObject(), &method_def));
+  PyObject* name = PyDescr_NAME(descriptor.get());
+  ASSERT_TRUE(isUnicodeEqualsCStr(name, "foo"));
 }
 
 }  // namespace testing

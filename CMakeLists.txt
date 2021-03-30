@@ -878,6 +878,8 @@ add_library(
   ext/Internal/capi-trampolines.h
   ext/Internal/function-utils.cpp
   ext/Internal/function-utils.h
+  ext/Internal/type-utils.cpp
+  ext/Internal/type-utils.h
   ext/Modules/_datetimemodule.cpp
   ext/Modules/_parsermodule.cpp
   ext/Modules/_sre/_sre.cpp

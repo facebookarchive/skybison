@@ -23,6 +23,7 @@
 #include "str-builtins.h"
 #include "trampolines.h"
 #include "type-builtins.h"
+#include "type-utils.h"
 #include "typeslots.h"
 #include "utils.h"
 
@@ -76,20 +77,8 @@ namespace {
 // can easily template the trampolines and/or the wrapper functions, but this
 // keeps the code compact for now.
 
-// Get an appropriately-typed function pointer out of the consts tuple in the
-// Code object in the given Frame.
-template <typename Func>
-Func getNativeFunc(Thread* thread) {
-  HandleScope scope(thread);
-  Code code(&scope, thread->currentFrame()->code());
-  Tuple consts(&scope, code.consts());
-  DCHECK(consts.length() == 1, "Unexpected tuple length");
-  Int raw_fn(&scope, consts.at(0));
-  return reinterpret_cast<Func>(raw_fn.asCPtr());
-}
-
 ALIGN_16 RawObject wrapUnaryfunc(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<unaryfunc>(thread);
+  unaryfunc func = reinterpret_cast<unaryfunc>(getNativeFunc(thread));
   PyObject* o = ApiHandle::newReference(thread->runtime(), args.get(0));
   PyObject* result = (*func)(o);
   Py_DECREF(o);
@@ -100,7 +89,7 @@ ALIGN_16 RawObject wrapUnaryfunc(Thread* thread, Arguments args) {
 // PyObject* and return an integral value.
 template <class cfunc, class RetFunc>
 RawObject wrapIntegralfunc(Thread* thread, Arguments args, RetFunc ret) {
-  auto func = getNativeFunc<cfunc>(thread);
+  cfunc func = reinterpret_cast<cfunc>(getNativeFunc(thread));
   PyObject* o = ApiHandle::newReference(thread->runtime(), args.get(0));
   auto result = func(o);
   Py_DECREF(o);
@@ -126,7 +115,7 @@ ALIGN_16 RawObject wrapInquirypred(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapBinaryfunc(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<binaryfunc>(thread);
+  binaryfunc func = reinterpret_cast<binaryfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* o1 = ApiHandle::borrowedReference(runtime, args.get(0));
   PyObject* o2 = ApiHandle::borrowedReference(runtime, args.get(1));
@@ -135,7 +124,7 @@ ALIGN_16 RawObject wrapBinaryfunc(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapBinaryfuncSwapped(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<binaryfunc>(thread);
+  binaryfunc func = reinterpret_cast<binaryfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* o1 = ApiHandle::borrowedReference(runtime, args.get(0));
   PyObject* o2 = ApiHandle::borrowedReference(runtime, args.get(1));
@@ -144,7 +133,7 @@ ALIGN_16 RawObject wrapBinaryfuncSwapped(Thread* thread, Arguments args) {
 }
 
 RawObject wrapTernaryfuncImpl(Thread* thread, Arguments args, bool swap) {
-  auto func = getNativeFunc<ternaryfunc>(thread);
+  ternaryfunc func = reinterpret_cast<ternaryfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self =
       ApiHandle::borrowedReference(runtime, args.get(swap ? 1 : 0));
@@ -169,7 +158,7 @@ ALIGN_16 RawObject wrapTernaryfuncSwapped(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapTpNew(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<ternaryfunc>(thread);
+  ternaryfunc func = reinterpret_cast<ternaryfunc>(getNativeFunc(thread));
 
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -212,7 +201,7 @@ bool checkSelfWithSlotType(Thread* thread, const Object& self) {
 }
 
 ALIGN_16 RawObject wrapVarkwTernaryfunc(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<ternaryfunc>(thread);
+  ternaryfunc func = reinterpret_cast<ternaryfunc>(getNativeFunc(thread));
 
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
@@ -233,7 +222,7 @@ ALIGN_16 RawObject wrapVarkwTernaryfunc(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapSetattr(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<setattrofunc>(thread);
+  setattrofunc func = reinterpret_cast<setattrofunc>(getNativeFunc(thread));
 
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
@@ -244,7 +233,7 @@ ALIGN_16 RawObject wrapSetattr(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapDelattr(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<setattrofunc>(thread);
+  setattrofunc func = reinterpret_cast<setattrofunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
   PyObject* name = ApiHandle::borrowedReference(runtime, args.get(1));
@@ -254,7 +243,7 @@ ALIGN_16 RawObject wrapDelattr(Thread* thread, Arguments args) {
 
 template <CompareOp op>
 ALIGN_16 RawObject wrapRichcompare(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<richcmpfunc>(thread);
+  richcmpfunc func = reinterpret_cast<richcmpfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
   PyObject* other = ApiHandle::borrowedReference(runtime, args.get(1));
@@ -263,7 +252,7 @@ ALIGN_16 RawObject wrapRichcompare(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapNext(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<unaryfunc>(thread);
+  unaryfunc func = reinterpret_cast<unaryfunc>(getNativeFunc(thread));
   PyObject* self = ApiHandle::borrowedReference(thread->runtime(), args.get(0));
   PyObject* result = (*func)(self);
   if (result == nullptr && !thread->hasPendingException()) {
@@ -273,7 +262,7 @@ ALIGN_16 RawObject wrapNext(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapDescrGet(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<descrgetfunc>(thread);
+  descrgetfunc func = reinterpret_cast<descrgetfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::newReference(runtime, args.get(0));
   PyObject* obj = nullptr;
@@ -296,7 +285,7 @@ ALIGN_16 RawObject wrapDescrGet(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapDescrSet(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<descrsetfunc>(thread);
+  descrsetfunc func = reinterpret_cast<descrsetfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
   PyObject* obj = ApiHandle::borrowedReference(runtime, args.get(1));
@@ -306,7 +295,7 @@ ALIGN_16 RawObject wrapDescrSet(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapDescrDelete(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<descrsetfunc>(thread);
+  descrsetfunc func = reinterpret_cast<descrsetfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
   PyObject* obj = ApiHandle::borrowedReference(runtime, args.get(1));
@@ -315,7 +304,7 @@ ALIGN_16 RawObject wrapDescrDelete(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapInit(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<initproc>(thread);
+  initproc func = reinterpret_cast<initproc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
   PyObject* varargs = ApiHandle::borrowedReference(runtime, args.get(1));
@@ -327,14 +316,14 @@ ALIGN_16 RawObject wrapInit(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapDel(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<destructor>(thread);
+  destructor func = reinterpret_cast<destructor>(getNativeFunc(thread));
   PyObject* self = ApiHandle::borrowedReference(thread->runtime(), args.get(0));
   func(self);
   return NoneType::object();
 }
 
 ALIGN_16 RawObject wrapObjobjargproc(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<objobjargproc>(thread);
+  objobjargproc func = reinterpret_cast<objobjargproc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
   PyObject* key = ApiHandle::borrowedReference(runtime, args.get(1));
@@ -345,7 +334,7 @@ ALIGN_16 RawObject wrapObjobjargproc(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapObjobjproc(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<objobjproc>(thread);
+  objobjproc func = reinterpret_cast<objobjproc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
   PyObject* value = ApiHandle::borrowedReference(runtime, args.get(1));
@@ -355,7 +344,7 @@ ALIGN_16 RawObject wrapObjobjproc(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapDelitem(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<objobjargproc>(thread);
+  objobjargproc func = reinterpret_cast<objobjargproc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
   PyObject* key = ApiHandle::borrowedReference(runtime, args.get(1));
@@ -380,7 +369,7 @@ static RawObject makeIndex(Thread* thread, const Object& obj) {
 }
 
 ALIGN_16 RawObject wrapIndexargfunc(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<ssizeargfunc>(thread);
+  ssizeargfunc func = reinterpret_cast<ssizeargfunc>(getNativeFunc(thread));
 
   HandleScope scope(thread);
   PyObject* self = ApiHandle::borrowedReference(thread->runtime(), args.get(0));
@@ -411,7 +400,7 @@ static RawObject normalizeIndex(Thread* thread, const Object& self,
 }
 
 ALIGN_16 RawObject wrapSqItem(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<ssizeargfunc>(thread);
+  ssizeargfunc func = reinterpret_cast<ssizeargfunc>(getNativeFunc(thread));
 
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -424,7 +413,8 @@ ALIGN_16 RawObject wrapSqItem(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapSqSetitem(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<ssizeobjargproc>(thread);
+  ssizeobjargproc func =
+      reinterpret_cast<ssizeobjargproc>(getNativeFunc(thread));
 
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -440,7 +430,8 @@ ALIGN_16 RawObject wrapSqSetitem(Thread* thread, Arguments args) {
 }
 
 ALIGN_16 RawObject wrapSqDelitem(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<ssizeobjargproc>(thread);
+  ssizeobjargproc func =
+      reinterpret_cast<ssizeobjargproc>(getNativeFunc(thread));
 
   HandleScope scope(thread);
   Object self(&scope, args.get(0));
@@ -462,8 +453,7 @@ struct SlotDef {
   int id;
 
   // List of parameter names/symbols.
-  const SymbolId* parameters;
-  word num_parameters;
+  View<SymbolId> parameters;
 
   // The wrapper function for this slot.
   BuiltinFunction wrapper;
@@ -498,11 +488,11 @@ static const SymbolId kParamsTypeArgsKwargs[] = {ID(type), ID(args),
 // method, along with logic to update slots as needed when a user assigns to a
 // type dict.
 #define TPSLOT(NAME, SLOT, PARAMETERS, FUNCTION, WRAPPER, DOC)                 \
-  { NAME, SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS), WRAPPER, 0, DOC }
+  { NAME, SLOT, PARAMETERS, WRAPPER, 0, DOC }
 #define KWSLOT(NAME, SLOT, PARAMETERS, FUNCTION, WRAPPER, DOC)                 \
   {                                                                            \
-    NAME, SLOT, PARAMETERS, ARRAYSIZE(PARAMETERS), WRAPPER,                    \
-        Code::Flags::kVarargs | Code::Flags::kVarkeyargs, DOC                  \
+    NAME, SLOT, PARAMETERS, WRAPPER,                                           \
+        Code::Flags::kVarargs | Code::Flags::kVarkeyargs, DOC,                 \
   }
 #define UNSLOT(NAME, C_NAME, SLOT, FUNCTION, DOC)                              \
   TPSLOT(NAME, SLOT, kParamsSelf, FUNCTION, wrapUnaryfunc,                     \
@@ -728,46 +718,6 @@ static const SlotDef kSlotdefs[] = {
            "__imul__($self, value, /)\n--\n\nImplement self*=value."),
 };
 
-static RawObject newExtCode(Thread* thread, const Object& name,
-                            const SymbolId* parameters, word num_parameters,
-                            word flags, BuiltinFunction function,
-                            void* slot_value) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object code_code(&scope,
-                   SmallInt::fromAlignedCPtr(bit_cast<void*>(function)));
-  Tuple empty_tuple(&scope, runtime->emptyTuple());
-
-  // TODO(T41024929): Many of the slot parameters should be positional only,
-  // but we cannot express this in code objects (yet).
-  Object varnames_obj(&scope, NoneType::object());
-  if (num_parameters > 0) {
-    MutableTuple varnames(&scope, runtime->newMutableTuple(num_parameters));
-    for (word i = 0; i < num_parameters; i++) {
-      varnames.atPut(i, runtime->symbols()->at(parameters[i]));
-    }
-    varnames_obj = varnames.becomeImmutable();
-  } else {
-    varnames_obj = runtime->emptyTuple();
-  }
-
-  word argcount = num_parameters - ((flags & Code::Flags::kVarargs) != 0) -
-                  ((flags & Code::Flags::kVarkeyargs) != 0);
-  flags |= Code::Flags::kOptimized | Code::Flags::kNewlocals;
-
-  Object filename(&scope, Str::empty());
-  Object lnotab(&scope, Bytes::empty());
-  Object ptr(&scope, runtime->newIntFromCPtr(slot_value));
-  Tuple consts(&scope, runtime->newTupleWith1(ptr));
-  return runtime->newCode(argcount, /*posonlyargcount=*/num_parameters,
-                          /*kwonlyargcount=*/0,
-                          /*nlocals=*/num_parameters,
-                          /*stacksize=*/0, flags, code_code, consts,
-                          /*names=*/empty_tuple, varnames_obj,
-                          /*freevars=*/empty_tuple, /*cellvars=*/empty_tuple,
-                          filename, name, /*firstlineno=*/0, lnotab);
-}
-
 // For every entry in kSlotdefs with a non-null wrapper function, a slot id
 // that was provided by the user, and no preexisting entry in the type dict, add
 // a wrapper function to call the slot from Python.
@@ -810,8 +760,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
       Str qualname(&scope,
                    runtime->newStrFromFmt("%S.%S", &type_name, &slot_name));
       Code code(&scope, newExtCode(thread, slot_name, slot.parameters,
-                                   slot.num_parameters, slot.flags,
-                                   slot.wrapper, slot_value));
+                                   slot.flags, slot.wrapper, slot_value));
       Object globals(&scope, NoneType::object());
       Function func(&scope, runtime->newFunctionWithCode(thread, qualname, code,
                                                          globals));
@@ -1299,60 +1248,6 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
   }
 }
 
-static ALIGN_16 RawObject getterWrapper(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<getter>(thread);
-  PyObject* self = ApiHandle::borrowedReference(thread->runtime(), args.get(0));
-  PyObject* result = (*func)(self, nullptr);
-  return ApiHandle::checkFunctionResult(thread, result);
-}
-
-static ALIGN_16 RawObject setterWrapper(Thread* thread, Arguments args) {
-  auto func = getNativeFunc<setter>(thread);
-  Runtime* runtime = thread->runtime();
-  PyObject* self = ApiHandle::borrowedReference(runtime, args.get(0));
-  PyObject* value = ApiHandle::borrowedReference(runtime, args.get(1));
-  if (func(self, value, nullptr) < 0) return Error::exception();
-  return NoneType::object();
-}
-
-static RawObject getSetGetter(Thread* thread, const Object& name,
-                              PyGetSetDef& def) {
-  if (def.get == nullptr) return NoneType::object();
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Code code(
-      &scope,
-      newExtCode(thread, name, kParamsSelf, ARRAYSIZE(kParamsSelf),
-                 /*flags=*/0, getterWrapper, reinterpret_cast<void*>(def.get)));
-  Object globals(&scope, NoneType::object());
-  Function function(&scope,
-                    runtime->newFunctionWithCode(thread, name, code, globals));
-  if (def.doc != nullptr) {
-    Object doc(&scope, runtime->newStrFromCStr(def.doc));
-    function.setDoc(*doc);
-  }
-  return *function;
-}
-
-static RawObject getSetSetter(Thread* thread, const Object& name,
-                              PyGetSetDef& def) {
-  if (def.set == nullptr) return NoneType::object();
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Code code(
-      &scope,
-      newExtCode(thread, name, kParamsSelfValue, ARRAYSIZE(kParamsSelfValue),
-                 /*flags=*/0, setterWrapper, reinterpret_cast<void*>(def.set)));
-  Object globals(&scope, NoneType::object());
-  Function function(&scope,
-                    runtime->newFunctionWithCode(thread, name, code, globals));
-  if (def.doc != nullptr) {
-    Object doc(&scope, runtime->newStrFromCStr(def.doc));
-    function.setDoc(*doc);
-  }
-  return *function;
-}
-
 RawObject addMethods(Thread* thread, const Type& type) {
   HandleScope scope(thread);
   PyMethodDef* methods =
@@ -1408,15 +1303,9 @@ RawObject addGetSet(Thread* thread, const Type& type) {
   PyGetSetDef* getsets =
       static_cast<PyGetSetDef*>(typeSlotAt(type, Py_tp_getset));
   if (getsets == nullptr) return NoneType::object();
-  Object none(&scope, NoneType::object());
-  Runtime* runtime = thread->runtime();
   for (word i = 0; getsets[i].name != nullptr; i++) {
     Object name(&scope, Runtime::internStrFromCStr(thread, getsets[i].name));
-    Object getter(&scope, getSetGetter(thread, name, getsets[i]));
-    if (getter.isError()) return *getter;
-    Object setter(&scope, getSetSetter(thread, name, getsets[i]));
-    if (setter.isError()) return *setter;
-    Object property(&scope, runtime->newProperty(getter, setter, none));
+    Object property(&scope, newGetSet(thread, name, &getsets[i]));
     typeAtPut(thread, type, name, property);
   }
   return NoneType::object();
@@ -1750,7 +1639,6 @@ static RawObject addDefaultsForRequiredSlots(Thread* thread, const Type& type,
                  runtime->newStrFromFmt("%S.%S", &type_name, &dunder_new_name));
     Code code(&scope,
               newExtCode(thread, dunder_new_name, kParamsTypeArgsKwargs,
-                         ARRAYSIZE(kParamsTypeArgsKwargs),
                          Code::Flags::kVarargs | Code::Flags::kVarkeyargs,
                          wrapTpNew, new_func));
     Object globals(&scope, NoneType::object());
