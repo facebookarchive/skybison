@@ -257,7 +257,9 @@ enum SaveRestoreFlags {
   kBytecode = 1 << 2,
   kVMPC = 1 << 3,
   kHandlerBase = 1 << 4,
+  kHandlerWithoutFrameChange = kVMStack | kBytecode,
   kAllState = kVMStack | kVMFrame | kBytecode | kVMPC | kHandlerBase,
+  kGenericHandler = kAllState & ~kHandlerBase,
 };
 
 void emitSaveInterpreterState(EmitEnv* env, word flags) {
@@ -298,7 +300,7 @@ void emitRestoreInterpreterState(EmitEnv* env, word flags) {
   }
 }
 
-bool mayChangeFramePC(Bytecode bc) {
+SaveRestoreFlags mayChangeFramePC(Bytecode bc) {
   // These opcodes have been manually vetted to ensure that they don't change
   // the current frame or PC (or if they do, it's through something like
   // Interpreter::callMethodN(), which restores the previous frame when it's
@@ -325,9 +327,11 @@ bool mayChangeFramePC(Bytecode bc) {
     case STORE_ATTR_POLYMORPHIC:
     case LOAD_METHOD_INSTANCE_FUNCTION:
     case LOAD_METHOD_POLYMORPHIC:
-      return false;
+      return kHandlerWithoutFrameChange;
+    case CALL_FUNCTION:
+      return kAllState;
     default:
-      return true;
+      return kGenericHandler;
   }
 }
 
@@ -345,7 +349,7 @@ void emitCallReg(EmitEnv* env, Register function) {
   env->register_state.clobber(kCallerSavedRegs);
 }
 
-void emitHandleContinue(EmitEnv* env, bool may_change_frame_pc) {
+void emitHandleContinue(EmitEnv* env, SaveRestoreFlags flags) {
   ScratchReg r_result(env, kReturnRegs[0]);
 
   Label handle_flow;
@@ -357,9 +361,7 @@ void emitHandleContinue(EmitEnv* env, bool may_change_frame_pc) {
   // Note that we do not restore the `kHandlerBase` for now. That saves some
   // cycles but fail to cleanly switch interpreter handlers for stackframes that
   // are already active at the time the handlers are switched.
-  emitRestoreInterpreterState(env, may_change_frame_pc
-                                       ? (kAllState & ~kHandlerBase)
-                                       : (kVMStack | kBytecode));
+  emitRestoreInterpreterState(env, flags);
   emitNextOpcode(env);
 
   __ bind(&handle_flow);
@@ -662,7 +664,7 @@ void emitHandler<BINARY_ADD_SMALLINT>(EmitEnv* env) {
   CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::binaryOpUpdateCache);
-  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+  emitHandleContinue(env, kGenericHandler);
 }
 
 template <>
@@ -689,7 +691,7 @@ void emitHandler<BINARY_AND_SMALLINT>(EmitEnv* env) {
   CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::binaryOpUpdateCache);
-  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+  emitHandleContinue(env, kGenericHandler);
 }
 
 template <>
@@ -718,7 +720,7 @@ void emitHandler<BINARY_SUB_SMALLINT>(EmitEnv* env) {
   CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::binaryOpUpdateCache);
-  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+  emitHandleContinue(env, kGenericHandler);
 }
 
 template <>
@@ -745,7 +747,7 @@ void emitHandler<BINARY_OR_SMALLINT>(EmitEnv* env) {
   CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::binaryOpUpdateCache);
-  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+  emitHandleContinue(env, kGenericHandler);
 }
 
 // Push r_list[r_index_smallint] into the stack.
@@ -792,7 +794,7 @@ void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
   emitCurrentCacheIndex(env, kArgRegs[1]);
   emitCall<Interpreter::Continue (*)(Thread*, word)>(
       env, Interpreter::binarySubscrUpdateCache);
-  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+  emitHandleContinue(env, kGenericHandler);
 }
 
 template <>
@@ -871,7 +873,7 @@ void emitHandler<STORE_SUBSCR_LIST>(EmitEnv* env) {
   emitCurrentCacheIndex(env, kArgRegs[1]);
   emitCall<Interpreter::Continue (*)(Thread*, word)>(
       env, Interpreter::storeSubscrUpdateCache);
-  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+  emitHandleContinue(env, kGenericHandler);
 }
 
 // TODO(T59397957): Split this into two opcodes.
@@ -1287,7 +1289,7 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
   }
   __ cmpl(kReturnRegs[0], Immediate(Error::exception().raw()));
   __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
-  emitRestoreInterpreterState(env, kVMStack | kBytecode);
+  emitRestoreInterpreterState(env, kHandlerWithoutFrameChange);
   env->register_state.assign(&env->callable, kCallableReg);
   __ movq(env->callable, kReturnRegs[0]);
   env->register_state.assign(&env->oparg, kOpargReg);
@@ -1330,7 +1332,7 @@ void emitCallTrampoline(EmitEnv* env) {
   // if (result.isErrorException()) return UNWIND;
   __ cmpl(r_result, Immediate(Error::exception().raw()));
   __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
-  emitRestoreInterpreterState(env, kVMStack | kBytecode);
+  emitRestoreInterpreterState(env, kHandlerWithoutFrameChange);
   __ pushq(r_result);
   emitNextOpcode(env);
 }
@@ -1376,7 +1378,7 @@ static void emitCallInterpretedSlowPath(EmitEnv* env) {
   emitCall<Interpreter::Continue (*)(Thread*, word, RawFunction)>(
       env, Interpreter::callInterpreted);
   emitRestoreInterpreterState(env, kHandlerBase);
-  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+  emitHandleContinue(env, kGenericHandler);
 }
 
 void emitFunctionEntryWithIntrinsicHandler(EmitEnv* env) {
@@ -1399,7 +1401,7 @@ void emitFunctionEntryWithIntrinsicHandler(EmitEnv* env) {
   __ popq(env->oparg);
   env->register_state.assign(&env->callable, kCallableReg);
   __ popq(env->callable);
-  emitRestoreInterpreterState(env, kVMStack | kBytecode);
+  emitRestoreInterpreterState(env, kHandlerWithoutFrameChange);
   __ testb(r_result, r_result);
   Label next_opcode;
   __ jcc(NOT_ZERO, &next_opcode, Assembler::kFarJump);
@@ -1931,7 +1933,7 @@ static void emitCompareOpSmallIntHandler(EmitEnv* env, Condition cond) {
   CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::compareOpUpdateCache);
-  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+  emitHandleContinue(env, kGenericHandler);
 }
 
 template <>
@@ -2000,7 +2002,7 @@ void emitHandler<INPLACE_ADD_SMALLINT>(EmitEnv* env) {
   CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::inplaceOpUpdateCache);
-  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+  emitHandleContinue(env, kGenericHandler);
 }
 
 template <>
@@ -2028,7 +2030,7 @@ void emitHandler<INPLACE_SUB_SMALLINT>(EmitEnv* env) {
   CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
   emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
       env, Interpreter::inplaceOpUpdateCache);
-  emitHandleContinue(env, /*may_change_frame_pc=*/true);
+  emitHandleContinue(env, kGenericHandler);
 }
 
 template <>
@@ -2213,7 +2215,7 @@ word emitHandlerTable(EmitEnv* env) {
     env->register_state.assign(&env->return_value, r_result);
     env->register_state.check(env->do_return_assignment);
     __ jcc(NOT_EQUAL, &env->do_return, Assembler::kFarJump);
-    emitRestoreInterpreterState(env, kAllState & ~kHandlerBase);
+    emitRestoreInterpreterState(env, kGenericHandler);
     emitNextOpcode(env);
   }
 
@@ -2232,7 +2234,7 @@ word emitHandlerTable(EmitEnv* env) {
     env->register_state.assign(&env->return_value, r_result);
     env->register_state.check(env->do_return_assignment);
     __ jcc(NOT_EQUAL, &env->do_return, Assembler::kFarJump);
-    emitRestoreInterpreterState(env, kAllState & ~kHandlerBase);
+    emitRestoreInterpreterState(env, kGenericHandler);
     emitNextOpcode(env);
   }
 
