@@ -8,6 +8,7 @@
 
 #include "capi-state.h"
 #include "capi.h"
+#include "debugging.h"
 #include "event.h"
 #include "globals.h"
 #include "object-builtins.h"
@@ -549,6 +550,14 @@ void objectSetMember(Runtime* runtime, RawObject old_ptr, RawObject new_val) {
   ApiHandle** old = reinterpret_cast<ApiHandle**>(Int::cast(old_ptr).asCPtr());
   (*old)->decref();
   *old = ApiHandle::newReference(runtime, new_val);
+}
+
+void dump(PyObject* obj) {
+  if (obj == nullptr) {
+    std::fprintf(stderr, "<nullptr>\n");
+    return;
+  }
+  dump(ApiHandle::fromPyObject(obj)->asObject());
 }
 
 }  // namespace py

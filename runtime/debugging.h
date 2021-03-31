@@ -5,6 +5,8 @@
 #include "handles.h"
 #include "objects.h"
 
+typedef struct _object PyObject;
+
 namespace py {
 
 std::ostream& dumpExtendedCode(std::ostream& os, RawCode value,
@@ -56,6 +58,7 @@ void dump(Frame* frame);
 void dumpPendingException(Thread* thread);
 void dumpSingleFrame(Frame* frame);
 void dumpTraceback();
+void dump(PyObject* obj);
 
 void initializeDebugging();
 
