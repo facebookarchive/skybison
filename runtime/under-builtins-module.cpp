@@ -758,6 +758,37 @@ RawObject FUNC(_builtins, _bytearray_contains)(Thread* thread, Arguments args) {
   return Bool::fromBool(bytes.findByte(key_opt.value, 0, self.numItems()) >= 0);
 }
 
+RawObject FUNC(_builtins, _bytearray_contains_byteslike)(Thread* thread,
+                                                         Arguments args) {
+  HandleScope scope(thread);
+
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfBytearray(*self_obj)) {
+    return raiseRequiresFromCaller(thread, args, ID(bytearray));
+  }
+
+  Byteslike key(&scope, thread, args.get(1));
+  if (!key.isValid()) {
+    Object key_obj(&scope, args.get(1));
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "a bytes-like object is required, not '%T'",
+                                &key_obj);
+  }
+
+  Bytearray self(&scope, *self_obj);
+  MutableBytes bytes(&scope, self.items());
+
+  if (key.length() == 0) {
+    // CPython returns true for: b'' in b'abc'.
+    return Bool::fromBool(true);
+  }
+
+  return Bool::fromBool(
+      Utils::memoryFind(reinterpret_cast<byte*>(bytes.address()),
+                        bytes.length(), reinterpret_cast<byte*>(key.address()),
+                        key.length()) != -1);
+}
+
 RawObject FUNC(_builtins, _bytearray_copy)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();

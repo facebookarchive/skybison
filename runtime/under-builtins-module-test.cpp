@@ -126,6 +126,83 @@ TEST_F(UnderBuiltinsModuleTest,
             Bool::falseObj());
 }
 
+TEST_F(UnderBuiltinsModuleTest,
+       UnderBytearrayContainsByteslikeWithBytearrayInBytearrayReturnsTrue) {
+  HandleScope scope(thread_);
+  Bytearray array(&scope, newBytearrayFromCStr(thread_, "1234"));
+  ASSERT_EQ(array.numItems(), 4);
+
+  Bytearray array_search(&scope, newBytearrayFromCStr(thread_, "23"));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _bytearray_contains_byteslike), array,
+                       array_search),
+            Bool::trueObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderBytearrayContainsByteslikeWithBytesInBytearrayReturnsTrue) {
+  HandleScope scope(thread_);
+  Bytearray array(&scope, newBytearrayFromCStr(thread_, "1234"));
+  ASSERT_EQ(array.numItems(), 4);
+
+  Bytes bytes_search(&scope, newBytesFromCStr(thread_, "23"));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _bytearray_contains_byteslike), array,
+                       bytes_search),
+            Bool::trueObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderBytearrayContainsByteslikeWithMemeoryViewInBytearrayReturnsTrue) {
+  HandleScope scope(thread_);
+  Bytearray array(&scope, newBytearrayFromCStr(thread_, "1234"));
+  ASSERT_EQ(array.numItems(), 4);
+
+  const byte view_src[] = {'2', '3'};
+  MemoryView view_search(&scope,
+                         newMemoryView(view_src, "b", ReadOnly::ReadWrite));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _bytearray_contains_byteslike), array,
+                       view_search),
+            Bool::trueObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderBytearrayContainsByteslikeWithBytearrayNotInBytearrayReturnsFalse) {
+  HandleScope scope(thread_);
+  Bytearray array(&scope, newBytearrayFromCStr(thread_, "1234"));
+  ASSERT_EQ(array.numItems(), 4);
+
+  Bytearray array_search(&scope, newBytearrayFromCStr(thread_, "24"));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _bytearray_contains_byteslike), array,
+                       array_search),
+            Bool::falseObj());
+}
+
+TEST_F(UnderBuiltinsModuleTest,
+       UnderBytearrayContainsByteslikeWithBytesNotInBytearrayReturnsFalse) {
+  HandleScope scope(thread_);
+  Bytearray array(&scope, newBytearrayFromCStr(thread_, "1234"));
+  ASSERT_EQ(array.numItems(), 4);
+
+  Bytes bytes_search(&scope, newBytesFromCStr(thread_, "24"));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _bytearray_contains_byteslike), array,
+                       bytes_search),
+            Bool::falseObj());
+}
+
+TEST_F(
+    UnderBuiltinsModuleTest,
+    UnderBytearrayContainsByteslikeWithMemoryviewNotInBytearrayReturnsFalse) {
+  HandleScope scope(thread_);
+  Bytearray array(&scope, newBytearrayFromCStr(thread_, "1234"));
+  ASSERT_EQ(array.numItems(), 4);
+
+  const byte view_src[] = {'2', '4'};
+  MemoryView view_search(&scope,
+                         newMemoryView(view_src, "b", ReadOnly::ReadWrite));
+  EXPECT_EQ(runBuiltin(FUNC(_builtins, _bytearray_contains_byteslike), array,
+                       view_search),
+            Bool::falseObj());
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderBytearrayDelitemDeletesItemAtIndex) {
   HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());

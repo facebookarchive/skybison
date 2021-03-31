@@ -83,6 +83,10 @@ def _bytearray_contains(obj, key):
     _builtin()
 
 
+def _bytearray_contains_byteslike(obj, key):
+    _builtin()
+
+
 def _bytearray_copy(obj):
     _builtin()
 

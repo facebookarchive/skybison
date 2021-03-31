@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import unittest
+from array import array
 from unittest.mock import Mock
 
 
@@ -11,14 +12,50 @@ class ByteArrayTests(unittest.TestCase):
     def test_dunder_contains_with_element_in_bytearray_returns_true(self):
         self.assertTrue(bytearray(b"abc").__contains__(ord("a")))
 
+    def test_dunder_contains_with_bytearray_in_bytearray_returns_true(self):
+        self.assertTrue(bytearray(b"abcd").__contains__(bytearray(b"bc")))
+
+    def test_dunder_contains_with_array_in_bytearray_returns_true(self):
+        self.assertTrue(bytearray(b"abcd").__contains__(array("b", b"bc")))
+
+    def test_dunder_contains_with_bytestring_in_bytearray_returns_true(self):
+        self.assertTrue(bytearray(b"abcd").__contains__(b"bc"))
+        self.assertTrue(bytearray(b"abcd").__contains__(b"abcd"))
+        self.assertTrue(bytearray(b"abcd").__contains__(b""))
+
+    def test_dunder_contains_with_memoryview_in_bytearray_returns_true(self):
+        self.assertTrue(bytearray(b"abcd").__contains__(memoryview(b"bc")))
+
     def test_dunder_contains_with_element_not_in_bytearray_returns_false(self):
         self.assertFalse(bytearray(b"abc").__contains__(ord("z")))
+
+    def test_dunder_contains_with_bytearray_not_in_bytearray_returns_false(self):
+        self.assertFalse(bytearray(b"abcd").__contains__(bytearray(b"bd")))
+
+    def test_dunder_contains_with_memoryview_not_in_bytearray_returns_false(self):
+        self.assertFalse(bytearray(b"abcd").__contains__(memoryview(b"bd")))
+
+    def test_dunder_contains_with_array_not_in_bytearray_returns_false(self):
+        self.assertFalse(bytearray(b"abcd").__contains__(array("b", b"bd")))
+        self.assertFalse(bytearray(b"abcd").__contains__(array("i", [ord("b")])))
+
+    def test_dunder_contains_with_bytestring_not_in_bytearray_returns_false(self):
+        self.assertFalse(bytearray(b"abcd").__contains__(b"bd"))
+        self.assertFalse(bytearray(b"abcd").__contains__(b"abcde"))
 
     def test_dunder_contains_calls_dunder_index(self):
         class C:
             __index__ = Mock(name="__index__", return_value=ord("a"))
 
         c = C()
+        self.assertTrue(bytearray(b"abc").__contains__(c))
+        c.__index__.assert_called_once()
+
+    def test_dunder_contains_ignores_errors_from_dunder_index_from_byteslike(self):
+        class C(bytes):
+            __index__ = Mock(name="__index__", side_effect=MemoryError("foo"))
+
+        c = C(b"ab")
         self.assertTrue(bytearray(b"abc").__contains__(c))
         c.__index__.assert_called_once()
 
