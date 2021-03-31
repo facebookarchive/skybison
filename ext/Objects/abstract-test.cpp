@@ -1883,6 +1883,7 @@ TEST_F(AbstractExtensionApiTest, PyObjectGetBufferWithBytesReturnsBuffer) {
   EXPECT_EQ(std::memcmp(buffer.buf, "hello\0world", 11), 0);
   ASSERT_EQ(result, 0);
   PyBuffer_Release(&buffer);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(buffer.obj, nullptr);
   EXPECT_EQ(Py_REFCNT(bytes), old_refcnt);
 }
@@ -1897,6 +1898,7 @@ TEST_F(AbstractExtensionApiTest, PyObjectGetBufferWithByteArrayReturnsBuffer) {
   EXPECT_EQ(std::memcmp(buffer.buf, "hello\0world", 11), 0);
   ASSERT_EQ(result, 0);
   PyBuffer_Release(&buffer);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(buffer.obj, nullptr);
   EXPECT_EQ(Py_REFCNT(bytearray), old_refcnt);
 }
@@ -1934,6 +1936,7 @@ TEST_F(AbstractExtensionApiTest,
   EXPECT_EQ(std::memcmp(buffer.buf, contents, contents_len), 0);
   ASSERT_EQ(result, 0);
   PyBuffer_Release(&buffer);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(buffer.obj, nullptr);
   EXPECT_EQ(Py_REFCNT(instance), old_refcnt);
 }
@@ -1956,6 +1959,7 @@ TEST_F(AbstractExtensionApiTest,
   EXPECT_EQ(std::memcmp(buffer.buf, "hello\0world", 11), 0);
 
   PyBuffer_Release(&buffer);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(buffer.obj, nullptr);
   EXPECT_EQ(Py_REFCNT(memoryview), old_memoryview_refcnt);
   EXPECT_EQ(Py_REFCNT(bytes), old_bytes_refcnt);
@@ -1978,6 +1982,7 @@ TEST_F(AbstractExtensionApiTest,
   EXPECT_EQ(std::memcmp(buffer.buf, "hello\0worl", 10), 0);
 
   PyBuffer_Release(&buffer);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(buffer.obj, nullptr);
   EXPECT_EQ(Py_REFCNT(memoryview), old_memoryview_refcnt);
   EXPECT_EQ(Py_REFCNT(bytearray), old_bytearray_refcnt);
@@ -1997,6 +2002,7 @@ TEST_F(AbstractExtensionApiTest,
   EXPECT_EQ(std::memcmp(buffer.buf, "hello", 6), 0);
 
   PyBuffer_Release(&buffer);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
   EXPECT_EQ(buffer.obj, nullptr);
   EXPECT_EQ(Py_REFCNT(memoryview), old_memoryview_refcnt);
 }

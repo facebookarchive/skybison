@@ -230,11 +230,12 @@ PY_EXPORT void PyBuffer_Release(Py_buffer* view) {
   PyObject* pyobj = view->obj;
   if (pyobj == nullptr) return;
 
-  // TODO(T38246066): Check for other builtin byteslike types using
-  // Runtime::isByteslike
-  if (PyBytes_Check(pyobj) || PyByteArray_Check(pyobj)) {
-    // Nothing to do
-  } else {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object object(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
+  Type type(&scope, runtime->typeOf(*object));
+  if (typeHasSlots(type)) {
     // Call Py_bf_releasebuffer slot if defined
     void* releasebuffer_fn =
         PyType_GetSlot(Py_TYPE(pyobj), Py_bf_releasebuffer);
