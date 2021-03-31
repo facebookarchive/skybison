@@ -14,6 +14,7 @@
 #include "runtime.h"
 #include "thread.h"
 #include "type-builtins.h"
+#include "unicode.h"
 
 namespace py {
 
@@ -49,19 +50,71 @@ void initializeFloatType(Thread* thread) {
                  /*basetype=*/true);
 }
 
+static void digitsFromDigitsWithUnderscores(const char* s, char* dup,
+                                            word* length) {
+  char* end = dup;
+  char prev = '\0';
+  const char* p;
+  const char* last = s + *length;
+  for (p = s; p < last; p++) {
+    if (*p == '_') {
+      /* Underscores are only allowed after digits. */
+      if (!ASCII::isDigit(prev)) {
+        return;
+      }
+    } else {
+      *end++ = *p;
+      /* Underscores are only allowed before digits. */
+      if (prev == '_' && !ASCII::isDigit(*p)) {
+        return;
+      }
+    }
+    prev = *p;
+  }
+  /* Underscores are not allowed at the end. */
+  if (prev == '_') {
+    return;
+  }
+  *end = '\0';
+  *length = end - dup;
+}
+
 RawObject floatFromDigits(Thread* thread, const char* str, word length) {
   // TODO(T57022841): follow full CPython conversion for strings
   char* end;
-  double result = std::strtod(str, &end);
+  char* new_str;
+  const char* dup = str;
+  word dup_length = length;
+  bool release_memory = false;
+  if (std::strchr(str, '_') != nullptr) {
+    word* new_length = &dup_length;
+    release_memory = true;
+    new_str = new char[length + 1];
+    digitsFromDigitsWithUnderscores(str, new_str, new_length);
+    if (new_str == nullptr) {
+      delete[] new_str;
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "could not convert string to float: '%s'",
+                                  str);
+    }
+    dup = new_str;
+  }
+  double result = std::strtod(dup, &end);
   // Overflow, return infinity or negative infinity.
   if (result == HUGE_VAL) {
     result = std::numeric_limits<double>::infinity();
   } else if (result == -HUGE_VAL) {
     result = -std::numeric_limits<double>::infinity();
-  } else if (length == 0 || end - str != length) {
+  } else if (dup_length == 0 || end - dup != dup_length) {
     // Conversion was incomplete; the string was not a valid float.
+    if (release_memory) {
+      delete[] new_str;
+    }
     return thread->raiseWithFmt(LayoutId::kValueError,
-                                "could not convert string to float");
+                                "could not convert string to float: '%s'", str);
+  }
+  if (release_memory) {
+    delete[] new_str;
   }
   return thread->runtime()->newFloat(result);
 }

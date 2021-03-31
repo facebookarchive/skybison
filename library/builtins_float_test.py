@@ -796,6 +796,31 @@ class FloatDunderFormatTests(unittest.TestCase):
         self.assertIn("'__format__' requires a 'float' object", str(context.exception))
         self.assertIn("'str'", str(context.exception))
 
+    def test_with_underscore_between_digits_returns_float(self):
+        self.assertEqual(float(2_3.5_3), 23.53)
+
+    def test_with_underscore_not_between_digits_raises_value_error(self):
+        with self.assertRaises(ValueError) as context:
+            float("_11")
+        self.assertEqual(
+            str(context.exception), "could not convert string to float: '_11'"
+        )
+        with self.assertRaises(ValueError) as context:
+            float("4.4_")
+        self.assertEqual(
+            str(context.exception), "could not convert string to float: '4.4_'"
+        )
+        with self.assertRaises(ValueError) as context:
+            float("2_3.5__3")
+        self.assertEqual(
+            str(context.exception), "could not convert string to float: '2_3.5__3'"
+        )
+        with self.assertRaises(ValueError) as context:
+            float("4._4")
+        self.assertEqual(
+            str(context.exception), "could not convert string to float: '4._4'"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
