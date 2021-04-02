@@ -347,6 +347,32 @@ RawObject typeLookupInMroSetLocation(Thread* thread, RawType type,
   return Error::notFound();
 }
 
+RawObject typeDeleteAttribute(Thread* thread, const Type& type,
+                              const Object& name) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  terminateIfUnimplementedTypeAttrCacheInvalidation(thread, type, name);
+  if (!type.hasMutableDict()) {
+    return raiseTypeErrorCannotSetImmutable(thread, type);
+  }
+
+  // Check for a delete descriptor
+  Type metatype(&scope, runtime->typeOf(*type));
+  Object meta_attr(&scope, typeLookupInMro(thread, *metatype, *name));
+  if (!meta_attr.isError() && runtime->isDeleteDescriptor(thread, meta_attr)) {
+    return Interpreter::callDescriptorDelete(thread, meta_attr, type);
+  }
+
+  // No delete descriptor found, attempt to delete from the type dict
+  if (typeRemove(thread, type, name).isErrorNotFound()) {
+    Str type_name(&scope, type.name());
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "type object '%S' has no attribute '%S'",
+                                &type_name, &name);
+  }
+  return NoneType::object();
+}
+
 RawObject typeLookupInMro(Thread* thread, RawType type, RawObject name) {
   RawTuple mro = Tuple::cast(type.mro());
   word hash = internedStrHash(name);
@@ -1142,6 +1168,19 @@ RawObject METH(type, __basicsize__)(Thread* thread, Arguments args) {
   Type self(&scope, *self_obj);
   uword basicsize = typeGetBasicSize(self);
   return runtime->newIntFromUnsigned(basicsize);
+}
+
+RawObject METH(type, __delattr__)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfType(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(type));
+  }
+  Type self(&scope, *self_obj);
+  Object name(&scope, args.get(1));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
+  return typeDeleteAttribute(thread, self, name);
 }
 
 RawObject METH(type, __flags__)(Thread* thread, Arguments args) {

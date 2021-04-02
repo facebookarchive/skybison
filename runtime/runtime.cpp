@@ -420,84 +420,6 @@ RawObject Runtime::newTypeProxy(const Type& type) {
   return *result;
 }
 
-RawObject Runtime::classDelAttr(Thread* thread, const Object& receiver,
-                                const Object& name) {
-  HandleScope scope(thread);
-  Type type(&scope, *receiver);
-  terminateIfUnimplementedTypeAttrCacheInvalidation(thread, type, name);
-  if (!type.hasMutableDict()) {
-    return raiseTypeErrorCannotSetImmutable(thread, type);
-  }
-
-  // Check for a delete descriptor
-  Type metatype(&scope, typeOf(*receiver));
-  Object meta_attr(&scope, typeLookupInMro(thread, *metatype, *name));
-  if (!meta_attr.isError()) {
-    if (isDeleteDescriptor(thread, meta_attr)) {
-      return Interpreter::callDescriptorDelete(thread, meta_attr, receiver);
-    }
-  }
-
-  // No delete descriptor found, attempt to delete from the type dict
-  if (typeRemove(thread, type, name).isErrorNotFound()) {
-    Str type_name(&scope, type.name());
-    return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "type object '%S' has no attribute '%S'",
-                                &type_name, &name);
-  }
-  return NoneType::object();
-}
-
-RawObject Runtime::instanceDelAttr(Thread* thread, const Object& receiver,
-                                   const Object& name) {
-  HandleScope scope(thread);
-
-  // Check for a descriptor with __delete__
-  Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, typeLookupInMro(thread, *type, *name));
-  if (!type_attr.isError()) {
-    if (isDeleteDescriptor(thread, type_attr)) {
-      return Interpreter::callDescriptorDelete(thread, type_attr, receiver);
-    }
-  }
-
-  // No delete descriptor found, delete from the instance
-  if (receiver.isInstance()) {
-    Instance instance(&scope, *receiver);
-    Object result(&scope, py::instanceDelAttr(thread, instance, name));
-    if (!result.isErrorNotFound()) return *result;
-  }
-
-  Str type_name(&scope, type.name());
-  return thread->raiseWithFmt(LayoutId::kAttributeError,
-                              "'%S' object has no attribute '%S'", &type_name,
-                              &name);
-}
-
-RawObject Runtime::moduleDelAttr(Thread* thread, const Object& receiver,
-                                 const Object& name) {
-  // Check for a descriptor with __delete__
-  HandleScope scope(thread);
-  Type type(&scope, typeOf(*receiver));
-  Object type_attr(&scope, typeLookupInMro(thread, *type, *name));
-  if (!type_attr.isError()) {
-    if (isDeleteDescriptor(thread, type_attr)) {
-      return Interpreter::callDescriptorDelete(thread, type_attr, receiver);
-    }
-  }
-
-  // No delete descriptor found, attempt to delete from the module dict
-  Module module(&scope, *receiver);
-  if (moduleRemove(thread, module, name).isError()) {
-    Str module_name(&scope, module.name());
-    return thread->raiseWithFmt(LayoutId::kAttributeError,
-                                "module '%S' has no attribute '%S'",
-                                &module_name, &name);
-  }
-
-  return NoneType::object();
-}
-
 bool Runtime::isCallable(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   if (obj.isFunction() || obj.isBoundMethod() || obj.isType()) {
@@ -508,10 +430,9 @@ bool Runtime::isCallable(Thread* thread, const Object& obj) {
 }
 
 bool Runtime::isDeleteDescriptor(Thread* thread, const Object& object) {
-  // TODO(T25692962): Track "descriptorness" through a bit on the class
   HandleScope scope(thread);
   Type type(&scope, typeOf(*object));
-  return !typeLookupInMroById(thread, *type, ID(__delete__)).isError();
+  return type.hasFlag(Type::Flag::kHasDunderDelete);
 }
 
 bool Runtime::isIterator(Thread* thread, const Object& obj) {
@@ -3136,22 +3057,12 @@ RawObject Runtime::attributeAtByCStr(Thread* thread, const Object& receiver,
 RawObject Runtime::attributeDel(Thread* thread, const Object& receiver,
                                 const Object& name) {
   HandleScope scope(thread);
-  // If present, __delattr__ overrides all attribute deletion logic.
-  Type type(&scope, typeOf(*receiver));
-  Object dunder_delattr(&scope,
-                        typeLookupInMroById(thread, *type, ID(__delattr__)));
-  RawObject result = NoneType::object();
-  if (!dunder_delattr.isError()) {
-    result = Interpreter::callMethod2(thread, dunder_delattr, receiver, name);
-  } else if (isInstanceOfType(*receiver)) {
-    result = classDelAttr(thread, receiver, name);
-  } else if (isInstanceOfModule(*receiver)) {
-    result = moduleDelAttr(thread, receiver, name);
-  } else {
-    result = instanceDelAttr(thread, receiver, name);
-  }
-
-  return result;
+  Object dunder_delattr(
+      &scope, Interpreter::lookupMethod(thread, receiver, ID(__delattr__)));
+  DCHECK(!dunder_delattr.isErrorNotFound(),
+         "__delattr__ is expected to be found");
+  if (dunder_delattr.isErrorException()) return *dunder_delattr;
+  return Interpreter::callMethod2(thread, dunder_delattr, receiver, name);
 }
 
 RawObject Runtime::strConcat(Thread* thread, const Str& left,

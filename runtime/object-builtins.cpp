@@ -24,6 +24,29 @@ RawObject objectRaiseAttributeError(Thread* thread, const Object& object,
                               &name);
 }
 
+RawObject objectDeleteAttribute(Thread* thread, const Object& object,
+                                const Object& name) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+
+  // Check for a descriptor with __delete__
+  Type type(&scope, runtime->typeOf(*object));
+  Object type_attr(&scope, typeLookupInMro(thread, *type, *name));
+  if (!type_attr.isError() && runtime->isDeleteDescriptor(thread, type_attr)) {
+    return Interpreter::callDescriptorDelete(thread, type_attr, object);
+  }
+
+  // No delete descriptor found, delete from the instance
+  if (object.isInstance()) {
+    Instance instance(&scope, *object);
+    Object result(&scope, instanceDelAttr(thread, instance, name));
+    if (!result.isErrorNotFound()) return *result;
+  }
+  return thread->raiseWithFmt(LayoutId::kAttributeError,
+                              "'%T' object has no attribute '%S'", &object,
+                              &name);
+}
+
 RawObject instanceDelAttr(Thread* thread, const Instance& instance,
                           const Object& name) {
   HandleScope scope(thread);
@@ -432,6 +455,24 @@ RawObject objectSetItem(Thread* thread, const Object& object, const Object& key,
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "'%T' object does not support item assignment",
                                 &object);
+  }
+  return *result;
+}
+
+RawObject METH(object, __delattr__)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  Object name(&scope, args.get(1));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
+  Object result(&scope, objectDeleteAttribute(thread, self, name));
+  if (!result.isErrorException()) return *result;
+  if (runtime->isInstanceOfType(*self) || runtime->isInstanceOfModule(*self)) {
+    thread->clearPendingException();
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "can't apply this __delattr__ to type '%T'",
+                                &self);
   }
   return *result;
 }

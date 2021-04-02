@@ -24,6 +24,29 @@ RawObject moduleAtById(Thread* thread, const Module& module, SymbolId id) {
   return attributeAt(*module, name);
 }
 
+RawObject moduleDeleteAttribute(Thread* thread, const Module& module,
+                                const Object& name) {
+  // Check for a descriptor with __delete__
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Type type(&scope, runtime->typeOf(*module));
+  Object type_attr(&scope, typeLookupInMro(thread, *type, *name));
+  if (!type_attr.isErrorNotFound() &&
+      runtime->isDeleteDescriptor(thread, type_attr)) {
+    return Interpreter::callDescriptorDelete(thread, type_attr, module);
+  }
+
+  // No delete descriptor found, attempt to delete from the module dict
+  if (moduleRemove(thread, module, name).isError()) {
+    Str module_name(&scope, module.name());
+    return thread->raiseWithFmt(LayoutId::kAttributeError,
+                                "module '%S' has no attribute '%S'",
+                                &module_name, &name);
+  }
+
+  return NoneType::object();
+}
+
 static RawObject filterPlaceholderValueCell(RawObject result) {
   if (result.isErrorNotFound()) {
     return result;
@@ -230,6 +253,19 @@ void initializeModuleType(Thread* thread) {
   Runtime* runtime = thread->runtime();
   Object object_type(&scope, runtime->typeAt(LayoutId::kObject));
   type.setMro(runtime->newTupleWith2(type, object_type));
+}
+
+RawObject METH(module, __delattr__)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfModule(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(module));
+  }
+  Module self(&scope, *self_obj);
+  Object name(&scope, args.get(1));
+  name = attributeName(thread, name);
+  if (name.isErrorException()) return *name;
+  return moduleDeleteAttribute(thread, self, name);
 }
 
 RawObject METH(module, __getattribute__)(Thread* thread, Arguments args) {

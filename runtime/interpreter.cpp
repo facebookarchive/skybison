@@ -3405,9 +3405,7 @@ HANDLER_INLINE Continue Interpreter::doDeleteAttr(Thread* thread, word arg) {
   Object receiver(&scope, thread->stackPop());
   Tuple names(&scope, Code::cast(frame->code()).names());
   Str name(&scope, names.at(arg));
-  if (thread->runtime()
-          ->attributeDel(thread, receiver, name)
-          .isErrorException()) {
+  if (delAttribute(thread, receiver, name).isErrorException()) {
     return Continue::UNWIND;
   }
   return Continue::NEXT;

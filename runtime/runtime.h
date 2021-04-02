@@ -895,21 +895,6 @@ class Runtime {
   RawObject createLargeBytes(word length);
   RawObject createMutableBytes(word length);
 
-  // Generic attribute deletion code used for class objects
-  // TODO(T55871582): Remove code paths that can raise from the Runtime
-  NODISCARD RawObject classDelAttr(Thread* thread, const Object& receiver,
-                                   const Object& name);
-
-  // Generic attribute deletion code used for instance objects
-  // TODO(T55871582): Remove code paths that can raise from the Runtime
-  NODISCARD RawObject instanceDelAttr(Thread* thread, const Object& receiver,
-                                      const Object& name);
-
-  // Generic attribute deletion code used for module objects
-  // TODO(T55871582): Remove code paths that can raise from the Runtime
-  NODISCARD RawObject moduleDelAttr(Thread* thread, const Object& receiver,
-                                    const Object& name);
-
   // Appends attribute entries for fixed attributes to an array of in-object
   // attribute entries starting at a specific index.  Useful for constructing
   // the in-object attributes array for built-in classes with fixed attributes.

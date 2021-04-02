@@ -497,8 +497,8 @@ class type(bootstrap=True):
 
     __call__ = _type_dunder_call
 
-    def __delattr_(self, other):
-        _unimplemented()
+    def __delattr__(self, name):
+        _builtin()
 
     def __dir__(self):
         _type_guard(self)
@@ -701,6 +701,9 @@ class object(bootstrap=True):  # noqa: E999
     @__class__.setter  # noqa: F811
     def __class__(self, value):
         _object_class_set(self, value)
+
+    def __delattr__(self, name):
+        _builtin()
 
     def __dir__(self):
         attrs = _object_keys(self)
@@ -5368,6 +5371,9 @@ class module(bootstrap=True):
                 "but received a '{_type(self).__name__}'"
             )
         return _module_dir(self)
+
+    def __delattr__(self, name):
+        _builtin()
 
     def __getattribute__(self, name):
         _builtin()

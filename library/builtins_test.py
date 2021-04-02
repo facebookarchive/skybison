@@ -8160,6 +8160,29 @@ class MethodTests(unittest.TestCase):
 
 
 class ModuleTests(unittest.TestCase):
+    def test_delattr_deletes_module_attribute(self):
+        from types import ModuleType
+
+        m = ModuleType("")
+        m.fld = 4
+        self.assertTrue(hasattr(m, "fld"))
+        self.assertIs(m.__delattr__("fld"), None)
+        self.assertFalse(hasattr(m, "fld"))
+
+    def test_delattr_raises_type_error_with_instance(self):
+        from types import ModuleType
+
+        class C:
+            fld = 4
+
+        c = C()
+        with self.assertRaises(TypeError) as context:
+            ModuleType.__delattr__(c, "fld")
+        self.assertIn(
+            "'__delattr__' requires a 'module' object but received a 'C'",
+            str(context.exception),
+        )
+
     def test_del_invalidates_cache(self):
         from types import ModuleType
 
@@ -8828,6 +8851,36 @@ class NotImplementedTypeTests(unittest.TestCase):
 
 
 class ObjectTests(unittest.TestCase):
+    def test_delattr_deletes_instance_attribute(self):
+        class C:
+            def __init__(self):
+                self.fld = 4
+
+        c = C()
+        self.assertTrue(hasattr(c, "fld"))
+        self.assertIs(c.__delattr__("fld"), None)
+        self.assertFalse(hasattr(c, "fld"))
+
+    def test_delattr_raises_type_error_with_type(self):
+        class C:
+            fld = 4
+
+        with self.assertRaises(TypeError) as context:
+            object.__delattr__(C, "fld")
+        self.assertIn("can't apply this __delattr__ to type", str(context.exception))
+
+    @pyro_only
+    def test_delattr_raises_with_module(self):
+        from types import ModuleType
+
+        m = ModuleType("")
+        m.fld = 4
+        with self.assertRaises(TypeError) as context:
+            object.__delattr__(m, "fld")
+        self.assertIn(
+            "can't apply this __delattr__ to type 'module'", str(context.exception)
+        )
+
     def test_reduce_with_object(self):
         result = object().__reduce__()
         self.assertEqual(len(result), 2)
@@ -12513,6 +12566,26 @@ class TypeTests(unittest.TestCase):
         self.assertNotIn("__module__", object.__dict__)
         self.assertNotIn("__module__", tuple.__dict__)
         self.assertNotIn("__module__", FrameType.__dict__)
+
+    def test_delattr_deletes_class_attribute(self):
+        class C:
+            fld = 4
+
+        self.assertTrue(hasattr(C, "fld"))
+        self.assertIs(type.__delattr__(C, "fld"), None)
+        self.assertFalse(hasattr(C, "fld"))
+
+    def test_delattr_raises_type_error_with_instance(self):
+        class C:
+            fld = 4
+
+        c = C()
+        with self.assertRaises(TypeError) as context:
+            type.__delattr__(c, "fld")
+        self.assertIn(
+            "'__delattr__' requires a 'type' object but received a 'C'",
+            str(context.exception),
+        )
 
     def test_dunder_base_with_object_type_returns_none(self):
         self.assertIs(object.__base__, None)

@@ -31,6 +31,9 @@ RawObject moduleAtPutByCStr(Thread* thread, const Module& module,
 RawObject moduleAtPutById(Thread* thread, const Module& module, SymbolId id,
                           const Object& value);
 
+RawObject moduleDeleteAttribute(Thread* thread, const Module& receiver,
+                                const Object& name);
+
 RawObject moduleInit(Thread* thread, const Module& module, const Object& name);
 
 // Returns keys associated with non-placeholder ValueCells in `module`.

@@ -24,6 +24,9 @@ void instanceGrowOverflow(Thread* thread, const Instance& instance,
 RawObject instanceSetAttr(Thread* thread, const Instance& instance,
                           const Object& name, const Object& value);
 
+RawObject objectDeleteAttribute(Thread* thread, const Object& receiver,
+                                const Object& name);
+
 RawObject objectGetAttribute(Thread* thread, const Object& object,
                              const Object& name);
 

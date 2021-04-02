@@ -59,6 +59,9 @@ RawObject typeAtPut(Thread* thread, const Type& type, const Object& name,
 RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
                         const Object& value);
 
+RawObject typeDeleteAttribute(Thread* thread, const Type& receiver,
+                              const Object& name);
+
 RawObject typeRemove(Thread* thread, const Type& type, const Object& name);
 
 RawObject typeRemoveById(Thread* thread, const Type& type, SymbolId id);

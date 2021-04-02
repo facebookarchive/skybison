@@ -308,7 +308,7 @@ PY_EXPORT int PyRun_SimpleFileExFlags(FILE* fp, const char* filename,
 
   Str dunder_file_name(&scope, runtime->symbols()->at(ID(__file__)));
   RawObject del_result =
-      runtime->attributeDel(thread, module, dunder_file_name);
+      moduleDeleteAttribute(thread, module, dunder_file_name);
   if (del_result.isError()) {
     PyErr_Clear();
   }
