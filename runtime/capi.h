@@ -36,7 +36,7 @@ class Runtime;
 
 static const word kCAPIStateSize = 256;
 
-extern struct _inittab _PyImport_Inittab[];
+extern struct _inittab* PyImport_Inittab;
 
 // Return the object referenced by the handle.
 // WARNING: This function should be called by the garbage collector.

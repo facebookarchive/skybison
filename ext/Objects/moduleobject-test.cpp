@@ -730,5 +730,44 @@ TEST_F(ModuleExtensionApiTest, MethodWithClassFlagRaisesException) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
 }
 
+static PyObject* init_extra_builtin_module(void) {
+  static PyModuleDef def;
+  def = {PyModuleDef_HEAD_INIT, "extra_builtin"};
+  return PyModule_Create(&def);
+}
+
+static PyObject* init_extra_extra_builtin_module(void) {
+  static PyModuleDef def;
+  def = {PyModuleDef_HEAD_INIT, "extra_extra_builtin"};
+  return PyModule_Create(&def);
+}
+
+TEST(ModuleExtensionApiTestNoFixture, PyImportAppendInittabExtendInittab) {
+  resetPythonEnv();
+  PyImport_AppendInittab("extra_builtin", init_extra_builtin_module);
+  PyImport_AppendInittab("extra_extra_builtin",
+                         init_extra_extra_builtin_module);
+  Py_Initialize();
+
+  PyRun_SimpleString(R"(
+import sys
+a = "extra_builtin" in sys.builtin_module_names
+b = "extra_extra_builtin" in sys.builtin_module_names
+c = "not_added" in sys.builtin_module_names
+)");
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr pybool_true(PyBool_FromLong(1));
+  PyObjectPtr pybool_false(PyBool_FromLong(0));
+  PyObjectPtr a(mainModuleGet("a"));
+  PyObjectPtr b(mainModuleGet("b"));
+  PyObjectPtr c(mainModuleGet("c"));
+
+  ASSERT_EQ(pybool_true, a);
+  ASSERT_EQ(pybool_true, b);
+  ASSERT_EQ(pybool_false, c);
+
+  Py_FinalizeEx();
+}
+
 }  // namespace testing
 }  // namespace py

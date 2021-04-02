@@ -117,11 +117,6 @@ PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* name) {
   return ApiHandle::borrowedReference(runtime, *new_module);
 }
 
-PY_EXPORT int PyImport_AppendInittab(const char* /* e */,
-                                     PyObject* (*/* initfunc */)(void)) {
-  UNIMPLEMENTED("PyImport_AppendInittab");
-}
-
 PY_EXPORT void PyImport_Cleanup() { UNIMPLEMENTED("PyImport_Cleanup"); }
 
 PY_EXPORT PyObject* PyImport_ExecCodeModule(const char* /* e */,

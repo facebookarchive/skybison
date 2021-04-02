@@ -1,5 +1,4 @@
 // moduleobject.c implementation
-
 #include "cpython-data.h"
 #include "cpython-func.h"
 
@@ -18,6 +17,7 @@ namespace py {
 
 using ExtensionModuleInitFunc = PyObject* (*)();
 extern struct _inittab _PyImport_Inittab[];
+struct _inittab* PyImport_Inittab = _PyImport_Inittab;
 
 PY_EXPORT int PyModule_CheckExact_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isModule();
@@ -359,8 +359,8 @@ RawObject moduleLoadDynamicExtension(Thread* thread, const Str& name,
 }
 
 static word inittabIndex(const Str& name) {
-  for (word i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
-    if (name.equalsCStr(_PyImport_Inittab[i].name)) {
+  for (word i = 0; PyImport_Inittab[i].name != nullptr; i++) {
+    if (name.equalsCStr(PyImport_Inittab[i].name)) {
       return i;
     }
   }
@@ -374,7 +374,39 @@ bool isBuiltinExtensionModule(const Str& name) {
 RawObject moduleInitBuiltinExtension(Thread* thread, const Str& name) {
   word index = inittabIndex(name);
   if (index < 0) return Error::notFound();
-  return initializeModule(thread, _PyImport_Inittab[index].initfunc, name);
+  return initializeModule(thread, PyImport_Inittab[index].initfunc, name);
+}
+
+PY_EXPORT int PyImport_AppendInittab(const char* name,
+                                     PyObject* (*initfunc)(void)) {
+  word old_inittab_length = 0;
+  while (PyImport_Inittab[old_inittab_length].name != nullptr) {
+    old_inittab_length++;
+  }
+  // The copy needs 2 more slots than the non-null entries:
+  // 1 for the sentinel at the end, and 1 for the inittab we're adding.
+  word new_inittab_length = old_inittab_length + 2;
+  struct _inittab* inittab_copy = static_cast<struct _inittab*>(
+      std::malloc(sizeof(struct _inittab) * (new_inittab_length)));
+  if (inittab_copy == nullptr) {
+    return -1;
+  }
+  int i = 0;
+  for (; i < old_inittab_length; i++) {
+    inittab_copy[i] = PyImport_Inittab[i];
+  }
+  inittab_copy[i++] = {name, initfunc};
+  inittab_copy[i++] = {nullptr, nullptr};
+  DCHECK(i == new_inittab_length,
+         "length mismatch when populating new inittab");
+
+  // Only attempt to deallocate PyImport_Inittab if it was heap-allocated.
+  struct _inittab* old_inittab_pointer = PyImport_Inittab;
+  PyImport_Inittab = inittab_copy;
+  if (old_inittab_pointer != _PyImport_Inittab) {
+    std::free(old_inittab_pointer);
+  }
+  return 0;
 }
 
 }  // namespace py

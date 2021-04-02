@@ -62,7 +62,7 @@ void FUNC(sys, __init_module__)(Thread* thread, const Module& module,
 
   // Count the number of builtin modules and create a tuple
   uword num_extension_modules = 0;
-  while (_PyImport_Inittab[num_extension_modules].name != nullptr) {
+  while (PyImport_Inittab[num_extension_modules].name != nullptr) {
     num_extension_modules++;
   }
   word num_builtin_modules = kNumFrozenModules + num_extension_modules;
@@ -72,10 +72,10 @@ void FUNC(sys, __init_module__)(Thread* thread, const Module& module,
     builtin_module_names.atPut(
         i, Runtime::internStrFromCStr(thread, kFrozenModules[i].name));
   }
-  for (int i = 0; _PyImport_Inittab[i].name != nullptr; i++) {
+  for (int i = 0; PyImport_Inittab[i].name != nullptr; i++) {
     builtin_module_names.atPut(
         kNumFrozenModules + i,
-        Runtime::internStrFromCStr(thread, _PyImport_Inittab[i].name));
+        Runtime::internStrFromCStr(thread, PyImport_Inittab[i].name));
   }
   Tuple builtin_module_names_tuple(&scope,
                                    builtin_module_names.becomeImmutable());
