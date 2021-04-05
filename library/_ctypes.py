@@ -136,12 +136,11 @@ class PyCArrayType(_CDataType):
         if bases[0] == _CData:
             return result
 
-        length = getattr(result, "_length_", None)
+        if not hasattr(result, "_length_"):
+            raise AttributeError("class must define a '_length_' attribute")
+        length = result._length_
         if not _int_check(length):
-            raise AttributeError(
-                "class must define a '_length_' attribute, "
-                "which must be a positive integer"
-            )
+            raise TypeError("The '_length_' attribute must be an integer")
         if length < 0:
             raise ValueError("The '_length_' attribute must not be negative")
 
