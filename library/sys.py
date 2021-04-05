@@ -120,13 +120,13 @@ def _init(_executable, _python_path, _flags_data, _warnoptions):
     warnoptions = _warnoptions
 
 
-__stderr__ = open(_stderr_fd, "w", buffering=True, closefd=False, encoding="UTF-8")
+__stderr__ = open(_stderr_fd, "w", buffering=True, closefd=False, encoding="utf-8")
 
 
-__stdin__ = open(_stdin_fd, "r", buffering=True, closefd=False, encoding="UTF-8")
+__stdin__ = open(_stdin_fd, "r", buffering=True, closefd=False, encoding="utf-8")
 
 
-__stdout__ = open(_stdout_fd, "w", buffering=True, closefd=False, encoding="UTF-8")
+__stdout__ = open(_stdout_fd, "w", buffering=True, closefd=False, encoding="utf-8")
 
 
 _framework = ""

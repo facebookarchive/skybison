@@ -4,7 +4,7 @@ import sys
 import unittest
 from _io import StringIO, TextIOWrapper
 
-from test_support import pyro_only
+from test_support import pyro_only, supports_38_feature
 
 
 # Tests for traceback printing in sys.excepthook
@@ -296,11 +296,12 @@ class SysTests(unittest.TestCase):
     def test_implementation_version_matches_module_version_info(self):
         self.assertEqual(sys.implementation.version, sys.version_info)
 
+    @supports_38_feature
     def test_setrecursionlimit_with_large_limit_raises_overflowerror(self):
         with self.assertRaises(OverflowError) as context:
             sys.setrecursionlimit(230992039023490234904329023904239023)
         self.assertEqual(
-            str(context.exception), "Python int too large to convert to C long"
+            str(context.exception), "Python int too large to convert to C int"
         )
 
     def test_hash_info_is_plausible(self):
@@ -377,10 +378,11 @@ class SysTests(unittest.TestCase):
         self.assertIs(sys.stdin, sys.__stdin__)
         self.assertIs(sys.stdout, sys.__stdout__)
 
+    @supports_38_feature
     def test_std_streams_are_utf_8_encoded(self):
-        self.assertEqual(sys.stderr.encoding, "UTF-8")
-        self.assertEqual(sys.stdin.encoding, "UTF-8")
-        self.assertEqual(sys.stdout.encoding, "UTF-8")
+        self.assertEqual(sys.stderr.encoding, "utf-8")
+        self.assertEqual(sys.stdin.encoding, "utf-8")
+        self.assertEqual(sys.stdout.encoding, "utf-8")
 
     def test_std_streams_have_correct_modes(self):
         self.assertEqual(sys.stderr.mode, "w")

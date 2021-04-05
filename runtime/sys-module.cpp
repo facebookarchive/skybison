@@ -335,7 +335,7 @@ RawObject FUNC(sys, setrecursionlimit)(Thread* thread, Arguments args) {
   OptInt<int> opt_val = limit.asInt<int>();
   if (opt_val.error != CastError::None) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
-                                "Python int too large to convert to C long");
+                                "Python int too large to convert to C int");
   }
 
   // TODO(T62600497) Raise RecursionError if new limit is too low at current
