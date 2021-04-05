@@ -222,6 +222,7 @@ class IntTests(unittest.TestCase):
     def test_dunder_pow_with_mod_equals_one_returns_zero(self):
         self.assertEqual(int.__pow__(4, 2, 1), 0)
 
+    @pyro_only  # TODO(T88103616): implement module multiplicative inverse
     def test_dunder_pow_with_negative_power_and_mod_raises_value_error(self):
         with self.assertRaises(ValueError):
             int.__pow__(4, -2, 1)
