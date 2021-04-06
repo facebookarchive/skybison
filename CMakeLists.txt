@@ -54,7 +54,8 @@ set(BENCHMARK_ENABLE_INSTALL CACHE BOOL OFF FORCE)
 add_subdirectory(third-party/benchmark-1.5.1)
 set(INSTALL_GTEST CACHE BOOL OFF FORCE)
 add_subdirectory(third-party/googletest)
-add_subdirectory(third-party/siphash-20170224)
+set(THIRD_PARTY_SIPHASH third-party/siphash-20170224)
+add_subdirectory(${THIRD_PARTY_SIPHASH})
 add_subdirectory(third-party/systemtap)
 add_subdirectory(third-party/valgrind-3.15.0)
 
@@ -619,7 +620,8 @@ target_include_directories(
   INTERFACE
   runtime
   PRIVATE
-  ${FFI_INCLUDE_DIRS})
+  ${FFI_INCLUDE_DIRS}
+  ${THIRD_PARTY_SIPHASH}/include)
 target_link_libraries(
   runtime
   PUBLIC
@@ -628,7 +630,6 @@ target_link_libraries(
   dl
   PRIVATE
   modules
-  siphash
   systemtap
   valgrind
   ${FFI_LIBRARIES})
@@ -1035,15 +1036,16 @@ else()
 endif()
 
 add_library(pyruntime
-  STATIC)
+  STATIC
+  $<TARGET_OBJECTS:siphash>)
 target_link_libraries(
   pyruntime
   PRIVATE
-  extension
-  runtime
   modules
   extension-modules
-  expat)
+  extension
+  expat
+  runtime)
 
 set(EXECUTABLE python${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 set(EXECUTABLE_SYMLINKS
@@ -1062,10 +1064,6 @@ target_compile_options(
   ${EXECUTABLE}
   PRIVATE
   ${PYRO_COMPILE_OPTIONS})
-target_include_directories(
-  ${EXECUTABLE}
-  PRIVATE
-  runtime)
 target_link_libraries(
     ${EXECUTABLE}
     PRIVATE
@@ -1086,10 +1084,6 @@ target_link_libraries(
   test_lldb_support
   PRIVATE
   pyruntime)
-target_include_directories(
-  test_lldb_support
-  PRIVATE
-  runtime)
 
 add_library(
   runtime-tests
