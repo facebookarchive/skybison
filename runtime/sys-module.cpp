@@ -182,9 +182,14 @@ void initializeRuntimePaths(Thread* thread) {
 
 RawObject initializeSys(Thread* thread, const Str& executable,
                         const List& python_path, const Tuple& flags_data,
-                        const List& warnoptions) {
-  return thread->invokeFunction4(ID(sys), ID(_init), executable, python_path,
-                                 flags_data, warnoptions);
+                        const List& warnoptions,
+                        bool extend_python_path_with_stdlib) {
+  HandleScope scope(thread);
+  Object extend_python_path_with_stdlib_obj(
+      &scope, Bool::fromBool(extend_python_path_with_stdlib));
+  return thread->invokeFunction5(ID(sys), ID(_init), executable, python_path,
+                                 flags_data, warnoptions,
+                                 extend_python_path_with_stdlib_obj);
 }
 
 void setPycachePrefix(Thread* thread, const Object& pycache_prefix) {

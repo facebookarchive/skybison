@@ -36,7 +36,8 @@ void initializeRuntimePaths(Thread* thread);
 // be called after the runtime constructor and before Runtime::initialize().
 RawObject initializeSys(Thread* thread, const Str& executable,
                         const List& python_path, const Tuple& flags_data,
-                        const List& warnoptions);
+                        const List& warnoptions,
+                        bool extend_python_path_with_stdlib);
 
 void setPycachePrefix(Thread* thread, const Object& pycache_prefix);
 

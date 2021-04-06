@@ -63,8 +63,8 @@ static RawObject initializeSysWithDefaults(Thread* thread) {
                 "unexpected flag count");
   Tuple flags_data(&scope, data.becomeImmutable());
   List warnoptions(&scope, runtime->newList());
-  return initializeSys(thread, executable, python_path, flags_data,
-                       warnoptions);
+  return initializeSys(thread, executable, python_path, flags_data, warnoptions,
+                       /*extend_python_path_with_stdlib=*/true);
 }
 
 bool useCppInterpreter() {

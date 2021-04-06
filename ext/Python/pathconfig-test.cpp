@@ -24,5 +24,39 @@ TEST_F(PathconfigExtensionApiTest, SetPathClearsPrefixAndExecPrefix) {
   EXPECT_STREQ(Py_GetPath(), L"test");
 }
 
+TEST(PathconfigExtensionApiTestNoFixture, PySetPathSetsSysPath) {
+  // Because we can't rely on os.h (due to tests being
+  // shared between CPython and Pyro, we can't link the runtime), we use
+  // the default sys.path's element as the canonical location of paths.
+  resetPythonEnv();
+  Py_Initialize();
+  std::wstring old_path(Py_GetPath());
+  Py_FinalizeEx();
+
+  int length = old_path.length() + 30;
+  std::unique_ptr<wchar_t[]> sys_path(new wchar_t[length]);
+  std::swprintf(sys_path.get(), length, L"%ls:/usr/local/setbyapi",
+                old_path.c_str());
+
+  resetPythonEnv();
+  Py_SetPath(sys_path.get());
+  Py_Initialize();
+
+  {
+    PyImport_ImportModule("sys");
+    ASSERT_EQ(PyErr_Occurred(), nullptr);
+    PyObjectPtr path(moduleGet("sys", "path"));
+    ASSERT_NE(path, nullptr);
+    PyObjectPtr path_last(PySequence_GetItem(path, -1));
+    ASSERT_NE(path_last, nullptr);
+    const char* cstring = PyUnicode_AsUTF8AndSize(path_last, nullptr);
+    EXPECT_STREQ(cstring, "/usr/local/setbyapi");
+  }
+
+  PyErr_Clear();
+  Py_FinalizeEx();
+  std::setlocale(LC_CTYPE, "C");
+}
+
 }  // namespace testing
 }  // namespace py

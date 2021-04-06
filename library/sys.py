@@ -93,7 +93,13 @@ _VersionInfo = _structseq_new_type(
 )
 
 
-def _init(_executable, _python_path, _flags_data, _warnoptions):
+def _init(
+    _executable,
+    _python_path,
+    _flags_data,
+    _warnoptions,
+    extend_python_path_with_stdlib,
+):
     global executable
     executable = _executable
 
@@ -108,10 +114,11 @@ def _init(_executable, _python_path, _flags_data, _warnoptions):
 
     global path
     path = _python_path
-    stdlib_dir = _join(
-        prefix, "lib", f"{implementation.name}{_version.major}.{_version.minor}"
-    )
-    path.append(stdlib_dir)
+    if extend_python_path_with_stdlib:
+        stdlib_dir = _join(
+            prefix, "lib", f"{implementation.name}{_version.major}.{_version.minor}"
+        )
+        path.append(stdlib_dir)
 
     global flags
     flags = _Flags(_flags_data)

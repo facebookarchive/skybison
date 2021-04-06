@@ -279,16 +279,34 @@ static void initializeSysFromGlobals(Thread* thread) {
   Runtime* runtime = thread->runtime();
   unique_c_ptr<char> path(OS::executablePath());
   Str executable(&scope, runtime->newStrFromCStr(path.get()));
-  const char* python_path_cstr =
-      Py_IgnoreEnvironmentFlag ? nullptr : std::getenv("PYTHONPATH");
+
   Object python_path_obj(&scope, NoneType::object());
-  if (python_path_cstr != nullptr) {
-    Str python_path_str(&scope, runtime->newStrFromCStr(python_path_cstr));
+  const wchar_t* explicitly_provided_module_search_path =
+      Runtime::moduleSearchPath();
+  bool has_explicitly_provided_module_search_path =
+      explicitly_provided_module_search_path[0] != L'\0';
+  if (has_explicitly_provided_module_search_path) {
+    // TODO(T88306794): Instead of passing in the python path to initializeSys,
+    // we should indicate that binary_location/../lib should not be included in
+    // the search path when an explicit module search path is provided.
+    Str python_path_str(
+        &scope,
+        newStrFromWideChar(thread, explicitly_provided_module_search_path));
     Str sep(&scope, SmallStr::fromCStr(":"));
     python_path_obj = strSplit(thread, python_path_str, sep, kMaxWord);
-    CHECK(!python_path_obj.isError(), "Failed to calculate PYTHONPATH");
+    CHECK(!python_path_obj.isError(),
+          "Failed to calculate path provided by `Py_SetPath`.");
   } else {
-    python_path_obj = runtime->newList();
+    const char* python_path_cstr =
+        Py_IgnoreEnvironmentFlag ? nullptr : std::getenv("PYTHONPATH");
+    if (python_path_cstr != nullptr) {
+      Str python_path_str(&scope, runtime->newStrFromCStr(python_path_cstr));
+      Str sep(&scope, SmallStr::fromCStr(":"));
+      python_path_obj = strSplit(thread, python_path_str, sep, kMaxWord);
+      CHECK(!python_path_obj.isError(), "Failed to calculate PYTHONPATH");
+    } else {
+      python_path_obj = runtime->newList();
+    }
   }
   List python_path(&scope, *python_path_obj);
   const char* warnoptions_cstr =
@@ -351,7 +369,9 @@ static void initializeSysFromGlobals(Thread* thread) {
   static_assert(static_cast<word>(SysFlag::kNumFlags) == 15,
                 "unexpected flag count");
   Tuple flags_data(&scope, data.becomeImmutable());
-  CHECK(initializeSys(thread, executable, python_path, flags_data, warnoptions)
+  CHECK(initializeSys(thread, executable, python_path, flags_data, warnoptions,
+                      /*extend_python_path_with_stdlib=*/
+                      !has_explicitly_provided_module_search_path)
             .isNoneType(),
         "initializeSys() failed");
 }
