@@ -3980,15 +3980,18 @@ RawObject FUNC(_builtins, _object_type_getattr)(Thread* thread,
   HandleScope scope(thread);
   Object instance(&scope, args.get(0));
   Object name(&scope, args.get(1));
-  name = attributeName(thread, name);
-  if (name.isErrorException()) return *name;
-  Type type(&scope, thread->runtime()->typeOf(*instance));
+  DCHECK(name.isStr(),
+         "_object_type_hasattr should only receive string literals");
+  Runtime* runtime = thread->runtime();
+  DCHECK(runtime->isInternedStr(thread, name),
+         "string literals that look like names should be interned");
+  Type type(&scope, runtime->typeOf(*instance));
   Object attr(&scope, typeLookupInMro(thread, *type, *name));
   if (attr.isErrorNotFound()) {
     return Unbound::object();
   }
   if (attr.isFunction()) {
-    return thread->runtime()->newBoundMethod(attr, instance);
+    return runtime->newBoundMethod(attr, instance);
   }
   return resolveDescriptorGet(thread, attr, instance, type);
 }
