@@ -561,17 +561,21 @@ TEST_F(StrBuiltinsTest,
   Str str0(&scope, runtime_->newStrFromCStr("_"));
   Str str1(&scope, runtime_->newStrFromCStr("hello world"));
   Str str2(&scope, runtime_->newStrFromCStr("helloworldfoobar"));
+  Str str3(&scope, runtime_->newStrFromCStr("hello_world"));
   EXPECT_TRUE(runtime_->isInternedStr(thread_, str0));
   EXPECT_FALSE(runtime_->isInternedStr(thread_, str1));
   EXPECT_FALSE(runtime_->isInternedStr(thread_, str2));
-  Tuple tuple(&scope, runtime_->newTupleWith3(str0, str1, str2));
+  EXPECT_FALSE(runtime_->isInternedStr(thread_, str3));
+  Tuple tuple(&scope, runtime_->newTupleWith4(str0, str1, str2, str3));
   strInternConstants(thread_, tuple);
   str0 = tuple.at(0);
   str1 = tuple.at(1);
   str2 = tuple.at(2);
+  str3 = tuple.at(3);
   EXPECT_TRUE(runtime_->isInternedStr(thread_, str0));
   EXPECT_FALSE(runtime_->isInternedStr(thread_, str1));
   EXPECT_TRUE(runtime_->isInternedStr(thread_, str2));
+  EXPECT_TRUE(runtime_->isInternedStr(thread_, str3));
 }
 
 TEST_F(StrBuiltinsTest, InternStringConstantsInternsStringsInNestedTuples) {

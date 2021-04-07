@@ -770,7 +770,8 @@ void strInternInTuple(Thread* thread, const Object& items) {
 
 static bool allNameChars(const Str& str) {
   for (word i = 0; i < str.length(); i++) {
-    if (!ASCII::isAlnum(str.byteAt(i))) {
+    byte c = str.byteAt(i);
+    if (!ASCII::isAlnum(c) && c != '_') {
       return false;
     }
   }
