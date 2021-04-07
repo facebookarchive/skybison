@@ -1971,15 +1971,19 @@ class bytearray(bootstrap=True):
         _bytearray_guard(self)
         _bytearray_clear(self)
         if source is _Unbound:
-            if encoding is not _Unbound or errors is not _Unbound:
-                raise TypeError("encoding or errors without sequence argument")
+            if encoding is not _Unbound:
+                raise TypeError("encoding without a string argument")
+            elif errors is not _Unbound:
+                raise TypeError("errors without a string argument")
         elif _str_check(source):
             if encoding is _Unbound:
                 raise TypeError("string argument without an encoding")
             encoded = str.encode(source, encoding, errors)
             _bytearray_setslice(self, 0, 0, 1, encoded)
-        elif encoding is not _Unbound or errors is not _Unbound:
-            raise TypeError("encoding or errors without a string argument")
+        elif encoding is not _Unbound:
+            raise TypeError("encoding without a string argument")
+        elif errors is not _Unbound:
+            raise TypeError("errors without a string argument")
         elif _byteslike_check(source):
             _bytearray_setslice(self, 0, 0, 1, source)
         elif _int_check(source) or _object_type_hasattr(source, "__index__"):
