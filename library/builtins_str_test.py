@@ -474,9 +474,13 @@ class StrTests(unittest.TestCase):
         )
 
     def test_format_index_out_of_args_raises_index_error(self):
-        with self.assertRaises(IndexError) as context:
-            str.format("{1}", 4)
-        self.assertIn("index out of range", str(context.exception))
+        self.assertRaisesRegex(
+            IndexError,
+            "index .*out of range",
+            str.format,
+            "{1}",
+            4,
+        )
 
     def test_format_not_existing_key_in_kwargs_raises_key_error(self):
         with self.assertRaises(KeyError) as context:
