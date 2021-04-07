@@ -37,6 +37,48 @@ TEST_F(ImportExtensionApiTest, AddExistingModuleReturnsModule) {
   Py_DECREF(pyname);
 }
 
+TEST_F(ImportExtensionApiTest, ExecCodeModulePopulatesModuleFromCAPI) {
+  PyObjectPtr code_object(
+      Py_CompileString("a = 21 + 21", "test_module.py", Py_file_input));
+  ASSERT_NE(code_object, nullptr);
+
+  PyObjectPtr module(PyImport_ExecCodeModule("test_module", code_object));
+  ASSERT_NE(module, nullptr);
+
+  PyObjectPtr a(PyObject_GetAttrString(module, "a"));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(isLongEqualsLong(a, 42));
+}
+
+TEST_F(ImportExtensionApiTest, ExecCodeModuleAddsModuleToModules) {
+  PyObjectPtr code(
+      Py_CompileString("a = 21 + 21", "test_module.py", Py_file_input));
+  ASSERT_NE(code, nullptr);
+
+  PyObjectPtr module(PyImport_ExecCodeModule("test_module", code));
+  ASSERT_NE(module, nullptr);
+
+  PyImport_ImportModule("test_module");
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyObjectPtr a(moduleGet("test_module", "a"));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(isLongEqualsLong(a, 42));
+}
+
+TEST_F(ImportExtensionApiTest, ExecCodeModuleWithInvalidCodeDoesNotAddModule) {
+  PyObjectPtr code(
+      Py_CompileString("b = nonexistent.foo", "test_module.py", Py_file_input));
+  ASSERT_NE(code, nullptr);
+
+  PyObjectPtr module(PyImport_ExecCodeModule("test_module", code));
+  ASSERT_EQ(module, nullptr);
+  PyErr_Clear();
+
+  PyImport_ImportModule("test_module");
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ModuleNotFoundError));
+}
+
 TEST_F(ImportExtensionApiTest,
        GetMagicNumberWithNonIntMagicNumberRaisesTypeError) {
   PyObjectPtr importlib(PyImport_ImportModule("_frozen_importlib_external"));

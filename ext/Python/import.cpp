@@ -119,9 +119,69 @@ PY_EXPORT PyObject* PyImport_AddModuleObject(PyObject* name) {
 
 PY_EXPORT void PyImport_Cleanup() { UNIMPLEMENTED("PyImport_Cleanup"); }
 
-PY_EXPORT PyObject* PyImport_ExecCodeModule(const char* /* e */,
-                                            PyObject* /* o */) {
-  UNIMPLEMENTED("PyImport_ExecCodeModule");
+PyObject* fixUpModule(PyObject* module_dict, PyObject* name) {
+  PyObject* importlib_external =
+      PyImport_ImportModule("_frozen_importlib_external");
+  if (importlib_external == nullptr) {
+    return nullptr;
+  }
+  PyObject* fix_up_module = PyUnicode_FromString("_fix_up_module");
+  if (fix_up_module == nullptr) {
+    Py_DECREF(importlib_external);
+    return nullptr;
+  }
+  PyObject* result = PyObject_CallMethodObjArgs(
+      importlib_external, fix_up_module, module_dict, name, name, nullptr);
+  PyErr_Print();
+  Py_DECREF(fix_up_module);
+  Py_DECREF(importlib_external);
+  return result;
+}
+
+void removeModule(const char* name) {
+  PyObject* modules_dict = PyImport_GetModuleDict();
+  Py_INCREF(modules_dict);
+  PyMapping_DelItemString(modules_dict, name);
+  Py_DECREF(modules_dict);
+}
+
+PY_EXPORT PyObject* PyImport_ExecCodeModule(const char* name, PyObject* code) {
+  PyObject* name_str = PyUnicode_FromString(name);
+  if (name_str == nullptr) {
+    return nullptr;
+  }
+  PyObject* module = PyImport_AddModuleObject(name_str);
+  Py_DECREF(name_str);
+  if (module == nullptr) {
+    return nullptr;
+  }
+  // PyImport_ExecCodeModule is supposed to return a new reference to the
+  // module.
+  Py_INCREF(module);
+  PyObject* module_dict = PyModule_GetDict(module);
+  if (module_dict == nullptr) {
+    Py_DECREF(module);
+    return nullptr;
+  }
+
+  PyObject* result = fixUpModule(module_dict, name_str);
+  if (result == nullptr) {
+    Py_DECREF(module);
+    PyErr_Clear();
+    removeModule(name);
+    return nullptr;
+  }
+
+  result = PyEval_EvalCode(code, /*globals=*/module_dict,
+                           /*locals=*/module_dict);
+  if (result == nullptr) {
+    Py_DECREF(module);
+    PyErr_Clear();
+    removeModule(name);
+    return nullptr;
+  }
+  Py_DECREF(result);
+  return module;
 }
 
 PY_EXPORT PyObject* PyImport_ExecCodeModuleEx(const char* /* e */,
