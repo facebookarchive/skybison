@@ -844,9 +844,7 @@ target_compile_options(
   -Wno-unused-result
   -Wsign-compare
   -Wstrict-prototypes
-  -DPy_BUILD_CORE
-  # TODO(T48643833): Remove this define to get _hashlib.scrypt.
-  -DOPENSSL_NO_SCRYPT)
+  -DPy_BUILD_CORE)
 if (CMAKE_C_COMPILER_ID MATCHES "GNU")
   target_compile_options(extension-modules PRIVATE -Wno-cast-function-type)
 endif()
