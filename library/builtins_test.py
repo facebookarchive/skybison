@@ -7091,13 +7091,6 @@ class InstanceTests(unittest.TestCase):
 
 
 class IsInstanceTests(unittest.TestCase):
-    @staticmethod
-    def get_isinstance_error_message():
-        if sys.implementation.name == "cpython" and sys.version_info < (3, 8):
-            return "isinstance() arg 2 must be a type or tuple of types"
-        else:
-            return "isinstance() arg 2 must be a type, a tuple of types or a union"
-
     def test_isinstance_with_same_types_returns_true(self):
         self.assertIs(isinstance(1, int), True)
 
@@ -7126,19 +7119,21 @@ class IsInstanceTests(unittest.TestCase):
         self.assertIs(isinstance(True, (int, "bad - not a type")), True)
 
     def test_isinstance_with_non_type_superclass_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            isinstance(4, "bad - not a type")
-        self.assertEqual(
-            str(context.exception),
-            self.get_isinstance_error_message(),
+        self.assertRaisesRegex(
+            TypeError,
+            r"isinstance\(\) arg 2 must be a type.* tuple of types",
+            isinstance,
+            4,
+            "bad - not a type",
         )
 
     def test_isinstance_with_non_type_in_tuple_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            isinstance(5, ("bad - not a type", int))
-        self.assertEqual(
-            str(context.exception),
-            self.get_isinstance_error_message(),
+        self.assertRaisesRegex(
+            TypeError,
+            r"isinstance\(\) arg 2 must be a type.* tuple of types",
+            isinstance,
+            5,
+            ("bad - not a type", int),
         )
 
     def test_isinstance_with_multiple_inheritance_returns_true(self):
@@ -7202,11 +7197,12 @@ class IsInstanceTests(unittest.TestCase):
         class A:
             __bases__ = 5
 
-        with self.assertRaises(TypeError) as context:
-            isinstance(5, A())
-        self.assertEqual(
-            str(context.exception),
-            self.get_isinstance_error_message(),
+        self.assertRaisesRegex(
+            TypeError,
+            r"isinstance\(\) arg 2 must be a type.* tuple of types",
+            isinstance,
+            5,
+            A(),
         )
 
     def test_isinstance_calls_custom_instancecheck_true(self):

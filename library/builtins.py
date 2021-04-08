@@ -1323,12 +1323,10 @@ class _descrclassmethod(metaclass=_non_heaptype):
 
 
 def _dunder_bases_tuple_check(obj, msg) -> None:
-    try:
-        is_tuple = hasattr(obj, "__bases__") and _tuple_check(obj.__bases__)
-        if not is_tuple and not isinstance(obj, Union):
-            raise TypeError(msg)
-    except AttributeError:
-        raise TypeError(msg)
+    bases = getattr(obj, "__bases__", None)
+    if _tuple_check(bases) or isinstance(obj, Union):
+        return
+    raise TypeError(msg)
 
 
 def _err_program_text(filename, lineno: int) -> str:
@@ -4668,7 +4666,7 @@ def isinstance(obj, type_or_tuple) -> bool:
     if _type_check(type_or_tuple):
         return _isinstance_type(obj, ty, type_or_tuple)
     _dunder_bases_tuple_check(
-        type_or_tuple, "isinstance() arg 2 must be a type, a tuple of types or a union"
+        type_or_tuple, "isinstance() arg 2 must be a type, a tuple of types, or a union"
     )
     subclass = getattr(obj, "__class__", None)
     return subclass and _issubclass_recursive(subclass, type_or_tuple)
