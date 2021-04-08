@@ -326,6 +326,7 @@ class Runtime {
   static bool isInternedStr(Thread* thread, const Object& str);
 
   void collectGarbage();
+  void immortalizeCurrentHeapObjects();
 
   // Creates a new thread and adds it to the runtime.
   Thread* newThread();

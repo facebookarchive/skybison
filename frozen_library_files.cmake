@@ -51,6 +51,7 @@ library/compiler/symbols.py
 library/compiler/unparse.py
 library/compiler/visitor.py
 library/faulthandler.py
+library/gc.py
 library/inspect.py
 library/itertools.py
 library/marshal.py

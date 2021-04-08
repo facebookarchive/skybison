@@ -8,4 +8,6 @@ class Runtime;
 
 RawObject scavenge(Runtime* runtime);
 
+void scavengeImmortalize(Runtime* runtime);
+
 }  // namespace py

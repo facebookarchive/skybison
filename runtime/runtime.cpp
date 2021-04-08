@@ -1774,6 +1774,12 @@ void Runtime::collectGarbage() {
   }
 }
 
+void Runtime::immortalizeCurrentHeapObjects() {
+  // Last chance to shrink before freezing
+  collectGarbage();
+  scavengeImmortalize(this);
+}
+
 Thread* Runtime::newThread() {
   Thread* thread = new Thread(Thread::kDefaultStackSize);
   thread->setRuntime(this);

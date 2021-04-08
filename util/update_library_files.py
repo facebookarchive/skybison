@@ -42,6 +42,7 @@ library/_weakref.py
 library/array.py
 library/builtins.py
 library/faulthandler.py
+library/gc.py
 library/inspect.py
 library/itertools.py
 library/marshal.py

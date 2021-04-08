@@ -73,6 +73,35 @@ TEST_F(HeapTest, AllocateBigLargeInt) {
   EXPECT_EQ(LargeInt::cast(*result).numDigits(), 100000);
 }
 
+TEST_F(HeapTest, MakeImmortalMovesMortalObjectsToImmortalSpace) {
+  Heap* heap = runtime_->heap();
+
+  uword address1;
+  bool result1 = heap->allocate(8, &address1);
+  ASSERT_TRUE(result1);
+  EXPECT_FALSE(heap->isImmortal(address1));
+  EXPECT_TRUE(heap->immortal() == nullptr);
+  EXPECT_TRUE(heap->contains(address1));
+
+  heap->makeImmortal();
+
+  EXPECT_TRUE(heap->isImmortal(address1));
+  EXPECT_FALSE(heap->immortal() == nullptr);
+  EXPECT_TRUE(heap->contains(address1));
+}
+
+TEST_F(HeapTest, AllocateImmortalPlacesObjectInImmortalSpace) {
+  Heap* heap = runtime_->heap();
+
+  ASSERT_TRUE(heap->immortal() == nullptr);
+  uword address1;
+  bool result1 = heap->allocateImmortal(8, &address1);
+  ASSERT_TRUE(result1);
+  EXPECT_TRUE(heap->contains(address1));
+  EXPECT_FALSE(heap->immortal() == nullptr);
+  EXPECT_TRUE(heap->isImmortal(address1));
+}
+
 TEST_F(HeapTest, AllocateBigInstance) {
   HandleScope scope(thread_);
   Layout layout(&scope, testing::layoutCreateEmpty(thread_));

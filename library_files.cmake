@@ -105,6 +105,7 @@ faulthandler_test.py
 fcntl_test.py
 fork_test.py
 gc.py
+gc_test.py
 grp_test.py
 hashlib_test.py
 imp_test.py

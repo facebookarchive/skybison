@@ -484,6 +484,7 @@ add_library(
   runtime/frame.cpp
   runtime/frame.h
   runtime/function-builtins.cpp
+  runtime/gc-module.cpp
   runtime/generator-builtins.cpp
   runtime/globals.h
   runtime/handles.cpp

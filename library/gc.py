@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from _builtins import _unimplemented
+from _builtins import _builtin, _unimplemented
 
 
 def disable():
@@ -9,6 +9,14 @@ def disable():
 
 def enable():
     _unimplemented()
+
+
+def immortalize_heap():
+    _builtin()
+
+
+def _is_immortal(obj):
+    _builtin()
 
 
 def isenabled():

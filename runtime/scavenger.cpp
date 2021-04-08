@@ -1,6 +1,7 @@
 #include "scavenger.h"
 
 #include <cstring>
+#include <memory>
 
 #include "capi.h"
 #include "runtime.h"
@@ -22,6 +23,8 @@ class Scavenger : public PointerVisitor {
 
   bool hasWhiteReferent(RawObject reference);
 
+  void processImmortalRoots(Space*);
+
   void processDelayedReferences();
 
   void processFinalizableReferences();
@@ -35,8 +38,9 @@ class Scavenger : public PointerVisitor {
   void compactLayoutTypeTransitions();
 
   Runtime* runtime_;
+  Heap* heap_;
   Space* from_;
-  Space* to_;
+  std::unique_ptr<Space> to_;
   uword scan_;
   RawMutableTuple layouts_;
   RawMutableTuple layout_type_transitions_;
@@ -46,7 +50,8 @@ class Scavenger : public PointerVisitor {
 
 Scavenger::Scavenger(Runtime* runtime)
     : runtime_(runtime),
-      from_(runtime->heap()->space()),
+      heap_(runtime->heap()),
+      from_(heap_->space()),
       to_(nullptr),
       layouts_(MutableTuple::cast(runtime->layouts())),
       layout_type_transitions_(
@@ -55,11 +60,14 @@ Scavenger::Scavenger(Runtime* runtime)
       delayed_callbacks_(NoneType::object()) {}
 
 RawObject Scavenger::scavenge() {
-  DCHECK(runtime_->heap()->verify(), "Heap failed to verify before GC");
-  to_ = new Space(from_->size());
+  DCHECK(heap_->verify(), "Heap failed to verify before GC");
+  to_.reset(new Space(from_->size()));
   scan_ = to_->start();
   // Nothing should be allocating during a GC.
-  runtime_->heap()->setSpace(nullptr);
+  heap_->setSpace(nullptr);
+  if (Space* immortal = heap_->immortal()) {
+    processImmortalRoots(immortal);
+  }
   processRoots();
   processGrayObjects();
   capiHandlesClearNotReferenced(runtime_);
@@ -67,8 +75,8 @@ RawObject Scavenger::scavenge() {
   processGrayObjects();
   processDelayedReferences();
   processLayouts();
-  runtime_->heap()->setSpace(to_);
-  DCHECK(runtime_->heap()->verify(), "Heap failed to verify after GC");
+  heap_->setSpace(to_.release());
+  DCHECK(heap_->verify(), "Heap failed to verify after GC");
   delete from_;
   return delayed_callbacks_;
 }
@@ -84,14 +92,36 @@ void Scavenger::scavengePointer(RawObject* pointer) {
   RawHeapObject object = HeapObject::cast(*pointer);
   if (!from_->contains(object.address())) {
     DCHECK(object.header().isHeader(), "object must have a header");
-    DCHECK(to_->contains(object.address()),
-           "object must be in 'from' or 'to' space");
+    DCHECK(
+        to_->contains(object.address()) || heap_->isImmortal(object.address()),
+        "object must be in 'from' or 'to' or 'immortal'space");
   } else if (object.isForwarding()) {
     DCHECK(to_->contains(HeapObject::cast(object.forward()).address()),
            "transported object must be located in 'to' space");
     *pointer = object.forward();
   } else {
     *pointer = transport(object);
+  }
+}
+
+void Scavenger::processImmortalRoots(Space* immortal) {
+  uword scan = immortal->start();
+  while (scan < immortal->fill()) {
+    if (!(*reinterpret_cast<RawObject*>(scan)).isHeader()) {
+      // Skip immediate values for alignment padding or header overflow.
+      scan += kPointerSize;
+    } else {
+      RawHeapObject object = HeapObject::fromAddress(scan + RawHeader::kSize);
+      uword end = object.baseAddress() + object.size();
+      if (!object.isRoot()) {
+        scan = end;
+      } else {
+        for (scan += RawHeader::kSize; scan < end; scan += kPointerSize) {
+          auto pointer = reinterpret_cast<RawObject*>(scan);
+          scavengePointer(pointer);
+        }
+      }
+    }
   }
 }
 
@@ -144,6 +174,7 @@ void Scavenger::processLayouts() {
     if (layout == SmallInt::fromWord(0)) continue;
     RawHeapObject heap_obj = HeapObject::cast(layout);
     if (to_->contains(heap_obj.address())) continue;
+    if (heap_->isImmortal(heap_obj.address())) continue;
 
     if (heap_obj.isForwarding()) {
       DCHECK(heap_obj.forward().isLayout(), "Bad Layout forwarded value");
@@ -295,6 +326,9 @@ void Scavenger::processFinalizableReferences() {
 
 RawObject Scavenger::transport(RawObject old_object) {
   RawHeapObject from_object = HeapObject::cast(old_object);
+  if (heap_->isImmortal(from_object.address())) {
+    return old_object;
+  }
   DCHECK(from_->contains(from_object.address()),
          "objects must be transported from 'from' space");
   DCHECK(from_object.header().isHeader(),
@@ -318,5 +352,11 @@ RawObject Scavenger::transport(RawObject old_object) {
 }
 
 RawObject scavenge(Runtime* runtime) { return Scavenger(runtime).scavenge(); }
+
+void scavengeImmortalize(Runtime* runtime) {
+  Heap* heap = runtime->heap();
+  heap->makeImmortal();
+  DCHECK(heap->verify(), "Heap OK");
+}
 
 }  // namespace py
