@@ -161,8 +161,11 @@ PY_EXPORT PyObject* PyCode_GetFreevars_Func(PyObject* code) {
 static RawObject constantKey(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  if (obj.isNoneType() || obj.isEllipsis() || obj.isInt() || obj.isBool() ||
-      obj.isBytes() || obj.isStr() || obj.isCode()) {
+  if (obj.isNoneType() || obj.isEllipsis() || obj.isSmallInt() ||
+      obj.isLargeInt() || obj.isStr() || obj.isCode()) {
+    return *obj;
+  }
+  if (obj.isBool() || obj.isBytes()) {
     Object type(&scope, runtime->typeOf(*obj));
     return runtime->newTupleWith2(type, obj);
   }

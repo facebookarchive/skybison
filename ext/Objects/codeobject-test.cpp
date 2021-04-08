@@ -9,36 +9,24 @@ namespace testing {
 
 using CodeExtensionApiTest = ExtensionApi;
 
-TEST_F(CodeExtensionApiTest, ConstantKeyWithNoneReturnsTwoTuple) {
+// TODO(T84156637): remove Pyro-only filter after 3.8 update
+TEST_F(CodeExtensionApiTest, ConstantKeyWithNoneReturnsNoneSelfPyro) {
   PyObjectPtr none(borrow(Py_None));
   PyObjectPtr result(_PyCode_ConstantKey(none));
-  ASSERT_NE(result, nullptr);
-  ASSERT_TRUE(PyTuple_Check(result));
-  ASSERT_EQ(PyTuple_Size(result), 2);
-  EXPECT_EQ(PyTuple_GetItem(result, 0),
-            reinterpret_cast<PyObject*>(Py_TYPE(none)));
-  EXPECT_EQ(PyTuple_GetItem(result, 1), none);
+  EXPECT_EQ(result, none);
 }
 
-TEST_F(CodeExtensionApiTest, ConstantKeyWithEllipsisReturnsTwoTuple) {
+// TODO(T84156637): remove Pyro-only filter after 3.8 update
+TEST_F(CodeExtensionApiTest, ConstantKeyWithEllipsisReturnsSelfPyro) {
   PyObjectPtr result(_PyCode_ConstantKey(Py_Ellipsis));
-  ASSERT_NE(result, nullptr);
-  ASSERT_TRUE(PyTuple_Check(result));
-  ASSERT_EQ(PyTuple_Size(result), 2);
-  EXPECT_EQ(PyTuple_GetItem(result, 0),
-            reinterpret_cast<PyObject*>(Py_TYPE(Py_Ellipsis)));
-  EXPECT_EQ(PyTuple_GetItem(result, 1), Py_Ellipsis);
+  EXPECT_EQ(result, Py_Ellipsis);
 }
 
-TEST_F(CodeExtensionApiTest, ConstantKeyWithIntReturnsTwoTuple) {
+// TODO(T84156637): remove Pyro-only filter after 3.8 update
+TEST_F(CodeExtensionApiTest, ConstantKeyWithIntReturnsSelfPyro) {
   PyObjectPtr obj(PyLong_FromLong(5));
   PyObjectPtr result(_PyCode_ConstantKey(obj));
-  ASSERT_NE(result, nullptr);
-  ASSERT_TRUE(PyTuple_Check(result));
-  ASSERT_EQ(PyTuple_Size(result), 2);
-  EXPECT_EQ(PyTuple_GetItem(result, 0),
-            reinterpret_cast<PyObject*>(Py_TYPE(obj)));
-  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+  EXPECT_EQ(result, obj);
 }
 
 TEST_F(CodeExtensionApiTest, ConstantKeyWithTrueReturnsTwoTuple) {
@@ -47,7 +35,7 @@ TEST_F(CodeExtensionApiTest, ConstantKeyWithTrueReturnsTwoTuple) {
   ASSERT_TRUE(PyTuple_Check(result));
   ASSERT_EQ(PyTuple_Size(result), 2);
   EXPECT_EQ(PyTuple_GetItem(result, 0),
-            reinterpret_cast<PyObject*>(Py_TYPE(Py_True)));
+            reinterpret_cast<PyObject*>(&PyBool_Type));
   EXPECT_EQ(PyTuple_GetItem(result, 1), Py_True);
 }
 
@@ -72,18 +60,15 @@ TEST_F(CodeExtensionApiTest, ConstantKeyWithBytesReturnsTwoTuple) {
   EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
 }
 
-TEST_F(CodeExtensionApiTest, ConstantKeyWithStrReturnsTwoTuple) {
+// TODO(T84156637): remove Pyro-only filter after 3.8 update
+TEST_F(CodeExtensionApiTest, ConstantKeyWithStrReturnsSelfPyro) {
   PyObjectPtr obj(PyUnicode_FromString("hello"));
   PyObjectPtr result(_PyCode_ConstantKey(obj));
-  ASSERT_NE(result, nullptr);
-  ASSERT_TRUE(PyTuple_Check(result));
-  ASSERT_EQ(PyTuple_Size(result), 2);
-  EXPECT_EQ(PyTuple_GetItem(result, 0),
-            reinterpret_cast<PyObject*>(Py_TYPE(obj)));
-  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+  EXPECT_EQ(result, obj);
 }
 
-TEST_F(CodeExtensionApiTest, ConstantKeyWithCodeReturnsTwoTuple) {
+// TODO(T84156637): remove Pyro-only filter after 3.8 update
+TEST_F(CodeExtensionApiTest, ConstantKeyWithCodeReturnsSelfPyro) {
   PyObjectPtr empty_tuple(PyTuple_New(0));
   PyObjectPtr empty_bytes(PyBytes_FromString(""));
   PyObjectPtr empty_str(PyUnicode_FromString(""));
@@ -91,12 +76,7 @@ TEST_F(CodeExtensionApiTest, ConstantKeyWithCodeReturnsTwoTuple) {
       0, 0, 0, 0, 0, empty_bytes, empty_tuple, empty_tuple, empty_tuple,
       empty_tuple, empty_tuple, empty_str, empty_str, 0, empty_bytes)));
   PyObjectPtr result(_PyCode_ConstantKey(obj));
-  ASSERT_NE(result, nullptr);
-  ASSERT_TRUE(PyTuple_Check(result));
-  ASSERT_EQ(PyTuple_Size(result), 2);
-  EXPECT_EQ(PyTuple_GetItem(result, 0),
-            reinterpret_cast<PyObject*>(Py_TYPE(obj)));
-  EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
+  EXPECT_EQ(result, obj);
 }
 
 TEST_F(CodeExtensionApiTest, ConstantKeyWithFloatReturnsTwoTuple) {
@@ -174,7 +154,8 @@ TEST_F(CodeExtensionApiTest,
   EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
 }
 
-TEST_F(CodeExtensionApiTest, ConstantKeyWithTupleReturnsTwoTuple) {
+// TODO(T84156637): remove Pyro-only filter after 3.8 update
+TEST_F(CodeExtensionApiTest, ConstantKeyWithTupleReturnsTwoTuplePyro) {
   PyObjectPtr val0(PyLong_FromLong(0));
   Py_INCREF(val0);
   PyObjectPtr val1(PyLong_FromLong(1));
@@ -192,9 +173,9 @@ TEST_F(CodeExtensionApiTest, ConstantKeyWithTupleReturnsTwoTuple) {
   EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
   PyObjectPtr new_tuple(borrow(PyTuple_GetItem(result, 0)));
   EXPECT_EQ(PyTuple_Size(new_tuple), PyTuple_Size(obj));
-  EXPECT_TRUE(PyTuple_Check(PyTuple_GetItem(new_tuple, 0)));
-  EXPECT_TRUE(PyTuple_Check(PyTuple_GetItem(new_tuple, 1)));
-  EXPECT_TRUE(PyTuple_Check(PyTuple_GetItem(new_tuple, 2)));
+  EXPECT_EQ(PyTuple_GetItem(new_tuple, 0), val0);
+  EXPECT_EQ(PyTuple_GetItem(new_tuple, 1), val1);
+  EXPECT_EQ(PyTuple_GetItem(new_tuple, 2), val2);
 }
 
 TEST_F(CodeExtensionApiTest, ConstantKeyWithEmptyTupleReturnsTwoTuple) {
