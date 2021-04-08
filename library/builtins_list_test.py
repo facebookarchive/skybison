@@ -4,8 +4,16 @@ import unittest
 
 class ListTests(unittest.TestCase):
     def test_dunder_add_with_non_list_raises_type_error(self):
-        self.assertRaises(TypeError, list.__add__, (), [])
-        self.assertRaises(TypeError, list.__add__, [], ())
+        self.assertRaisesRegex(
+            TypeError,
+            "'__add__' .* 'list' object.* a 'tuple'",
+            list.__add__,
+            (),
+            [],
+        )
+        self.assertRaisesRegex(
+            TypeError, "can only concatenate list", list.__add__, [], ()
+        )
 
     def test_dunder_add_with_empty_lists_returns_new_empty_list(self):
         orig = []
@@ -22,11 +30,12 @@ class ListTests(unittest.TestCase):
         self.assertEqual(orig, [1, 2, 3])
 
     def test_dunder_eq_with_non_list_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            list.__eq__(False, [])
-        self.assertIn(
-            "'__eq__' requires a 'list' object but received a 'bool'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__eq__' .* 'list' object.* a 'bool'",
+            list.__eq__,
+            False,
+            [],
         )
 
     def test_dunder_eq_propagates_error(self):
@@ -59,8 +68,13 @@ class ListTests(unittest.TestCase):
         self.assertEqual(orig, [1, 2, 3, "a", "b", "c", 4, 5])
 
     def test_dunder_imul_with_non_list_raises_type_error(self):
-        with self.assertRaisesRegex(TypeError, "'__imul__' requires a 'list' object"):
-            list.__imul__(False, 3)
+        self.assertRaisesRegex(
+            TypeError,
+            "'__imul__' .* 'list' object.* a 'bool'",
+            list.__imul__,
+            False,
+            3,
+        )
 
     def test_dunder_imul_with_non_int_raises_type_error(self):
         result = []
@@ -268,11 +282,24 @@ class ListTests(unittest.TestCase):
             "attempt to assign sequence of size 4 to extended slice of size 3",
         )
 
+    def test_append_with_non_list_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError, "'append' .* 'list' object.* a 'NoneType'", list.append, None, 42
+        )
+
     def test_dunder_setitem_slice_with_non_iterable_raises_type_error(self):
         orig = []
         with self.assertRaises(TypeError) as context:
             orig[:] = 1
         self.assertEqual(str(context.exception), "can only assign an iterable")
+
+    def test_clear_with_non_list_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'clear' .* 'list' object.* a 'tuple'",
+            list.clear,
+            (),
+        )
 
     def test_clear_with_empty_list_does_nothing(self):
         ls = []
@@ -280,19 +307,20 @@ class ListTests(unittest.TestCase):
         self.assertEqual(len(ls), 0)
 
     def test_copy_with_non_list_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            list.copy(None)
-        self.assertIn(
-            "'copy' requires a 'list' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'copy' .* 'list' object.* a 'NoneType'",
+            list.copy,
+            None,
         )
 
     def test_count_with_non_list_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            list.count(None, 1)
-        self.assertIn(
-            "'count' requires a 'list' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'count' .* 'list' object.* a 'NoneType'",
+            list.count,
+            None,
+            1,
         )
 
     def test_count_with_item_returns_int_count(self):
@@ -618,11 +646,12 @@ class ListTests(unittest.TestCase):
         self.assertFalse(list.__gt__(a, a))
 
     def test_gt_with_non_list_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            list.__gt__(False, [])
-        self.assertIn(
-            "'__gt__' requires a 'list' object but received a 'bool'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__gt__' .* 'list' object.* a 'bool'",
+            list.__gt__,
+            False,
+            [],
         )
 
     def test_gt_with_shorter_lhs_but_bigger_elem_returns_true(self):
@@ -651,11 +680,12 @@ class ListTests(unittest.TestCase):
         self.assertFalse(list.__gt__(a, b))
 
     def test_index_with_non_list_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            list.index(1, 2)
-        self.assertIn(
-            "'index' requires a 'list' object but received a 'int'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'index' .* 'list' object.* a 'int'",
+            list.index,
+            1,
+            2,
         )
 
     def test_index_with_none_start_raises_type_error(self):
@@ -704,6 +734,16 @@ class ListTests(unittest.TestCase):
         self.assertEqual(a_list.index(a), 0)
         self.assertEqual(a_list.index(n, 1), 1)
         self.assertEqual(n_list.index(n, 2, 3), 2)
+
+    def test_insert_with_non_list_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'insert' .* 'list' object.* a 'tuple'",
+            list.insert,
+            (),
+            1,
+            None,
+        )
 
     def test_ge_with_elem_ge_and_same_size_returns_true(self):
         class SubSet(set):
@@ -782,11 +822,12 @@ class ListTests(unittest.TestCase):
         self.assertFalse(list.__ge__(a, b))
 
     def test_ge_with_non_list_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            list.__ge__(False, [])
-        self.assertIn(
-            "'__ge__' requires a 'list' object but received a 'bool'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__ge__' .* 'list' object.* a 'bool'",
+            list.__ge__,
+            False,
+            [],
         )
 
     def test_le_with_elem_le_and_same_size_returns_true(self):
@@ -866,11 +907,12 @@ class ListTests(unittest.TestCase):
         self.assertTrue(list.__le__(a, b))
 
     def test_le_with_non_list_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            list.__le__(False, [])
-        self.assertIn(
-            "'__le__' requires a 'list' object but received a 'bool'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__le__' .* 'list' object.* a 'bool'",
+            list.__le__,
+            False,
+            [],
         )
 
     def test_le_with_smaller_list_returns_true(self):
@@ -955,11 +997,12 @@ class ListTests(unittest.TestCase):
         self.assertTrue(list.__lt__(a, b))
 
     def test_lt_with_non_list_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            list.__lt__(False, [])
-        self.assertIn(
-            "'__lt__' requires a 'list' object but received a 'bool'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__lt__' .* 'list' object.* a 'bool'",
+            list.__lt__,
+            False,
+            [],
         )
 
     def test_lt_with_smaller_list_returns_true(self):
@@ -1040,11 +1083,11 @@ class ListTests(unittest.TestCase):
         self.assertEqual(ls, reversed_ls)
 
     def test_sort_with_non_list_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            list.sort(None)
-        self.assertIn(
-            "'sort' requires a 'list' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'sort' .* 'list' object.* a 'NoneType'",
+            list.sort,
+            None,
         )
 
     def test_sort_with_small_integers(self):

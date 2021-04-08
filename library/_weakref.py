@@ -6,6 +6,7 @@ from builtins import _index
 from _builtins import (
     _builtin,
     _property,
+    _type,
     _unimplemented,
     _weakref_callback,
     _weakref_check,
@@ -242,8 +243,8 @@ class weakcallableproxy(bootstrap=True):
     def __setattr__(self, name, value):
         if not _proxy_check(self):
             raise TypeError(
-                "descriptor '__setattr__' requires a 'weakproxy' object but received a "
-                "{type(self).__name__}"
+                "'__setattr__' for 'weakproxy' objects doesn't apply to a "
+                f"'{_type(self).__name__}' object"
             )
         return setattr(_proxy_unwrap(self), name, value)
 
@@ -378,8 +379,8 @@ class weakproxy(bootstrap=True):
     def __setattr__(self, name, value):
         if not _proxy_check(self):
             raise TypeError(
-                "descriptor '__setattr__' requires a 'weakproxy' object but received a "
-                "{type(self).__name__}"
+                "'__setattr__' for 'weakproxy' objects doesn't apply to a "
+                f"'{_type(self).__name__}' object"
             )
         return setattr(_proxy_unwrap(self), name, value)
 

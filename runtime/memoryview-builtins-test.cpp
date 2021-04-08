@@ -75,16 +75,6 @@ TEST_F(MemoryViewBuiltinsTest, CastWithNonStrFormatRaisesTypeError) {
                             "format argument must be a string"));
 }
 
-TEST_F(MemoryViewBuiltinsTest, CastWithNonMemoryViewRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object none(&scope, NoneType::object());
-  Str new_format(&scope, runtime_->newStrFromCStr("I"));
-  Object result(&scope, runBuiltin(METH(memoryview, cast), none, new_format));
-  EXPECT_TRUE(raisedWithStr(*result, LayoutId::kTypeError,
-                            "'<anonymous>' requires a 'memoryview' object but "
-                            "received a 'NoneType'"));
-}
-
 TEST_F(MemoryViewBuiltinsTest, SetitemWithFormatbSetsInt) {
   HandleScope scope(thread_);
   const byte bytes[] = {0xab};

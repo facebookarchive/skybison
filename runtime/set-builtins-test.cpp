@@ -783,69 +783,6 @@ TEST_F(SetBuiltinsTest, DunderLtWithNonSetSecondArgReturnsNotImplemented) {
   ASSERT_EQ(*result, NotImplementedType::object());
 }
 
-TEST_F(SetBuiltinsTest, DunderEqWithNonSetFirstArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, R"(
-set.__eq__(None, set())
-)"),
-      LayoutId::kTypeError,
-      "'__eq__' requires a 'set' object but received a 'NoneType'"));
-}
-
-TEST_F(SetBuiltinsTest, DunderNeWithNonSetFirstArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, R"(
-set.__ne__(None, set())
-)"),
-      LayoutId::kTypeError,
-      "'__ne__' requires a 'set' object but received a 'NoneType'"));
-}
-
-TEST_F(SetBuiltinsTest, DunderGeWithNonSetFirstArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, R"(
-set.__ge__(None, set())
-)"),
-      LayoutId::kTypeError,
-      "'__ge__' requires a 'set' object but received a 'NoneType'"));
-}
-
-TEST_F(SetBuiltinsTest, DunderGtWithNonSetFirstArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, R"(
-set.__gt__(None, set())
-)"),
-      LayoutId::kTypeError,
-      "'__gt__' requires a 'set' object but received a 'NoneType'"));
-}
-
-TEST_F(SetBuiltinsTest, DunderLeWithNonSetFirstArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, R"(
-set.__le__(None, set())
-)"),
-      LayoutId::kTypeError,
-      "'__le__' requires a 'set' object but received a 'NoneType'"));
-}
-
-TEST_F(SetBuiltinsTest, DunderLtWithNonSetFirstArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, R"(
-set.__lt__(None, set())
-)"),
-      LayoutId::kTypeError,
-      "'__lt__' requires a 'set' object but received a 'NoneType'"));
-}
-
-TEST_F(SetBuiltinsTest, DunderInitWithNonSetFirstArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, R"(
-set.__init__([])
-)"),
-      LayoutId::kTypeError,
-      "'__init__' requires a 'set' object but received a 'list'"));
-}
-
 TEST_F(SetBuiltinsTest, DunderInitWithNonIterableRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, R"(
 set.__init__(set(), None)
@@ -1130,14 +1067,6 @@ result = s.__repr__()
   EXPECT_TRUE(isStrEqualsCStr(mainModuleAt(runtime_, "result"), "{set(...)}"));
 }
 
-TEST_F(SetBuiltinsTest, CopyWithNonSetRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object not_a_set(&scope, NoneType::object());
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(METH(set, copy), not_a_set), LayoutId::kTypeError,
-      "'<anonymous>' requires a 'set' object but received a 'NoneType'"));
-}
-
 TEST_F(SetBuiltinsTest, CopyReturnsNewObject) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -1145,15 +1074,6 @@ TEST_F(SetBuiltinsTest, CopyReturnsNewObject) {
   Object result(&scope, runBuiltin(METH(set, copy), set));
   EXPECT_NE(*set, *result);
   EXPECT_TRUE(result.isSet());
-}
-
-TEST_F(SetBuiltinsTest, CopyFrozenSetRaisesTypeError) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  FrozenSet set(&scope, runtime_->newFrozenSet());
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(METH(set, copy), set), LayoutId::kTypeError,
-      "'<anonymous>' requires a 'set' object but received a 'frozenset'"));
 }
 
 TEST_F(SetBuiltinsTest, CopyReturnsShallowCopy) {
@@ -1172,23 +1092,6 @@ TEST_F(SetBuiltinsTest, CopyReturnsShallowCopy) {
     }
   }
   EXPECT_TRUE(has_object);
-}
-
-TEST_F(FrozenSetBuiltinsTest, CopyWithNonFrozenSetRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object not_a_set(&scope, NoneType::object());
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(METH(frozenset, copy), not_a_set), LayoutId::kTypeError,
-      "'<anonymous>' requires a 'frozenset' object but received a 'NoneType'"));
-}
-
-TEST_F(FrozenSetBuiltinsTest, CopySetRaisesTypeError) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Set set(&scope, runtime_->newSet());
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(METH(frozenset, copy), set), LayoutId::kTypeError,
-      "'<anonymous>' requires a 'frozenset' object but received a 'set'"));
 }
 
 TEST_F(FrozenSetBuiltinsTest, CopyFrozenSetReturnsSameObject) {
@@ -1244,15 +1147,6 @@ TEST_F(SetBuiltinsTest, UpdateWithNoArgsDoesNothing) {
   Object result(&scope, runBuiltin(METH(set, update), set, starargs));
   EXPECT_TRUE(result.isNoneType());
   EXPECT_EQ(set.numItems(), 0);
-}
-
-TEST_F(SetBuiltinsTest, UpdateWithNonSetRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, R"(
-set.update(None)
-)"),
-      LayoutId::kTypeError,
-      "'update' requires a 'set' object but received a 'NoneType'"));
 }
 
 TEST_F(SetBuiltinsTest, UpdateWithNonIterableRaisesTypeError) {

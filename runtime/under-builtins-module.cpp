@@ -43,9 +43,10 @@ static RawObject raiseRequiresFromCaller(Thread* thread, Arguments args,
                     thread->currentFrame()->previousFrame()->function());
   Str function_name(&scope, function.name());
   Object obj(&scope, args.get(0));
-  return thread->raiseWithFmt(LayoutId::kTypeError,
-                              "'%S' requires a '%Y' object but received a '%T'",
-                              &function_name, expected_type, &obj);
+  return thread->raiseWithFmt(
+      LayoutId::kTypeError,
+      "'%S' for '%Y' objects doesn't apply to a '%T' object", &function_name,
+      expected_type, &obj);
 }
 
 bool FUNC(_builtins, _bool_check_intrinsic)(Thread* thread) {
@@ -3294,7 +3295,9 @@ RawObject FUNC(_builtins, _list_append)(Thread* thread, Arguments args) {
   Object self(&scope, args.get(0));
   Runtime* runtime = thread->runtime();
   if (!runtime->isInstanceOfList(*self)) {
-    return thread->raiseRequiresType(self, ID(list));
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "'append' for 'list' objects doesn't apply to a '%T' object", &self);
   }
   List list(&scope, *self);
   Object value(&scope, args.get(1));
@@ -3672,7 +3675,7 @@ RawObject FUNC(_builtins, _memoryview_getitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
-    return thread->raiseRequiresType(self_obj, ID(memoryview));
+    return raiseRequiresFromCaller(thread, args, ID(memoryview));
   }
   MemoryView self(&scope, *self_obj);
 
@@ -3778,7 +3781,7 @@ RawObject FUNC(_builtins, _memoryview_setitem)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isMemoryView()) {
-    return thread->raiseRequiresType(self_obj, ID(memoryview));
+    return raiseRequiresFromCaller(thread, args, ID(memoryview));
   }
   MemoryView self(&scope, *self_obj);
   if (self.readOnly()) {
@@ -5741,7 +5744,7 @@ RawObject FUNC(_builtins, _type_dunder_call)(Thread* thread, Arguments args) {
   if (!runtime->isInstanceOfType(*self_obj)) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
-        "'__call__' requires a '%Y' object but received a '%T'", ID(type),
+        "'__call__' for '%Y' objects doesn't apply to a '%T' object", ID(type),
         &self_obj);
   }
   Type self(&scope, *self_obj);

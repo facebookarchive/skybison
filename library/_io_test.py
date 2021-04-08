@@ -3346,10 +3346,11 @@ class StringIOTests(unittest.TestCase):
         self.assertRegex(str(context.exception), "I/O operation on closed file")
 
     def test_getvalue_with_non_stringio_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            _io.StringIO.getvalue(1)
-        self.assertRegex(
-            str(context.exception), r"'getvalue' requires a '(_io\.)?StringIO' object"
+        self.assertRaisesRegex(
+            TypeError,
+            r"'getvalue' .* '(_io\.)?StringIO' object.* a 'int'",
+            _io.StringIO.getvalue,
+            1,
         )
 
     def test_getvalue_with_open_returns_copy_of_value(self):
@@ -3395,10 +3396,11 @@ class StringIOTests(unittest.TestCase):
         self.assertRegex(str(context.exception), "I/O operation on closed file")
 
     def test_next_with_non_stringio_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            _io.StringIO.__next__(1)
-        self.assertRegex(
-            str(context.exception), r"'__next__' requires a '(_io\.)?StringIO' object"
+        self.assertRaisesRegex(
+            TypeError,
+            r"'__next__' .* '(_io\.)?StringIO' object.* a 'int'",
+            _io.StringIO.__next__,
+            1,
         )
 
     def test_next_with_open_reads_line(self):

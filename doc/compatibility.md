@@ -23,7 +23,7 @@ Built-in Types
 >>> class A:
 ...   locals()[500] = 1
 ...
-TypeError: '_type_init' requires a 'str' object but got 'int'
+TypeError: '_type_init' for 'str' objects doesn't apply to a 'int' object
 ```
 
 - Object attributes must only have `str` names that do not override `__eq__` or

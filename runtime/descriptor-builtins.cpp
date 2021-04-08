@@ -108,7 +108,7 @@ static RawObject slotDescriptorRaiseTypeError(
   Str slot_descriptor_type_name(&scope, slot_descriptor_type.name());
   return thread->raiseWithFmt(LayoutId::kTypeError,
                               "descriptor '%S' for '%S' objects "
-                              "doesn't apply to '%T' object",
+                              "doesn't apply to a '%T' object",
                               &slot_descriptor_name, &slot_descriptor_type_name,
                               &instance_obj);
 }

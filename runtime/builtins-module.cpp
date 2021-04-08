@@ -809,9 +809,7 @@ RawObject METH(method, __eq__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isBoundMethod()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "'__eq__' requires a 'method' object but received a '%T'", &self_obj);
+    return thread->raiseRequiresType(self_obj, ID(method));
   }
   Object other_obj(&scope, args.get(1));
   if (!other_obj.isBoundMethod()) {

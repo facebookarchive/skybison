@@ -534,12 +534,6 @@ TEST_F(BytesBuiltinsTest, DunderGetitemWithTooManyArgsRaisesTypeError) {
                     "arguments but 3 given"));
 }
 
-TEST_F(BytesBuiltinsTest, DunderGetitemWithNonBytesSelfRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytes.__getitem__(0, 1)"), LayoutId::kTypeError,
-      "'__getitem__' requires a 'bytes' object but received a 'int'"));
-}
-
 TEST_F(BytesBuiltinsTest, DunderGetitemWithLargeIntRaisesIndexError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, "b''[2**64]"),
                             LayoutId::kIndexError,
@@ -960,12 +954,6 @@ TEST_F(BytesBuiltinsTest, DunderLtWithLexicographicallyLaterOtherReturnsTrue) {
   EXPECT_TRUE(Bool::cast(*lt).value());
 }
 
-TEST_F(BytesBuiltinsTest, DunderMulWithNonBytesRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytes.__mul__(0, 1)"), LayoutId::kTypeError,
-      "'__mul__' requires a 'bytes' object but received a 'int'"));
-}
-
 TEST_F(BytesBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
   HandleScope scope(thread_);
   Object self(&scope, Bytes::empty());
@@ -1328,13 +1316,6 @@ result = bytes(Foo())
   EXPECT_TRUE(isBytesEqualsBytes(result, expected));
 }
 
-TEST_F(BytesBuiltinsTest, DunderReprWithNonBytesRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytes.__repr__(bytearray())"),
-      LayoutId::kTypeError,
-      "'__repr__' requires a 'bytes' object but received a 'bytearray'"));
-}
-
 TEST_F(BytesBuiltinsTest, DunderReprWithEmptyBytesReturnsEmptyRepr) {
   HandleScope scope(thread_);
   Object self(&scope, Bytes::empty());
@@ -1453,12 +1434,6 @@ TEST_F(BytesBuiltinsTest, JoinWithMemoryviewReturnsBytes) {
   Bytes result(&scope,
                bytesJoin(thread_, sep, sep.length(), src, src.length()));
   EXPECT_TRUE(isBytesEqualsCStr(result, "hello,world"));
-}
-
-TEST_F(BytesBuiltinsTest, HexWithNonBytesRaisesTypeError) {
-  EXPECT_TRUE(
-      raisedWithStr(runFromCStr(runtime_, "bytes.hex(1)"), LayoutId::kTypeError,
-                    "'hex' requires a 'bytes' object but received a 'int'"));
 }
 
 TEST_F(BytesBuiltinsTest, HexWithEmptyBytesReturnsEmptyString) {
@@ -1743,13 +1718,6 @@ TEST_F(BytesBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
   EXPECT_EQ(actual.byteAt('a'), '1');
   EXPECT_EQ(actual.byteAt('b'), '2');
   EXPECT_EQ(actual.byteAt('c'), '3');
-}
-
-TEST_F(BytesBuiltinsTest, TranslateWithNonBytesSelfRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytes.translate(bytearray(), None)"),
-      LayoutId::kTypeError,
-      "'translate' requires a 'bytes' object but received a 'bytearray'"));
 }
 
 TEST_F(BytesBuiltinsTest, TranslateWithNonBytesLikeTableRaisesTypeError) {

@@ -423,11 +423,12 @@ class DictItemsTests(unittest.TestCase):
         self.assertEqual(d & a, c)
 
     def test_dunder_and_with_non_dict_items_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictItemsType.__and__({}.keys(), [])
-        self.assertIn(
-            "'__and__' requires a 'dict_items' object but received a 'dict_keys'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__and__' .* 'dict_items' object.* a 'dict_keys'",
+            self.DictItemsType.__and__,
+            {}.keys(),
+            [],
         )
 
     def test_dunder_and_with_non_iterable_raises_type_error(self):
@@ -461,11 +462,12 @@ class DictItemsTests(unittest.TestCase):
         self.assertEqual(result, set())
 
     def test_dunder_eq_with_non_dict_items_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictItemsType.__eq__({}.keys(), [])
-        self.assertIn(
-            "'__eq__' requires a 'dict_items' object but received a 'dict_keys'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__eq__' .* 'dict_items' object.* a 'dict_keys'",
+            self.DictItemsType.__eq__,
+            {}.keys(),
+            [],
         )
 
     def test_dunder_eq_with_no_rhs_raises_type_error(self):
@@ -522,11 +524,11 @@ class DictItemsTests(unittest.TestCase):
         self.assertIs({instance: "world"}.items().__eq__({(instance, "world")}), True)
 
     def test_dunder_repr_with_non_dict_items_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictItemsType.__repr__({}.keys())
-        self.assertIn(
-            "'__repr__' requires a 'dict_items' object but received a 'dict_keys'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__repr__' .* 'dict_items' object.* a 'dict_keys'",
+            self.DictItemsType.__repr__,
+            {}.keys(),
         )
 
     def test_dunder_repr_prints_items(self):
@@ -555,17 +557,18 @@ class DictItemsTests(unittest.TestCase):
         )
 
     def test_dunder_len_with_non_dict_items_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictItemsType.__len__({}.keys())
-        self.assertIn(
-            "'__len__' requires a 'dict_items' object but received a 'dict_keys'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__len__' .* 'dict_items' object.* a 'dict_keys'",
+            self.DictItemsType.__len__,
+            {}.keys(),
         )
 
     def test_dunder_len_with_non_dict_items_raises_type_error(self):
         dict_items = type({}.items())
         with self.assertRaisesRegex(
-            TypeError, "requires a 'dict_items' object but .+ 'int'"
+            TypeError,
+            "'__len__' .* 'dict_items' object.* a 'int'",
         ):
             dict_items.__len__(5)
 
@@ -577,11 +580,12 @@ class DictItemsTests(unittest.TestCase):
         self.assertEqual(items.__len__(), 3)
 
     def test_dunder_or_with_non_dict_items_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictItemsType.__or__({}.keys(), [])
-        self.assertIn(
-            "'__or__' requires a 'dict_items' object but received a 'dict_keys'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__or__' .* 'dict_items' object.* a 'dict_keys'",
+            self.DictItemsType.__or__,
+            {}.keys(),
+            [],
         )
 
     def test_dunder_or_with_non_iterable_raises_type_error(self):
@@ -615,11 +619,12 @@ class DictItemsTests(unittest.TestCase):
         self.assertEqual(result, {("hello", "world")})
 
     def test_dunder_ror_with_non_dict_items_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictItemsType.__ror__({}.keys(), [])
-        self.assertIn(
-            "'__ror__' requires a 'dict_items' object but received a 'dict_keys'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__ror__' .* 'dict_items' object.* a 'dict_keys'",
+            self.DictItemsType.__ror__,
+            {}.keys(),
+            [],
         )
 
     def test_dunder_ror_with_non_iterable_raises_type_error(self):
@@ -653,11 +658,12 @@ class DictItemsTests(unittest.TestCase):
         self.assertEqual(result, {("hello", "world")})
 
     def test_dunder_sub_with_non_dict_items_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictItemsType.__sub__({}.keys(), [])
-        self.assertIn(
-            "'__sub__' requires a 'dict_items' object but received a 'dict_keys'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__sub__' .* 'dict_items' object.* a 'dict_keys'",
+            self.DictItemsType.__sub__,
+            {}.keys(),
+            [],
         )
 
     def test_dunder_sub_with_non_iterable_raises_type_error(self):
@@ -703,11 +709,12 @@ class DictItemsTests(unittest.TestCase):
         self.assertEqual(result, {("hello", "world")})
 
     def test_dunder_xor_with_non_dict_items_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictItemsType.__xor__({}.keys(), [])
-        self.assertIn(
-            "'__xor__' requires a 'dict_items' object but received a 'dict_keys'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__xor__' .* 'dict_items' object.* a 'dict_keys'",
+            self.DictItemsType.__xor__,
+            {}.keys(),
+            [],
         )
 
     def test_dunder_xor_with_non_iterable_raises_type_error(self):
@@ -766,11 +773,11 @@ class DictItemsTests(unittest.TestCase):
     def test_reversed_items_of_wrong_type_raises_type_error(self):
         keys = {}.keys()
         item_type = type({}.items())
-        with self.assertRaises(TypeError) as context:
-            item_type.__reversed__(keys)
-        self.assertIn(
-            "'__reversed__' requires a 'dict_items' object but received a 'dict_keys'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__reversed__' .* 'dict_items' object.* a 'dict_keys'",
+            item_type.__reversed__,
+            keys,
         )
 
 
@@ -778,11 +785,12 @@ class DictKeysTests(unittest.TestCase):
     DictKeysType = type({}.keys())
 
     def test_dunder_and_with_non_dict_keys_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictKeysType.__and__({}.items(), [])
-        self.assertIn(
-            "'__and__' requires a 'dict_keys' object but received a 'dict_items'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__and__' .* 'dict_keys' object.* a 'dict_items'",
+            self.DictKeysType.__and__,
+            {}.items(),
+            [],
         )
 
     def test_dunder_and_with_non_iterable_raises_type_error(self):
@@ -816,11 +824,12 @@ class DictKeysTests(unittest.TestCase):
         self.assertEqual(result, set())
 
     def test_dunder_eq_with_non_dict_keys_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictKeysType.__eq__({}.items(), [])
-        self.assertIn(
-            "'__eq__' requires a 'dict_keys' object but received a 'dict_items'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__eq__' .* 'dict_keys' object.* a 'dict_items'",
+            self.DictKeysType.__eq__,
+            {}.items(),
+            [],
         )
 
     def test_dunder_eq_with_no_rhs_raises_type_error(self):
@@ -874,11 +883,12 @@ class DictKeysTests(unittest.TestCase):
         self.assertIs({instance: "world"}.keys().__eq__({instance}), True)
 
     def test_dunder_rand_with_non_dict_keys_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictKeysType.__rand__({}.items(), [])
-        self.assertIn(
-            "'__rand__' requires a 'dict_keys' object but received a 'dict_items'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__rand__' .* 'dict_keys' object.* a 'dict_items'",
+            self.DictKeysType.__rand__,
+            {}.items(),
+            [],
         )
 
     def test_dunder_rand_with_non_iterable_raises_type_error(self):
@@ -912,11 +922,11 @@ class DictKeysTests(unittest.TestCase):
         self.assertEqual(result, set())
 
     def test_dunder_repr_with_non_dict_keys_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictKeysType.__repr__({}.items())
-        self.assertIn(
-            "'__repr__' requires a 'dict_keys' object but received a 'dict_items'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__repr__' .* 'dict_keys' object.* a 'dict_items'",
+            self.DictKeysType.__repr__,
+            {}.items(),
         )
 
     def test_dunder_repr_prints_keys(self):
@@ -956,7 +966,8 @@ class DictKeysTests(unittest.TestCase):
 
     def test_dunder_len_with_non_dict_keys_raises_type_error(self):
         with self.assertRaisesRegex(
-            TypeError, "requires a 'dict_keys' object but .+ 'int'"
+            TypeError,
+            "'__len__' .* 'dict_keys' object.* a 'int'",
         ):
             self.DictKeysType.__len__(5)
 
@@ -968,11 +979,12 @@ class DictKeysTests(unittest.TestCase):
         self.assertEqual(keys.__len__(), 3)
 
     def test_dunder_or_with_non_dict_keys_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictKeysType.__or__({}.items(), [])
-        self.assertIn(
-            "'__or__' requires a 'dict_keys' object but received a 'dict_items'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__or__' .* 'dict_keys' object.* a 'dict_items'",
+            self.DictKeysType.__or__,
+            {}.items(),
+            [],
         )
 
     def test_dunder_or_with_non_iterable_raises_type_error(self):
@@ -1006,11 +1018,12 @@ class DictKeysTests(unittest.TestCase):
         self.assertEqual(result, {"hello"})
 
     def test_dunder_ror_with_non_dict_keys_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictKeysType.__ror__({}.items(), [])
-        self.assertIn(
-            "'__ror__' requires a 'dict_keys' object but received a 'dict_items'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__ror__' .* 'dict_keys' object.* a 'dict_items'",
+            self.DictKeysType.__ror__,
+            {}.items(),
+            [],
         )
 
     def test_dunder_ror_with_non_iterable_raises_type_error(self):
@@ -1044,11 +1057,12 @@ class DictKeysTests(unittest.TestCase):
         self.assertEqual(result, {"hello"})
 
     def test_dunder_sub_with_non_dict_keys_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictKeysType.__sub__({}.items(), [])
-        self.assertIn(
-            "'__sub__' requires a 'dict_keys' object but received a 'dict_items'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__sub__' .* 'dict_keys' object.* a 'dict_items'",
+            self.DictKeysType.__sub__,
+            {}.items(),
+            [],
         )
 
     def test_dunder_sub_with_non_iterable_raises_type_error(self):
@@ -1094,11 +1108,12 @@ class DictKeysTests(unittest.TestCase):
         self.assertEqual(result, {"hello"})
 
     def test_dunder_xor_with_non_dict_keys_lhs_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.DictKeysType.__xor__({}.items(), [])
-        self.assertIn(
-            "'__xor__' requires a 'dict_keys' object but received a 'dict_items'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__xor__' .* 'dict_keys' object.* a 'dict_items'",
+            self.DictKeysType.__xor__,
+            {}.items(),
+            [],
         )
 
     def test_dunder_xor_with_non_iterable_raises_type_error(self):
@@ -1155,7 +1170,8 @@ class DictValuesTests(unittest.TestCase):
     def test_dunder_len_with_non_dict_values_raises_type_error(self):
         dict_values = type({}.values())
         with self.assertRaisesRegex(
-            TypeError, "requires a 'dict_values' object but .+ 'int'"
+            TypeError,
+            "'__len__' .* 'dict_values' object.* a 'int'",
         ):
             dict_values.__len__(5)
 

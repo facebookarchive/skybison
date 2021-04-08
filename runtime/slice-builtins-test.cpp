@@ -88,12 +88,6 @@ TEST_F(SliceBuiltinsTest, DunderNewWithThreeArgsSetsAllIndices) {
   EXPECT_EQ(slice.step(), SmallInt::fromWord(2));
 }
 
-TEST_F(SliceBuiltinsTest, IndicesWithNonSliceRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "slice.indices([], 1)"), LayoutId::kTypeError,
-      "'indices' requires a 'slice' object but received a 'list'"));
-}
-
 TEST_F(SliceBuiltinsTest, IndicesWithNonIntRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "slice(1).indices([])"), LayoutId::kTypeError,

@@ -24,9 +24,9 @@ TEST_F(StrArrayBuiltinsTest, DunderInitWithWrongTypeRaisesTypeError) {
 }
 
 TEST_F(StrArrayBuiltinsTest, DunderReprWithNonStrArrayRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, "_str_array.__repr__(b'')"),
-                            LayoutId::kTypeError,
-                            "'__repr__' requires a '_str_array' object"));
+  EXPECT_TRUE(raisedWithStr(
+      runFromCStr(runtime_, "_str_array.__repr__(b'')"), LayoutId::kTypeError,
+      "'__repr__' for '_str_array' objects doesn't apply to a 'bytes' object"));
 }
 
 TEST_F(StrArrayBuiltinsTest, DunderReprWithSimpleStrArrayReturnsStr) {
@@ -40,7 +40,7 @@ TEST_F(StrArrayBuiltinsTest, DunderReprWithSimpleStrArrayReturnsStr) {
 TEST_F(StrArrayBuiltinsTest, DunderStrWithNonStrArrayRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "_str_array.__str__(b'')"), LayoutId::kTypeError,
-      "'__str__' requires a '_str_array' object but received a 'bytes'"));
+      "'__str__' for '_str_array' objects doesn't apply to a 'bytes' object"));
 }
 
 TEST_F(StrArrayBuiltinsTest, DunderStrWithEmptyStrArrayReturnsEmptyStr) {

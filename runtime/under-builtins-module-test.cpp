@@ -2103,15 +2103,6 @@ TEST_F(UnderBuiltinsModuleTest, UnderListAppendAppendsObject) {
   EXPECT_EQ(list.at(1), value1);
 }
 
-TEST_F(UnderBuiltinsModuleTest, UnderListAppendWithNonListRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object not_a_list(&scope, runtime_->newInt(42));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _list_append), not_a_list, not_a_list),
-      LayoutId::kTypeError,
-      "'<anonymous>' requires a 'list' object but received a 'int'"));
-}
-
 TEST_F(UnderBuiltinsModuleTest, UnderListCheckExactWithExactListReturnsTrue) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newList());
@@ -2549,16 +2540,6 @@ TEST_F(UnderBuiltinsModuleTest,
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderMemoryViewGetitemWithNonMemoryViewRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object none(&scope, NoneType::object());
-  Int index(&scope, runtime_->newInt(0));
-  Object result(&scope,
-                runBuiltin(FUNC(_builtins, _memoryview_getitem), none, index));
-  EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
-}
-
-TEST_F(UnderBuiltinsModuleTest,
        UnderMemoryViewGetitemWithTooBigIndexRaisesIndexError) {
   HandleScope scope(thread_);
   const byte bytes[] = {0, 1, 2, 3, 4, 5, 6, 7};
@@ -2629,16 +2610,6 @@ TEST_F(UnderBuiltinsModuleTest,
 }
 
 TEST_F(UnderBuiltinsModuleTest,
-       UnderMemoryViewItemsizeWithNonMemoryViewRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object not_memoryview(&scope, runtime_->newInt(12));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _memoryview_itemsize), not_memoryview),
-      LayoutId::kTypeError,
-      "'<anonymous>' requires a 'memoryview' object but received a 'int'"));
-}
-
-TEST_F(UnderBuiltinsModuleTest,
        UnderMemoryViewItemsizeReturnsSizeOfMemoryItems) {
   HandleScope scope(thread_);
   Bytes bytes(&scope, runtime_->newBytes(5, 'x'));
@@ -2647,16 +2618,6 @@ TEST_F(UnderBuiltinsModuleTest,
   Object result(&scope,
                 runBuiltin(FUNC(_builtins, _memoryview_itemsize), view));
   EXPECT_TRUE(isIntEqualsWord(*result, 1));
-}
-
-TEST_F(UnderBuiltinsModuleTest,
-       UnderMemoryViewNbytesWithNonMemoryViewRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object not_memoryview(&scope, runtime_->newInt(12));
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(_builtins, _memoryview_nbytes), not_memoryview),
-      LayoutId::kTypeError,
-      "'<anonymous>' requires a 'memoryview' object but received a 'int'"));
 }
 
 TEST_F(UnderBuiltinsModuleTest, UnderMemoryViewNbytesReturnsSizeOfMemoryView) {

@@ -49,13 +49,6 @@ array.clear()
   EXPECT_EQ(array.numItems(), 0);
 }
 
-TEST_F(BytearrayBuiltinsTest, DunderAddWithNonBytearraySelfRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.__add__(b'', b'')"),
-      LayoutId::kTypeError,
-      "'__add__' requires a 'bytearray' object but received a 'bytes'"));
-}
-
 TEST_F(BytearrayBuiltinsTest, DunderAddWithNonBytesLikeRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "bytearray(b'') + None"), LayoutId::kTypeError,
@@ -106,13 +99,6 @@ TEST_F(BytearrayBuiltinsTest, DunderAddReturnsConcatenatedBytearray) {
   Object result(&scope, runBuiltin(METH(bytearray, __add__), self, other));
   EXPECT_TRUE(isBytearrayEqualsCStr(self, "foo"));
   EXPECT_TRUE(isBytearrayEqualsCStr(result, "food"));
-}
-
-TEST_F(BytearrayBuiltinsTest, DunderEqWithNonBytearraySelfRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.__eq__(b'', bytearray())"),
-      LayoutId::kTypeError,
-      "'__eq__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderEqWithNonBytesOtherReturnsNotImplemented) {
@@ -166,13 +152,6 @@ TEST_F(BytearrayBuiltinsTest, DunderEqWithDifferentContentsReturnsFalse) {
   runtime_->bytearrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytes(3, 'f'));
   EXPECT_EQ(runBuiltin(METH(bytearray, __eq__), self, other), Bool::falseObj());
-}
-
-TEST_F(BytearrayBuiltinsTest, DunderGeWithNonBytearraySelfRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.__ge__(b'', bytearray())"),
-      LayoutId::kTypeError,
-      "'__ge__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderGeWithNonBytesOtherReturnsNotImplemented) {
@@ -247,13 +226,6 @@ TEST_F(BytearrayBuiltinsTest, DunderGeWithLaterOtherReturnsFalse) {
   EXPECT_EQ(runBuiltin(METH(bytearray, __ge__), self, other), Bool::falseObj());
 }
 
-TEST_F(BytearrayBuiltinsTest, DunderGtWithNonBytearraySelfRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.__gt__(b'', bytearray())"),
-      LayoutId::kTypeError,
-      "'__gt__' requires a 'bytearray' object but received a 'bytes'"));
-}
-
 TEST_F(BytearrayBuiltinsTest, DunderGtWithNonBytesOtherReturnsNotImplemented) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
@@ -326,13 +298,6 @@ TEST_F(BytearrayBuiltinsTest, DunderGtWithLaterOtherReturnsFalse) {
   EXPECT_EQ(runBuiltin(METH(bytearray, __gt__), self, other), Bool::falseObj());
 }
 
-TEST_F(BytearrayBuiltinsTest, DunderIaddWithNonBytearraySelfRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.__iadd__(b'', b'')"),
-      LayoutId::kTypeError,
-      "'__iadd__' requires a 'bytearray' object but received a 'bytes'"));
-}
-
 TEST_F(BytearrayBuiltinsTest, DunderIaddWithNonBytesLikeRaisesTypeError) {
   const char* test = R"(
 array = bytearray(b'')
@@ -377,12 +342,6 @@ other = Foo(b"1234")
   const char* expected = "1234";
   EXPECT_TRUE(isBytearrayEqualsCStr(self, expected));
   EXPECT_TRUE(isBytearrayEqualsCStr(result, expected));
-}
-
-TEST_F(BytearrayBuiltinsTest, DunderImulWithNonBytearrayRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.__imul__(b'', 1)"), LayoutId::kTypeError,
-      "'__imul__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderImulWithNonIntRaisesTypeError) {
@@ -524,13 +483,6 @@ TEST_F(BytearrayBuiltinsTest, DunderImulReturnsRepeatedBytearray) {
   EXPECT_TRUE(isBytearrayEqualsCStr(result, "ababab"));
 }
 
-TEST_F(BytearrayBuiltinsTest, DunderLeWithNonBytearraySelfRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.__le__(b'', bytearray())"),
-      LayoutId::kTypeError,
-      "'__le__' requires a 'bytearray' object but received a 'bytes'"));
-}
-
 TEST_F(BytearrayBuiltinsTest, DunderLeWithNonBytesOtherReturnsNotImplemented) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
@@ -603,12 +555,6 @@ TEST_F(BytearrayBuiltinsTest, DunderLeWithLaterOtherReturnsTrue) {
   EXPECT_EQ(runBuiltin(METH(bytearray, __le__), self, other), Bool::trueObj());
 }
 
-TEST_F(BytearrayBuiltinsTest, DunderLenWithNonBytearrayRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.__len__(b'')"), LayoutId::kTypeError,
-      "'__len__' requires a 'bytearray' object but received a 'bytes'"));
-}
-
 TEST_F(BytearrayBuiltinsTest, DunderLenWithEmptyBytearrayReturnsZero) {
   HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
@@ -628,13 +574,6 @@ TEST_F(BytearrayBuiltinsTest, DunderLenWithNonEmptyBytearrayReturnsPositive) {
   runtime_->bytearrayExtend(thread_, self, bytes2);
   result = runBuiltin(METH(bytearray, __len__), self);
   EXPECT_TRUE(isIntEqualsWord(*result, 7));
-}
-
-TEST_F(BytearrayBuiltinsTest, DunderLtWithNonBytearraySelfRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.__lt__(b'', bytearray())"),
-      LayoutId::kTypeError,
-      "'__lt__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderLtWithNonBytesOtherReturnsNotImplemented) {
@@ -707,12 +646,6 @@ TEST_F(BytearrayBuiltinsTest, DunderLtWithLaterOtherReturnsTrue) {
   runtime_->bytearrayExtend(thread_, self, bytes);
   Object other(&scope, runtime_->newBytes(3, 'o'));
   EXPECT_EQ(runBuiltin(METH(bytearray, __lt__), self, other), Bool::trueObj());
-}
-
-TEST_F(BytearrayBuiltinsTest, DunderMulWithNonBytearrayRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.__mul__(b'', 1)"), LayoutId::kTypeError,
-      "'__mul__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
@@ -855,13 +788,6 @@ TEST_F(BytearrayBuiltinsTest, DunderMulReturnsRepeatedBytearray) {
   EXPECT_TRUE(isBytearrayEqualsCStr(result, "ababab"));
 }
 
-TEST_F(BytearrayBuiltinsTest, DunderNeWithNonBytearraySelfRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.__ne__(b'', bytearray())"),
-      LayoutId::kTypeError,
-      "'__ne__' requires a 'bytearray' object but received a 'bytes'"));
-}
-
 TEST_F(BytearrayBuiltinsTest, DunderNeWithNonBytesOtherReturnsNotImplemented) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
@@ -939,12 +865,6 @@ TEST_F(BytearrayBuiltinsTest, NewBytearray) {
       runFromCStr(runtime_, "obj = bytearray(b'Hello world!')").isError());
   Bytearray self(&scope, mainModuleAt(runtime_, "obj"));
   EXPECT_TRUE(isBytearrayEqualsCStr(self, "Hello world!"));
-}
-
-TEST_F(BytearrayBuiltinsTest, DunderReprWithNonBytearrayRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.__repr__(b'')"), LayoutId::kTypeError,
-      "'__repr__' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(BytearrayBuiltinsTest, DunderReprWithEmptyBytearrayReturnsEmptyRepr) {
@@ -1031,12 +951,6 @@ TEST_F(BytearrayBuiltinsTest, DunderRmulCallsDunderMul) {
   EXPECT_TRUE(isBytearrayEqualsCStr(result, "123123123"));
 }
 
-TEST_F(BytearrayBuiltinsTest, HexWithNonBytearrayRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.hex(b'')"), LayoutId::kTypeError,
-      "'hex' requires a 'bytearray' object but received a 'bytes'"));
-}
-
 TEST_F(BytearrayBuiltinsTest, HexWithEmptyBytearrayReturnsEmptyString) {
   HandleScope scope(thread_);
   Object self(&scope, runtime_->newBytearray());
@@ -1121,13 +1035,6 @@ TEST_F(BytearrayBuiltinsTest, MaketransWithNonEmptyReturnsBytes) {
   EXPECT_EQ(actual.byteAt('a'), '1');
   EXPECT_EQ(actual.byteAt('b'), '2');
   EXPECT_EQ(actual.byteAt('c'), '3');
-}
-
-TEST_F(BytearrayBuiltinsTest, TranslateWithNonBytearraySelfRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "bytearray.translate(b'', None)"),
-      LayoutId::kTypeError,
-      "'translate' requires a 'bytearray' object but received a 'bytes'"));
 }
 
 TEST_F(BytearrayBuiltinsTest, TranslateWithNonBytesLikeTableRaisesTypeError) {

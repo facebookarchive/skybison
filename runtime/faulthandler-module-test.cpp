@@ -16,17 +16,6 @@ namespace testing {
 using FaulthandlerModuleDeathTest = RuntimeFixture;
 using FaulthandlerModuleTest = RuntimeFixture;
 
-TEST_F(FaulthandlerModuleTest,
-       DumpTracebackWithNonIntAllThreadsRaisesTypeError) {
-  HandleScope scope(thread_);
-  Object fd(&scope, SmallInt::fromWord(2));
-  Object all_threads(&scope, NoneType::object());
-  EXPECT_TRUE(raisedWithStr(
-      runBuiltin(FUNC(faulthandler, dump_traceback), fd, all_threads),
-      LayoutId::kTypeError,
-      "'<anonymous>' requires a 'int' object but received a 'NoneType'"));
-}
-
 TEST_F(FaulthandlerModuleTest, DumpTracebackWritesToFileDescriptor) {
   TemporaryDirectory tempdir;
   std::string temp_file = tempdir.path + "traceback";

@@ -5,6 +5,15 @@ from test_support import supports_38_feature
 
 
 class FloatTests(unittest.TestCase):
+    def test_dunder_add_with_non_float_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__add__' .* 'float' object.* a 'int'",
+            float.__add__,
+            2,
+            2.0,
+        )
+
     def test_dunder_divmod_raises_type_error(self):
         with self.assertRaises(TypeError):
             float.__divmod__(1, 1.0)
@@ -138,11 +147,6 @@ class FloatTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             float.__getformat__("unknown")
 
-    def test_dunder_int_with_non_float_raise_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            float.__int__("not a float")
-        self.assertIn("'__int__' requires a 'float' object", str(context.exception))
-
     def test_dunder_hash_from_non_finites_returns_well_known_values(self):
         import sys
 
@@ -209,10 +213,20 @@ class FloatTests(unittest.TestCase):
         self.assertEqual(float.__hash__(C(-77.0)), -77)
 
     def test_dunder_hash_with_non_float_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.assertEqual(float.__hash__("not a float"))
-        self.assertIn("'__hash__' requires a 'float' object", str(context.exception))
-        self.assertIn("'str'", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'__hash__' .* 'float' object.* a 'str'",
+            float.__hash__,
+            "not a float",
+        )
+
+    def test_dunder_int_with_non_float_raise_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__int__' .* 'float' object.* a 'str'",
+            float.__int__,
+            "not a float",
+        )
 
     def test_dunder_mod_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -526,6 +540,15 @@ class FloatTests(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_dunder_sub_with_non_float_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__sub__' .* 'float' object.* a 'int'",
+            float.__sub__,
+            2,
+            2.0,
+        )
+
     def test_dunder_trunc_returns_int(self):
         self.assertEqual(float.__trunc__(0.0), 0)
         self.assertEqual(float.__trunc__(-0.0), 0)
@@ -791,10 +814,13 @@ class FloatDunderFormatTests(unittest.TestCase):
         )
 
     def test_with_non_float_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            float.__format__("not a float", "")
-        self.assertIn("'__format__' requires a 'float' object", str(context.exception))
-        self.assertIn("'str'", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'__format__' .* 'float' object.* a 'int'",
+            float.__format__,
+            1,
+            "",
+        )
 
     def test_with_underscore_between_digits_returns_float(self):
         self.assertEqual(float(2_3.5_3), 23.53)

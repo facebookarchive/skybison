@@ -7,7 +7,7 @@ from unittest.mock import Mock
 
 
 class FaulthandlerTest(unittest.TestCase):
-    def test_dump_traceback_with_non_int_calls_fileno_and_flush(self):
+    def test_dump_traceback_with_non_int_fd_calls_fileno_and_flush(self):
         with tempfile.TemporaryFile() as file:
 
             class C:
@@ -19,6 +19,9 @@ class FaulthandlerTest(unittest.TestCase):
             faulthandler.dump_traceback(C(), False)
             C.fileno.assert_called_once()
             C.flush.assert_called_once()
+
+    def test_dump_traceback_with_non_int_all_threads_raises_type_error(self):
+        self.assertRaises(TypeError, faulthandler.dump_traceback, 2, None)
 
     def test_is_enabled(self):
         self.assertIs(faulthandler.is_enabled(), False)

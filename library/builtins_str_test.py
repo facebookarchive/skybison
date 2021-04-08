@@ -89,6 +89,26 @@ class StrTests(unittest.TestCase):
         self.assertEqual(s[-20:5], "hello")
         self.assertEqual(s[6:42], "world")
 
+    def test_dunder_len_with_non_str_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__len__' .* 'str' object.* a 'bytes'",
+            str.__len__,
+            b"not a string",
+        )
+
+    def test_dunder_mul_with_non_str_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__mul__' .* 'str' object.* a 'bytes'",
+            str.__mul__,
+            b"not a string",
+            2,
+        )
+
+    def test_dunder_new_with_non_type_cls_raises_type_error(self):
+        self.assertRaises(TypeError, str.__new__, 1)
+
     def test_expandtabs_with_non_int_raises_type_error(self):
         with self.assertRaises(TypeError):
             "expand\tme".expandtabs("not-int")
@@ -278,19 +298,19 @@ class StrTests(unittest.TestCase):
         self.assertEqual(str(context.exception), "failed")
 
     def test_capitalize_with_non_str_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.capitalize(1)
-        self.assertIn(
-            "'capitalize' requires a 'str' object but received a 'int'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'capitalize' .* 'str' object.* a 'int'",
+            str.capitalize,
+            1,
         )
 
     def test_casefold_with_non_str_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.casefold(1)
-        self.assertIn(
-            "'casefold' requires a 'str' object but received a 'int'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'casefold' .* 'str' object.* a 'int'",
+            str.casefold,
+            1,
         )
 
     def test_casefold_with_empty_string_returns_itself(self):
@@ -576,9 +596,12 @@ class StrTests(unittest.TestCase):
         self.assertFalse("\u0e50 \u00e9".isalnum())
 
     def test_isalnum_with_non_str_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.isalnum(None)
-        self.assertIn("'isalnum' requires a 'str' object", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'isalnum' .* 'str' object.* a 'NoneType'",
+            str.isalnum,
+            None,
+        )
 
     def test_isalpha_with_ascii_char_returns_bool(self):
         self.assertEqual(
@@ -603,9 +626,12 @@ class StrTests(unittest.TestCase):
         self.assertFalse("\u01c8 ".isalpha())
 
     def test_isalpha_with_non_str_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.isalpha(None)
-        self.assertIn("'isalpha' requires a 'str' object", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'isalpha' .* 'str' object.* a 'NoneType'",
+            str.isalpha,
+            None,
+        )
 
     @unittest.skipUnless(hasattr(str, "isascii"), "Added in 3.7")
     def test_isascii_with_empty_string_returns_true(self):
@@ -643,9 +669,12 @@ class StrTests(unittest.TestCase):
         self.assertFalse("\u00bd".isdecimal())  # VULGAR FRACTION ONE HALF
 
     def test_isdecimal_with_non_str_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.isdecimal(None)
-        self.assertIn("'isdecimal' requires a 'str' object", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'isdecimal' .* 'str' object.* a 'NoneType'",
+            str.isdecimal,
+            None,
+        )
 
     def test_isdigit_with_ascii_char_returns_bool(self):
         self.assertEqual(
@@ -667,9 +696,12 @@ class StrTests(unittest.TestCase):
         self.assertFalse("\u00bd".isdigit())  # VULGAR FRACTION ONE HALF
 
     def test_isdigit_with_non_str_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.isdigit(None)
-        self.assertIn("'isdigit' requires a 'str' object", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'isdigit' .* 'str' object.* a 'NoneType'",
+            str.isdigit,
+            None,
+        )
 
     def test_isidentifier_with_ascii_char_returns_bool(self):
         self.assertEqual(
@@ -710,9 +742,12 @@ class StrTests(unittest.TestCase):
         self.assertFalse("_world!".isidentifier())
 
     def test_isidentifier_with_non_str_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.isidentifier(None)
-        self.assertIn("'isidentifier' requires a 'str' object", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'isidentifier' .* 'str' object.* a 'NoneType'",
+            str.isidentifier,
+            None,
+        )
 
     def test_islower_with_ascii_char_returns_bool(self):
         self.assertEqual(
@@ -737,9 +772,12 @@ class StrTests(unittest.TestCase):
         self.assertFalse("\u01c8udevit".islower())  # titlecase
 
     def test_islower_with_non_str_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.islower(None)
-        self.assertIn("'islower' requires a 'str' object", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'islower' .* 'str' object.* a 'NoneType'",
+            str.islower,
+            None,
+        )
 
     def test_isnumeric_with_ascii_char_returns_bool(self):
         self.assertEqual(
@@ -761,9 +799,12 @@ class StrTests(unittest.TestCase):
         self.assertTrue("\u00bd".isnumeric())  # VULGAR FRACTION ONE HALF
 
     def test_isnumeric_with_non_str_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.isnumeric(None)
-        self.assertIn("'isnumeric' requires a 'str' object", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'isnumeric' .* 'str' object.* a 'NoneType'",
+            str.isnumeric,
+            None,
+        )
 
     def test_isprintable_with_ascii_char_returns_bool(self):
         self.assertEqual(
@@ -784,9 +825,12 @@ class StrTests(unittest.TestCase):
         self.assertFalse("\u0e50 \t \u00e3!".isprintable())
 
     def test_isprintable_with_non_str_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.isprintable(None)
-        self.assertIn("'isprintable' requires a 'str' object", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'isprintable' .* 'str' object.* a 'NoneType'",
+            str.isprintable,
+            None,
+        )
 
     def test_isspace_with_ascii_char_returns_bool(self):
         self.assertEqual(
@@ -806,9 +850,12 @@ class StrTests(unittest.TestCase):
         self.assertTrue(" \t\u3000\n\u202f".isspace())
 
     def test_isspace_with_non_str_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.isspace(None)
-        self.assertIn("'isspace' requires a 'str' object", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'isspace' .* 'str' object.* a 'NoneType'",
+            str.isspace,
+            None,
+        )
 
     def test_istitle_with_ascii_char_returns_bool(self):
         self.assertEqual(
@@ -834,9 +881,12 @@ class StrTests(unittest.TestCase):
         self.assertFalse("...".istitle())
 
     def test_istitle_with_non_str_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.istitle(None)
-        self.assertIn("'istitle' requires a 'str' object", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'istitle' .* 'str' object.* a 'NoneType'",
+            str.istitle,
+            None,
+        )
 
     def test_istitle_with_non_ascii_returns_bool(self):
         self.assertTrue("Resum\u00e9".istitle())
@@ -873,9 +923,12 @@ class StrTests(unittest.TestCase):
         self.assertFalse("\u01c8UDEVIT".isupper())  # titlecase
 
     def test_isupper_with_non_str_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.isupper(None)
-        self.assertIn("'isupper' requires a 'str' object", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'isupper' .* 'str' object.* a 'NoneType'",
+            str.isupper,
+            None,
+        )
 
     def test_index_returns_int(self):
         self.assertEqual(str.index("", ""), 0)
@@ -926,12 +979,12 @@ class StrTests(unittest.TestCase):
         )
 
     def test_join_with_non_string_separator_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.join(None, ["hello", "world"])
-        self.assertTrue(
-            str(context.exception).endswith(
-                "'join' requires a 'str' object but received a 'NoneType'"
-            )
+        self.assertRaisesRegex(
+            TypeError,
+            "'join' .* 'str' object.* a 'int'",
+            str.join,
+            4,
+            ["hello", "world"],
         )
 
     def test_join_with_empty_items_returns_empty_string(self):
@@ -1020,6 +1073,14 @@ class StrTests(unittest.TestCase):
         self.assertIs(type(str.lower(C(""))), str)
         self.assertIs(type(str.lower(C("lower"))), str)
 
+    def test_lstrip_with_non_str_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'lstrip' .* 'str' object.* a 'bytes'",
+            str.lstrip,
+            b"not a string",
+        )
+
     def test_replace(self):
         test = "mississippi"
         self.assertEqual(test.replace("i", "a"), "massassappa")
@@ -1103,7 +1164,11 @@ class StrTests(unittest.TestCase):
 
     def test_rpartition_with_non_str_self_raises_type_error(self):
         self.assertRaisesRegex(
-            TypeError, "requires a 'str'", str.rpartition, None, "hello"
+            TypeError,
+            "'rpartition' .* 'str' object.* a 'NoneType'",
+            str.rpartition,
+            None,
+            "hello",
         )
 
     def test_rpartition_with_non_str_sep_raises_type_error(self):
@@ -1111,6 +1176,14 @@ class StrTests(unittest.TestCase):
 
     def test_rpartition_partitions_str(self):
         self.assertEqual("hello".rpartition("l"), ("hel", "l", "o"))
+
+    def test_rstrip_with_non_str_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'rstrip' .* 'str' object.* a 'bytes'",
+            str.rstrip,
+            b"not a string",
+        )
 
     def test_split_with_empty_separator_list_raises_type_error(self):
         self.assertRaisesRegex(TypeError, "must be str or None", str.split, "abc", [])
@@ -1288,12 +1361,20 @@ class StrTests(unittest.TestCase):
 
         self.assertEqual(str.__new__(str, A()), "test")
 
+    def test_strip_with_non_str_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'strip' .* 'str' object.* a 'bytes'",
+            str.strip,
+            b"not a string",
+        )
+
     def test_swapcase_with_int_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            str.swapcase(4)
-        self.assertIn(
-            "'swapcase' requires a 'str' object but received a 'int'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'swapcase' .* 'str' object.* a 'int'",
+            str.swapcase,
+            4,
         )
 
     def test_swapcase_returns_inverted_string(self):
@@ -1468,7 +1549,8 @@ class StrDunderFormatTests(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             str.__format__("", "d")
         self.assertEqual(
-            str(context.exception), "Unknown format code 'd' for object of type 'str'"
+            str(context.exception),
+            "Unknown format code 'd' for object of type 'str'",
         )
 
         class C(str):

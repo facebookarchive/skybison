@@ -243,6 +243,15 @@ class IntTests(unittest.TestCase):
     def test_dunder_pow_with_non_int_power_returns_not_implemented(self):
         self.assertEqual(int.__pow__(1, None), NotImplemented)
 
+    def test_dunder_truediv_with_non_int_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__truediv__' .* 'int' object.* a 'str'",
+            int.__truediv__,
+            "not an int",
+            2,
+        )
+
     @supports_38_feature
     def test_as_integer_ratio_with_non_int_raises_type_error(self):
         with self.assertRaises(TypeError) as ctx:
@@ -598,10 +607,13 @@ class IntDunderFormatTests(unittest.TestCase):
         )
 
     def test_with_non_int_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            int.__format__("not an int", "")
-        self.assertIn("'__format__' requires a 'int' object", str(context.exception))
-        self.assertIn("'str'", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'__format__' .* 'int' object.* a 'str'",
+            int.__format__,
+            "not an int",
+            1,
+        )
 
     @pyro_only
     def test_under_int_ctor_with_small_int_returns_int(self):

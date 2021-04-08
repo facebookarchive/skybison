@@ -46,8 +46,8 @@ RawObject FUNC(_contextvars, _ContextVar_default_value)(Thread* thread,
   if (!ctxvar_obj.isContextVar()) {
     return thread->raiseWithFmt(
         LayoutId::kTypeError,
-        "'_contextvar__default_value_get' requires a 'ContextVar', "
-        "but received a '%T'",
+        "'_contextvar__default_value_get' for 'ContextVar' objects doesn't "
+        "apply to a '%T' object",
         &ctxvar_obj);
   }
   ContextVar ctxvar(&scope, *ctxvar_obj);
@@ -58,11 +58,10 @@ RawObject FUNC(_contextvars, _ContextVar_name)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object ctxvar_obj(&scope, args.get(0));
   if (!ctxvar_obj.isContextVar()) {
-    return thread->raiseWithFmt(
-        LayoutId::kTypeError,
-        "'_contextvar__name_get' requires a 'ContextVar', "
-        "but received a '%T'",
-        &ctxvar_obj);
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "'_contextvar__name_get' for 'ContextVar' "
+                                "objects doesn't apply to a '%T' object",
+                                &ctxvar_obj);
   }
   ContextVar ctxvar(&scope, *ctxvar_obj);
   return ctxvar.name();
@@ -72,10 +71,10 @@ RawObject FUNC(_contextvars, _Token_used)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object token_obj(&scope, args.get(0));
   if (!token_obj.isToken()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'_Token_used' requires a 'Token', "
-                                "but received a '%T'",
-                                &token_obj);
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "'_Token_used' for 'Token' objects doesn't apply to a '%T' object",
+        &token_obj);
   }
   Token token(&scope, *token_obj);
   return Bool::fromBool(token.used());
@@ -85,10 +84,10 @@ RawObject FUNC(_contextvars, _Token_var)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object token_obj(&scope, args.get(0));
   if (!token_obj.isToken()) {
-    return thread->raiseWithFmt(LayoutId::kTypeError,
-                                "'_Token_var' requires a 'Token', "
-                                "but received a '%T'",
-                                &token_obj);
+    return thread->raiseWithFmt(
+        LayoutId::kTypeError,
+        "'_Token_var' for 'Token' objects doesn't apply to a '%T' object",
+        &token_obj);
   }
   Token token(&scope, *token_obj);
   return token.var();

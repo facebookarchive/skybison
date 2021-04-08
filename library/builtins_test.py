@@ -2165,7 +2165,7 @@ class BoolTests(unittest.TestCase):
     def test_dunder_or_with_non_bool_raises_type_error(self):
         self.assertRaisesRegex(
             TypeError,
-            "'__or__' requires a 'bool' object but .* 'int'",
+            "'__or__' .* 'bool' object.* a 'int'",
             bool.__or__,
             1,
             1,
@@ -2185,10 +2185,10 @@ class BoolTests(unittest.TestCase):
         self.assertIs(bool.__or__(True, "string"), NotImplemented)
         self.assertIs(bool.__or__(True, 1.8), NotImplemented)
 
-    def test_dunder_or_with_non_bool_raises_type_error(self):
+    def test_dunder_ror_with_non_bool_raises_type_error(self):
         self.assertRaisesRegex(
             TypeError,
-            "'__ror__' requires a 'bool' object but .* 'int'",
+            "'__ror__' .* 'bool' object.* a 'int'",
             bool.__ror__,
             1,
             1,
@@ -2212,7 +2212,7 @@ class BoolTests(unittest.TestCase):
         with self.assertRaises(TypeError) as ctx:
             bool.__xor__(1, 1)
         self.assertIn(
-            "'__xor__' requires a 'bool' object but received a 'int'",
+            "'__xor__' .* 'bool' object.* a 'int'",
             str(ctx.exception),
         )
 
@@ -2231,11 +2231,12 @@ class BoolTests(unittest.TestCase):
         self.assertIs(bool.__xor__(True, 1.8), NotImplemented)
 
     def test_dunder_xor_with_non_bool_raises_type_error(self):
-        with self.assertRaises(TypeError) as ctx:
-            bool.__rxor__(1, 1)
-        self.assertIn(
-            "'__rxor__' requires a 'bool' object but received a 'int'",
-            str(ctx.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__rxor__' .* 'bool' object.* a 'int'",
+            bool.__rxor__,
+            1,
+            1,
         )
 
     def test_dunder_rxor_success(self):
@@ -2625,15 +2626,13 @@ class ClassMethodTests(unittest.TestCase):
         self.assertEqual(C.bar(), 5)
 
     def test_dunder_get_called_with_non_classmethod_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-
-            def bar():
-                pass
-
-            classmethod.__get__(42.3, None, bar)
-        self.assertIn(
-            "'__get__' requires a 'classmethod' object but received a 'float'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__get__' .* 'classmethod' object.* a 'float'",
+            classmethod.__get__,
+            42.3,
+            None,
+            None,
         )
 
     def test_dunder_new_called_with_non_type_object_raises_type_error(self):
@@ -2693,11 +2692,11 @@ class CodeTests(unittest.TestCase):
         )
 
     def test_dunder_hash_with_non_code_object_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            self.CodeType.__hash__(None)
-        self.assertIn(
-            "'__hash__' requires a 'code' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__hash__' .* 'code' object.* a 'NoneType'",
+            self.CodeType.__hash__,
+            None,
         )
 
     def test_dunder_hash_returns_stable_value_on_different_code_objects(self):
@@ -4822,6 +4821,7 @@ class DunderSlotsTests(unittest.TestCase):
         instance = C()
         self.assertEqual(descriptor.__delete__(instance), None)
 
+    @supports_38_feature
     def test_slot_descriptor_dunder_delete_none_raises_type_error(self):
         class C:
             __slots__ = "a"
@@ -4832,7 +4832,7 @@ class DunderSlotsTests(unittest.TestCase):
             descriptor.__delete__(None)
         self.assertEqual(
             str(context.exception),
-            "descriptor 'a' for 'C' objects doesn't apply to 'NoneType' object",
+            "descriptor 'a' for 'C' objects doesn't apply to a 'NoneType' object",
         )
 
     def test_dunder_slots_creates_type_attributes(self):
@@ -4979,6 +4979,7 @@ class DunderSlotsTests(unittest.TestCase):
         self.assertEqual(C.c.__get__(obj), 33)
         self.assertEqual(D.c.__get__(obj), 3)
 
+    @supports_38_feature
     def test_dunder_slots_member_descriptor_works_only_for_subtypes(self):
         class C:
             __slots__ = "x"
@@ -5000,7 +5001,7 @@ class DunderSlotsTests(unittest.TestCase):
             C.x.__set__(e, 500)
         self.assertEqual(
             str(context.exception),
-            "descriptor 'x' for 'C' objects doesn't apply to 'E' object",
+            "descriptor 'x' for 'C' objects doesn't apply to a 'E' object",
         )
 
         e.x = 600
@@ -5008,7 +5009,7 @@ class DunderSlotsTests(unittest.TestCase):
             C.x.__get__(e)
         self.assertEqual(
             str(context.exception),
-            "descriptor 'x' for 'C' objects doesn't apply to 'E' object",
+            "descriptor 'x' for 'C' objects doesn't apply to a 'E' object",
         )
 
 
@@ -5696,6 +5697,14 @@ class FrozensetTests(unittest.TestCase):
         frozenset1 = frozenset({1, 2, 3, 4, 5, 6, 7})
         set2 = set({1, 3, 5, 7})
         self.assertEqual(frozenset.__sub__(frozenset1, set2), {2, 4, 6})
+
+    def test_copy_with_non_frozenset_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'copy' .* 'frozenset' object.* a 'set'",
+            frozenset.copy,
+            set(),
+        )
 
     def test_difference_with_non_frozenset_self_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -6958,11 +6967,11 @@ class InstanceProxyTests(unittest.TestCase):
         self.assertIs(instance_proxy.__eq__(left.__dict__, {"a": value}), True)
 
     def test_dunder_init_with_non_instance_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            builtins.instance_proxy(42)
-        self.assertEqual(
-            str(context.exception),
-            "'__init__' requires a 'instance' object but received a 'int'",
+        self.assertRaisesRegex(
+            TypeError,
+            "'__init__' .* 'instance' object.* a 'int'",
+            instance_proxy,
+            42,
         )
 
     def test_copy_with_empty_instance_returns_empty_dict(self):
@@ -7767,9 +7776,13 @@ class MemoryviewTests(unittest.TestCase):
         self.assertIs(memory_mem_mem.obj, memory)
 
     def test_dunder_getitem_with_non_memoryview_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            memoryview.__getitem__(None, 1)
-        self.assertIn("requires a 'memoryview' object", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'__getitem__' .* 'memoryview' object.* a 'NoneType'",
+            memoryview.__getitem__,
+            None,
+            1,
+        )
 
     def test_dunder_getitem_index_too_large_raises_index_error(self):
         view = memoryview(b"12345678").cast("I")
@@ -7921,9 +7934,14 @@ class MemoryviewTests(unittest.TestCase):
         view.release()
 
     def test_setitem_with_non_memoryview_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            memoryview.__setitem__(None, 1, 1)
-        self.assertIn("requires a 'memoryview' object", str(context.exception))
+        self.assertRaisesRegex(
+            TypeError,
+            "'__setitem__' .* 'memoryview' object.* a 'NoneType'",
+            memoryview.__setitem__,
+            None,
+            1,
+            1,
+        )
 
     def test_setitem_with_bytes_memoryview_raises_type_error(self):
         view = memoryview(b"foobar")
@@ -8077,11 +8095,11 @@ class MemoryviewTests(unittest.TestCase):
         self.assertEqual(view, b"00zz00")
 
     def test_tolist_with_non_memoryview_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            memoryview.tolist(None)
-        self.assertIn(
-            "'tolist' requires a 'memoryview' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'tolist' .* 'memoryview' object.* a 'NoneType'",
+            memoryview.tolist,
+            None,
         )
 
     def test_tolist_returns_list_of_elements(self):
@@ -8172,11 +8190,12 @@ class ModuleTests(unittest.TestCase):
             fld = 4
 
         c = C()
-        with self.assertRaises(TypeError) as context:
-            ModuleType.__delattr__(c, "fld")
-        self.assertIn(
-            "'__delattr__' requires a 'module' object but received a 'C'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__delattr__' .* 'module' object.* a 'C'",
+            ModuleType.__delattr__,
+            c,
+            "fld",
         )
 
     def test_del_invalidates_cache(self):
@@ -9870,15 +9889,13 @@ class PropertyTests(unittest.TestCase):
         self.assertEqual(C().bar, 5)
 
     def test_dunder_get_called_with_non_property_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-
-            def bar():
-                pass
-
-            property.__get__(42.3, None, bar)
-        self.assertIn(
-            "'__get__' requires a 'property' object but received a 'float'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__get__' .* 'property' object.* a 'float'",
+            property.__get__,
+            42.3,
+            None,
+            None,
         )
 
     def test_dunder_new_called_with_non_type_object_raises_type_error(self):
@@ -10542,6 +10559,68 @@ class SetTests(unittest.TestCase):
         s = SubSet({1, 2, 3})
         self.assertEqual(s, copy.deepcopy(s))
 
+    def test_dunder_eq_with_non_set_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__eq__' .* 'set' object.* a 'list'",
+            set.__eq__,
+            [],
+            set(),
+        )
+
+    def test_dunder_ge_with_non_set_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__ge__' .* 'set' object.* a 'list'",
+            set.__ge__,
+            [],
+            set(),
+        )
+
+    def test_dunder_gt_with_non_set_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__gt__' .* 'set' object.* a 'list'",
+            set.__gt__,
+            [],
+            set(),
+        )
+
+    def test_dunder_init_with_non_set_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__init__' .* 'set' object.* a 'list'",
+            set.__init__,
+            [],
+        )
+
+    def test_dunder_le_with_non_set_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__le__' .* 'set' object.* a 'list'",
+            set.__le__,
+            [],
+            set(),
+        )
+
+    def test_dunder_lt_with_non_set_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__lt__' .* 'set' object.* a 'list'",
+            set.__lt__,
+            [],
+            set(),
+        )
+
+    def test_dunder_ne_with_non_set_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__ne__' .* 'set' object.* a 'list'",
+            set.__ne__,
+            [],
+            set(),
+        )
+
     def test_dunder_reduce_with_set_returns_tuple(self):
         s = set({1, 2, 3})
         result = s.__reduce__()
@@ -10581,6 +10660,14 @@ class SetTests(unittest.TestCase):
         for x in range(100):
             s.add(x)
         self.assertEqual(s, set(range(100)))
+
+    def test_copy_with_non_set_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'copy' .* 'set' object.* a 'frozenset'",
+            set.copy,
+            frozenset(),
+        )
 
     def test_set_difference_update_with_non_iterable_raises_type_error(self):
         a = {1, 2, 3}
@@ -10624,7 +10711,8 @@ class SetTests(unittest.TestCase):
 
     def test_dunder_ixor_with_non_set_self_raises_type_error(self):
         with self.assertRaisesRegex(
-            TypeError, "'__ixor__' requires a 'set' object but received a 'frozenset'"
+            TypeError,
+            "'__ixor__' .* 'set' object.* a 'frozenset'",
         ):
             set.__ixor__(frozenset(), set())
 
@@ -10698,19 +10786,21 @@ class SetTests(unittest.TestCase):
         self.assertEqual(len(a), 0)
 
     def test_dunder_or_with_non_set_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            set.__or__(frozenset(), set())
-        self.assertIn(
-            "'__or__' requires a 'set' object but received a 'frozenset'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__or__' .* 'set' object.* a 'frozenset'",
+            set.__or__,
+            frozenset(),
+            set(),
         )
 
     def test_dunder_xor_with_non_set_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            set.__xor__(frozenset(), set())
-        self.assertIn(
-            "'__xor__' requires a 'set' object but received a 'frozenset'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__xor__' .* 'set' object.* a 'frozenset'",
+            set.__xor__,
+            frozenset(),
+            set(),
         )
 
     def test_dunder_xor_with_non_anyset_other_returns_notimplemented(self):
@@ -10733,7 +10823,8 @@ class SetTests(unittest.TestCase):
 
     def test_dunder_rxor_with_non_set_raises_type_error(self):
         with self.assertRaisesRegex(
-            TypeError, "'__rxor__' requires a 'set' object but received a 'frozenset'"
+            TypeError,
+            "'__rxor__' .* 'set' object.* a 'frozenset'",
         ):
             set.__rxor__(frozenset(), set())
 
@@ -10857,11 +10948,12 @@ class SetTests(unittest.TestCase):
         self.assertIn("foo", a)
 
     def test_intersection_update_with_non_set_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            set.intersection_update(frozenset(), set())
-        self.assertIn(
-            "'intersection_update' requires a 'set' object but received a 'frozenset'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'intersection_update' .* 'set' object.* a 'frozenset'",
+            set.intersection_update,
+            frozenset(),
+            set(),
         )
 
     def test_intersection_update_with_non_iterable_other_raises_type_error(self):
@@ -10968,11 +11060,12 @@ class SetTests(unittest.TestCase):
         self.assertEqual(set.__isub__(set(), "not a set"), NotImplemented)
 
     def test_symmetric_difference_with_non_set_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            set.symmetric_difference(frozenset(), set())
-        self.assertIn(
-            "'symmetric_difference' requires a 'set' object but received a 'frozenset'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'symmetric_difference' .* 'set' object.* a 'frozenset'",
+            set.symmetric_difference,
+            frozenset(),
+            set(),
         )
 
     def test_symmetric_difference_with_non_anyset_other_returns_notimplemented(self):
@@ -10996,7 +11089,8 @@ class SetTests(unittest.TestCase):
 
     def test_symmetric_difference_update_with_non_set_self_raises_type_error(self):
         with self.assertRaisesRegex(
-            TypeError, "requires a 'set' object but received .+ 'int'"
+            TypeError,
+            "'symmetric_difference_update' .* 'set' object.* a 'int'",
         ):
             set.symmetric_difference_update(1, set())
 
@@ -11154,6 +11248,14 @@ class SetTests(unittest.TestCase):
         self.assertFalse({1, 2}.issuperset([1, 2, 3]))
         self.assertFalse({1, 2}.issuperset(range(1, 4)))
 
+    def test_update_with_non_set_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'update' .* 'set' object.* a 'frozenset'",
+            set.update,
+            frozenset(),
+        )
+
 
 class SimpleNamespaceTests(unittest.TestCase):
     def test_dunder_eq_returns_false(self):
@@ -11267,6 +11369,15 @@ class SliceTest(unittest.TestCase):
         s = slice(c, c, c)
         self.assertEqual(repr(s), "slice(repr, repr, repr)")
 
+    def test_indices_with_non_slice_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'indices' .* 'slice' object.* a 'list'",
+            slice.indices,
+            [],
+            1,
+        )
+
 
 class StaticMethodTests(unittest.TestCase):
     def test_dunder_abstractmethod_with_missing_attr_returns_false(self):
@@ -11346,15 +11457,13 @@ class StaticMethodTests(unittest.TestCase):
         self.assertEqual(C.bar(C()), 5)
 
     def test_dunder_get_called_with_non_staticmethod_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-
-            def bar():
-                pass
-
-            staticmethod.__get__(42.3, None, bar)
-        self.assertIn(
-            "'__get__' requires a 'staticmethod' object but received a 'float'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__get__' .* 'staticmethod' object.* a 'float'",
+            staticmethod.__get__,
+            42.3,
+            None,
+            None,
         )
 
     def test_dunder_new_called_with_non_type_object_raises_type_error(self):
@@ -11566,11 +11675,12 @@ class TupleTests(unittest.TestCase):
         self.assertEqual(repr(y), "([(...)], [], 1)")
 
     def test_dunder_eq_with_non_tuple_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            tuple.__eq__(None, ())
-        self.assertIn(
-            "'__eq__' requires a 'tuple' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__eq__' .* 'tuple' object.* a 'NoneType'",
+            tuple.__eq__,
+            None,
+            (),
         )
 
     def test_dunder_eq_with_non_tuple_other_return_not_implemented(self):
@@ -11602,11 +11712,12 @@ class TupleTests(unittest.TestCase):
         self.assertFalse(tuple.__eq__(lhs, rhs))
 
     def test_dunder_ge_with_non_tuple_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            tuple.__ge__(None, ())
-        self.assertIn(
-            "'__ge__' requires a 'tuple' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__ge__' .* 'tuple' object.* a 'NoneType'",
+            tuple.__ge__,
+            None,
+            (),
         )
 
     def test_dunder_ge_with_non_tuple_other_return_not_implemented(self):
@@ -11638,11 +11749,12 @@ class TupleTests(unittest.TestCase):
         self.assertFalse(tuple.__ge__(lhs, rhs))
 
     def test_dunder_getitem_with_non_tuple_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            tuple.__getitem__(None, 1)
-        self.assertIn(
-            "'__getitem__' requires a 'tuple' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__getitem__' .* 'tuple' object.* a 'NoneType'",
+            tuple.__getitem__,
+            None,
+            1,
         )
 
     def test_dunder_getitem_with_int_subclass_does_not_call_dunder_index(self):
@@ -11761,11 +11873,12 @@ class TupleTests(unittest.TestCase):
         self.assertEqual(tuple.__getitem__(t, slice(2, 1, 2)), ())
 
     def test_dunder_gt_with_non_tuple_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            tuple.__gt__(None, ())
-        self.assertIn(
-            "'__gt__' requires a 'tuple' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__gt__' .* 'tuple' object.* a 'NoneType'",
+            tuple.__gt__,
+            None,
+            (),
         )
 
     def test_dunder_gt_with_non_tuple_other_return_not_implemented(self):
@@ -11797,11 +11910,12 @@ class TupleTests(unittest.TestCase):
         self.assertFalse(tuple.__gt__(lhs, rhs))
 
     def test_dunder_le_with_non_tuple_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            tuple.__le__(None, ())
-        self.assertIn(
-            "'__le__' requires a 'tuple' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__le__' .* 'tuple' object.* a 'NoneType'",
+            tuple.__le__,
+            None,
+            (),
         )
 
     def test_dunder_le_with_non_tuple_other_return_not_implemented(self):
@@ -11833,11 +11947,12 @@ class TupleTests(unittest.TestCase):
         self.assertTrue(tuple.__le__(lhs, rhs))
 
     def test_dunder_lt_with_non_tuple_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            tuple.__lt__(None, ())
-        self.assertIn(
-            "'__lt__' requires a 'tuple' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__lt__' .* 'tuple' object.* a 'NoneType'",
+            tuple.__lt__,
+            None,
+            (),
         )
 
     def test_dunder_lt_with_non_tuple_other_returns_not_implemented(self):
@@ -11869,11 +11984,12 @@ class TupleTests(unittest.TestCase):
         self.assertTrue(tuple.__lt__(lhs, rhs))
 
     def test_dunder_ne_with_non_tuple_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            tuple.__ne__(None, ())
-        self.assertIn(
-            "'__ne__' requires a 'tuple' object but received a 'NoneType'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__ne__' .* 'tuple' object.* a 'NoneType'",
+            tuple.__ne__,
+            None,
+            (),
         )
 
     def test_dunder_ne_with_non_tuple_other_returns_not_implemented(self):
@@ -12576,11 +12692,12 @@ class TypeTests(unittest.TestCase):
             fld = 4
 
         c = C()
-        with self.assertRaises(TypeError) as context:
-            type.__delattr__(c, "fld")
-        self.assertIn(
-            "'__delattr__' requires a 'type' object but received a 'C'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'__delattr__' .* 'type' object.* a 'C'",
+            type.__delattr__,
+            c,
+            "fld",
         )
 
     def test_dunder_base_with_object_type_returns_none(self):
@@ -12657,6 +12774,14 @@ class TypeTests(unittest.TestCase):
     def test_dunder_basicsize_get_with_non_type_raises_type_error(self):
         with self.assertRaises(TypeError):
             type.__dict__["__basicsize__"].__get__(42)
+
+    def test_dunder_call_with_non_type_self_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__call__' .* 'type' object.* a 'int'",
+            type.__call__,
+            5,
+        )
 
     def test_dunder_dir_with_non_type_object_raises_type_error(self):
         with self.assertRaises(TypeError):

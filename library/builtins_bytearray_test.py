@@ -7,6 +7,15 @@ from test_support import supports_38_feature
 
 
 class ByteArrayTests(unittest.TestCase):
+    def test_dunder_add_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__add__' .* 'bytearray' object.* a 'str'",
+            bytearray.__add__,
+            "not a bytearray",
+            bytearray(),
+        )
+
     def test_dunder_contains_with_non_bytearray_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytearray.__contains__("not_bytearray", 123)
@@ -128,6 +137,24 @@ class ByteArrayTests(unittest.TestCase):
         del result[4 :: 1 << 333]
         self.assertEqual(result, bytearray(b"0123"))
 
+    def test_dunder_eq_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__eq__' .* 'bytearray' object.* a 'str'",
+            bytearray.__eq__,
+            "not a bytearray",
+            bytearray(),
+        )
+
+    def test_dunder_ge_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__ge__' .* 'bytearray' object.* a 'str'",
+            bytearray.__ge__,
+            "not a bytearray",
+            bytearray(),
+        )
+
     def test_dunder_getitem_with_non_index_raises_type_error(self):
         ba = bytearray()
         with self.assertRaises(TypeError) as context:
@@ -183,13 +210,40 @@ class ByteArrayTests(unittest.TestCase):
         self.assertIsInstance(result, bytearray)
         self.assertEqual(result, b"eoo")
 
+    def test_dunder_gt_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__gt__' .* 'bytearray' object.* a 'str'",
+            bytearray.__gt__,
+            "not a bytearray",
+            bytearray(),
+        )
+
     def test_dunder_hash_is_none(self):
         self.assertIs(bytearray.__hash__, None)
+
+    def test_dunder_iadd_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__iadd__' .* 'bytearray' object.* a 'str'",
+            bytearray.__iadd__,
+            "not a bytearray",
+            bytearray(),
+        )
+
+    def test_dunder_imul_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__imul__' .* 'bytearray' object.* a 'str'",
+            bytearray.__imul__,
+            "not a bytearray",
+            bytearray(),
+        )
 
     def test_dunder_init_with_non_bytearray_raises_type_error(self):
         self.assertRaisesRegex(
             TypeError,
-            "'__init__' requires a 'bytearray' object but received a 'bytes'",
+            "'__init__' .* 'bytearray' object.* a 'bytes'",
             bytearray.__init__,
             b"",
         )
@@ -290,6 +344,58 @@ class ByteArrayTests(unittest.TestCase):
         ba = bytearray.__new__(bytearray)
         self.assertIsNone(ba.__init__([100, 101, 102]))
         self.assertEqual(ba, b"def")
+
+    def test_dunder_le_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__le__' .* 'bytearray' object.* a 'str'",
+            bytearray.__le__,
+            "not a bytearray",
+            bytearray(),
+        )
+
+    def test_dunder_len_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__len__' .* 'bytearray' object.* a 'str'",
+            bytearray.__len__,
+            "not a bytearray",
+        )
+
+    def test_dunder_lt_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__lt__' .* 'bytearray' object.* a 'str'",
+            bytearray.__lt__,
+            "not a bytearray",
+            bytearray(),
+        )
+
+    def test_dunder_mul_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__mul__' .* 'bytearray' object.* a 'str'",
+            bytearray.__mul__,
+            "not a bytearray",
+            2,
+        )
+
+    def test_dunder_ne_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__ne__' .* 'bytearray' object.* a 'str'",
+            bytearray.__ne__,
+            "not a bytearray",
+            bytearray(),
+        )
+
+    def test_dunder_repr_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'__repr__' .* 'bytearray' object.* a 'str'",
+            bytearray.__repr__,
+            "not a bytearray",
+        )
 
     def test_dunder_setitem_with_non_bytearray_raises_type_error(self):
         with self.assertRaises(TypeError):
@@ -472,19 +578,19 @@ class ByteArrayTests(unittest.TestCase):
         self.assertEqual("byte must be in range(0, 256)", str(context.exception))
 
     def test_clear_with_non_bytearray_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            bytearray.clear(b"")
-        self.assertIn(
-            "'clear' requires a 'bytearray' object but received a 'bytes'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'clear' .* 'bytearray' object.* a 'bytes'",
+            bytearray.clear,
+            b"",
         )
 
     def test_copy_with_non_bytearray_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            bytearray.copy(b"")
-        self.assertIn(
-            "'copy' requires a 'bytearray' object but received a 'bytes'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'copy' .* 'bytearray' object.* a 'bytes'",
+            bytearray.copy,
+            b"",
         )
 
     def test_copy_returns_new_object(self):
@@ -495,11 +601,12 @@ class ByteArrayTests(unittest.TestCase):
         self.assertEqual(array, copy)
 
     def test_count_with_bytes_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            bytearray.count(b"", bytearray())
-        self.assertIn(
-            "'count' requires a 'bytearray' object but received a 'bytes'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'count' .* 'bytearray' object.* a 'bytes'",
+            bytearray.count,
+            b"",
+            bytearray(),
         )
 
     def test_count_with_nonbyte_int_raises_value_error(self):
@@ -617,11 +724,12 @@ class ByteArrayTests(unittest.TestCase):
         self.assertEqual(haystack.count(needle), 3)
 
     def test_endswith_with_bytes_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            bytearray.endswith(b"", bytearray())
-        self.assertIn(
-            "'endswith' requires a 'bytearray' object but received a 'bytes'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'endswith' .* 'bytearray' object.* a 'bytes'",
+            bytearray.endswith,
+            b"",
+            bytearray(),
         )
 
     def test_endswith_with_list_other_raises_type_error(self):
@@ -809,6 +917,14 @@ class ByteArrayTests(unittest.TestCase):
             haystack.find(needle)
         self.assertEqual(str(context.exception), "not a byte!")
 
+    def test_hex_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'hex' .* 'bytearray' object.* a 'str'",
+            bytearray.hex,
+            "not a bytearray",
+        )
+
     def test_index_with_bytes_self_raises_type_error(self):
         with self.assertRaises(TypeError):
             bytearray.index(b"", bytearray())
@@ -833,11 +949,12 @@ class ByteArrayTests(unittest.TestCase):
         self.assertEqual(str(context.exception), "subsection not found")
 
     def test_join_with_non_bytearray_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            bytearray.join(b"", [])
-        self.assertIn(
-            "'join' requires a 'bytearray' object but received a 'bytes'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'join' .* 'bytearray' object.* a 'bytes'",
+            bytearray.join,
+            b"",
+            bytearray(),
         )
 
     def test_ljust_without_growth_returns_copy(self):
@@ -995,11 +1112,12 @@ class ByteArrayTests(unittest.TestCase):
         self.assertIsNot(result, arr)
 
     def test_rfind_with_bytes_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            bytearray.rfind(b"", bytearray())
-        self.assertIn(
-            "'rfind' requires a 'bytearray' object but received a 'bytes'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'rfind' .* 'bytearray' object.* a 'bytes'",
+            bytearray.rfind,
+            b"",
+            bytearray(),
         )
 
     def test_rfind_with_empty_sub_returns_end(self):
@@ -1217,11 +1335,12 @@ class ByteArrayTests(unittest.TestCase):
         self.assertIsNot(result, arr)
 
     def test_split_with_non_bytearray_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            bytearray.split(b"foo bar")
-        self.assertIn(
-            "'split' requires a 'bytearray' object but received a 'bytes'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'split' .* 'bytearray' object.* a 'bytes'",
+            bytearray.split,
+            b"foo bar",
+            bytearray(),
         )
 
     def test_split_with_non_byteslike_sep_raises_type_error(self):
@@ -1282,11 +1401,12 @@ class ByteArrayTests(unittest.TestCase):
         self.assertEqual(b.split(b"not found"), [b])
 
     def test_startswith_with_bytes_self_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            bytearray.startswith(b"", bytearray())
-        self.assertIn(
-            "'startswith' requires a 'bytearray' object but received a 'bytes'",
-            str(context.exception),
+        self.assertRaisesRegex(
+            TypeError,
+            "'startswith' .* 'bytearray' object.* a 'bytes'",
+            bytearray.startswith,
+            b"",
+            bytearray(),
         )
 
     def test_startswith_with_list_other_raises_type_error(self):
@@ -1348,6 +1468,15 @@ class ByteArrayTests(unittest.TestCase):
         self.assertIsInstance(result, bytearray)
         self.assertEqual(result, arr)
         self.assertIsNot(result, arr)
+
+    def test_translate_with_non_bytearray_raises_type_error(self):
+        self.assertRaisesRegex(
+            TypeError,
+            "'translate' .* 'bytearray' object.* a 'str'",
+            bytearray.translate,
+            "not a bytearray",
+            bytes(256),
+        )
 
     def test_upper_with_non_bytearray_raises_type_error(self):
         with self.assertRaises(TypeError):

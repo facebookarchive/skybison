@@ -180,12 +180,6 @@ TEST_F(StrBuiltinsTest, DunderNewWithTooManyArgsRaisesTypeError) {
       "'str.__new__' takes max 4 positional arguments but 5 given"));
 }
 
-TEST_F(StrBuiltinsTest, DunderNewWithNonTypeArgRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "str.__new__(1)"), LayoutId::kTypeError,
-      "'__new__' requires a 'type' object but received a 'int'"));
-}
-
 TEST_F(StrBuiltinsTest, DunderNewWithNonSubtypeArgRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, "str.__new__(object)"),
                             LayoutId::kTypeError,
@@ -300,22 +294,10 @@ TEST_F(StrBuiltinsTest, DunderLenWithNonAsciiReturnsCodePointLength) {
   EXPECT_TRUE(isIntEqualsWord(*length, 1));
 }
 
-TEST_F(StrBuiltinsTest, DunderLenWithIntRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "l = str.__len__(None)"), LayoutId::kTypeError,
-      "'__len__' requires a 'str' object but received a 'NoneType'"));
-}
-
 TEST_F(StrBuiltinsTest, DunderLenWithExtraArgumentRaisesTypeError) {
   EXPECT_TRUE(raisedWithStr(
       runFromCStr(runtime_, "l = 'aloha'.__len__('arg')"), LayoutId::kTypeError,
       "'str.__len__' takes max 1 positional arguments but 2 given"));
-}
-
-TEST_F(StrBuiltinsTest, DunderMulWithNonStrRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, "str.__mul__(None, 1)"), LayoutId::kTypeError,
-      "'__mul__' requires a 'str' object but received a 'NoneType'"));
 }
 
 TEST_F(StrBuiltinsTest, DunderMulWithNonIntRaisesTypeError) {
@@ -1111,33 +1093,6 @@ l = "1,2,3,4".rsplit(",", 5)
   EXPECT_TRUE(isStrEqualsCStr(result.at(1), "2"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(2), "3"));
   EXPECT_TRUE(isStrEqualsCStr(result.at(3), "4"));
-}
-
-TEST_F(StrBuiltinsTest, StrStripWithNonStrRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, R"(
-str.strip(None)
-)"),
-      LayoutId::kTypeError,
-      "'strip' requires a 'str' object but received a 'NoneType'"));
-}
-
-TEST_F(StrBuiltinsTest, StrLStripWithNonStrRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, R"(
-str.lstrip(None)
-)"),
-      LayoutId::kTypeError,
-      "'lstrip' requires a 'str' object but received a 'NoneType'"));
-}
-
-TEST_F(StrBuiltinsTest, StrRStripWithNonStrRaisesTypeError) {
-  EXPECT_TRUE(raisedWithStr(
-      runFromCStr(runtime_, R"(
-str.rstrip(None)
-)"),
-      LayoutId::kTypeError,
-      "'rstrip' requires a 'str' object but received a 'NoneType'"));
 }
 
 TEST_F(StrBuiltinsTest, StrStripWithInvalidCharsRaisesTypeError) {

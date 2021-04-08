@@ -461,7 +461,7 @@ class traceback(bootstrap=True):
     def __dir__(self):
         if _type(self) is not traceback:
             raise TypeError(
-                f"'__dir__' requires a 'traceback' object but received a {_type(self).__name__}"
+                f"'__dir__' for 'traceback' objects doesn't apply to a '{_type(self).__name__}' object"
             )
         return ["tb_frame", "tb_next", "tb_lasti", "tb_lineno"]
 
@@ -1675,7 +1675,9 @@ class _str_array(bootstrap=True):  # noqa: F821
 
     def __repr__(self) -> str:
         if _type(self) is not _str_array:
-            raise TypeError("'__repr__' requires a '_str_array' object")
+            raise TypeError(
+                f"'__repr__' for '_str_array' objects doesn't apply to a '{_type(self).__name__}' object"
+            )
         return f"_str_array('{self.__str__()}')"
 
     def __str__(self) -> str:  # noqa: T484
@@ -2963,8 +2965,8 @@ class complex(bootstrap=True):
     def __ge__(self, other):
         if not _complex_check(self):
             raise TypeError(
-                "'__ge__' requires a 'complex' object but "
-                f"received a '{type(self).__name__}'"
+                "'__ge__' for 'complex' objects doesn't apply to a "
+                f"'{_type(self).__name__}' object"
             )
 
         return NotImplemented
@@ -2977,8 +2979,8 @@ class complex(bootstrap=True):
     def __gt__(self, other):
         if not _complex_check(self):
             raise TypeError(
-                "'__gt__' requires a 'complex' object but "
-                f"received a '{type(self).__name__}'"
+                "'__gt__' for 'complex' objects doesn't apply to a "
+                f"'{_type(self).__name__}' object"
             )
 
         return NotImplemented
@@ -2992,8 +2994,8 @@ class complex(bootstrap=True):
     def __le__(self, other):
         if not _complex_check(self):
             raise TypeError(
-                "'__le__' requires a 'complex' object but "
-                f"received a '{type(self).__name__}'"
+                "'__le__' for 'complex' objects doesn't apply to a "
+                f"'{_type(self).__name__}' object"
             )
 
         return NotImplemented
@@ -3001,8 +3003,8 @@ class complex(bootstrap=True):
     def __lt__(self, other):
         if not _complex_check(self):
             raise TypeError(
-                "'__lt__' requires a 'complex' object but "
-                f"received a '{type(self).__name__}'"
+                "'__lt__' for 'complex' objects doesn't apply to a "
+                f"'{_type(self).__name__}' object"
             )
 
         return NotImplemented
@@ -3083,8 +3085,8 @@ class complex(bootstrap=True):
     def __repr__(self):
         if not _complex_check(self):
             raise TypeError(
-                "descriptor '__repr__' requires a 'complex' object but "
-                f"received a '{type(self).__name__}'"
+                "'__repr__' for 'complex' objects doesn't apply to a "
+                f"'{_type(self).__name__}' object"
             )
 
         real_str = f"{self.real:g}"
@@ -3796,8 +3798,8 @@ class float(bootstrap=True):
     def __repr__(self) -> str:
         if not _float_check(self):
             raise TypeError(
-                f"'__repr__' requires a 'float' object "
-                f"but received a '{_type(self).__name__}'"
+                f"'__repr__' for 'float' objects doesn't apply to a "
+                f"'{_type(self).__name__}' object"
             )
         return _float_format(self, "r", 0, False, True, False)
 
@@ -3839,8 +3841,8 @@ class float(bootstrap=True):
     def __str__(self) -> str:
         if not _float_check(self):
             raise TypeError(
-                f"'__str__' requires a 'float' object "
-                f"but received a '{_type(self).__name__}'"
+                f"'__str__' for 'float' objects doesn't apply to a "
+                f"'{_type(self).__name__}' object"
             )
         return _float_format(self, "r", 0, False, True, False)
 
@@ -5369,8 +5371,8 @@ class module(bootstrap=True):
     def __dir__(self):
         if not isinstance(self, module):
             raise TypeError(
-                f"'__dir__' requires a 'module' object "
-                "but received a '{_type(self).__name__}'"
+                "'__dir__' for 'module' objects doesn't apply to a "
+                f"'{_type(self).__name__}' object"
             )
         return _module_dir(self)
 
@@ -5595,8 +5597,8 @@ class range(bootstrap=True):
     def __getitem__(self, key):
         if not _range_check(self):
             raise TypeError(
-                "'__getitem__' requires a 'range' object but received a "
-                f"'{_type(self).__name__}'"
+                "'__getitem__' for 'range' objects doesn't apply to a "
+                f"'{_type(self).__name__}' object"
             )
         if _int_check(key):
             return _range_getitem(self, key)
@@ -5974,8 +5976,8 @@ class set(bootstrap=True):
     def union(self, *others):
         if not _set_check(self):
             raise TypeError(
-                "'union' requires a 'set' object but received a "
-                f"'{_type(self).__name__}'"
+                "'union' for 'set' objects doesn't apply to a "
+                f"'{_type(self).__name__}' object"
             )
         result = set.copy(self)
         for item in others:
@@ -6132,8 +6134,8 @@ class str(bootstrap=True):
 
         if not _str_check(self):
             raise TypeError(
-                f"'__mod__' requires a 'str' object "
-                f"but received a '{_type(self).__name__}'"
+                "'__mod__' for 'str' objects doesn't apply to a "
+                f"'{_type(self).__name__}' object"
             )
         return _str_mod_format(self, other)
 

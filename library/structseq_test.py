@@ -93,10 +93,13 @@ class StructSequenceTests(unittest.TestCase):
     def test_descriptor_on_other_instance_raises_type_error(self):
         sseq_type = grp.struct_group
         descriptor = sseq_type.gr_name
-        with self.assertRaisesRegex(
-            TypeError, "descriptor.*doesn't apply to 'tuple' object"
-        ):
-            descriptor.__get__((1, 2, 3, 4), tuple)
+        self.assertRaisesRegex(
+            TypeError,
+            r"descriptor .* '(grp.)?struct_group' .* 'tuple' object",
+            descriptor.__get__,
+            (1, 2, 3, 4),
+            tuple,
+        )
 
     def test_repr_returns_string(self):
         sseq_type = grp.struct_group

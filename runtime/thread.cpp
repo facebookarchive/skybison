@@ -675,7 +675,7 @@ RawObject Thread::raiseRequiresType(const Object& obj, SymbolId expected_type) {
   Function function(&scope, currentFrame()->function());
   Str function_name(&scope, function.name());
   return raiseWithFmt(LayoutId::kTypeError,
-                      "'%S' requires a '%Y' object but received a '%T'",
+                      "'%S' for '%Y' objects doesn't apply to a '%T' object",
                       &function_name, expected_type, &obj);
 }
 
