@@ -641,7 +641,7 @@ RawObject FUNC(builtins, chr)(Thread* thread, Arguments args) {
   Int num(&scope, intUnderlying(*arg));
   if (!num.isSmallInt()) {
     return thread->raiseWithFmt(LayoutId::kOverflowError,
-                                "Python int too large to convert to C long");
+                                "Python int too large to convert to C int");
   }
   word code_point = num.asWord();
   if (code_point < 0 || code_point > kMaxUnicode) {

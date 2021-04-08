@@ -2472,11 +2472,10 @@ class ChrTests(unittest.TestCase):
         )
 
     def test_with_large_int_raises_overflow_error(self):
-        with self.assertRaises(OverflowError) as context:
+        with self.assertRaisesRegex(
+            OverflowError, r"Python int too large to convert to C \w*"
+        ):
             chr(123456789012345678901234567890)
-        self.assertEqual(
-            str(context.exception), "Python int too large to convert to C long"
-        )
 
 
 class ClassMethodTests(unittest.TestCase):
