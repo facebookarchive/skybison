@@ -1390,19 +1390,6 @@ static void copySlotIfImplementedInBase(Thread* thread, const Type& type,
   }
 }
 
-static void inheritFinalize(Thread* thread, const Type& type,
-                            unsigned long type_flags, const Type& base,
-                            unsigned long base_flags) {
-  if ((type_flags & Py_TPFLAGS_HAVE_FINALIZE) &&
-      (base_flags & Py_TPFLAGS_HAVE_FINALIZE)) {
-    copySlotIfImplementedInBase(thread, type, base, Py_tp_finalize);
-  }
-  if ((type_flags & Py_TPFLAGS_HAVE_FINALIZE) &&
-      (base_flags & Py_TPFLAGS_HAVE_FINALIZE)) {
-    copySlotIfImplementedInBase(thread, type, base, Py_tp_finalize);
-  }
-}
-
 static void inheritFree(Thread* thread, const Type& type,
                         unsigned long type_flags, const Type& base,
                         unsigned long base_flags) {
@@ -1523,6 +1510,7 @@ static const int kInheritableSlots[] = {
   Py_tp_init,
   Py_tp_alloc,
   Py_tp_is_gc,
+  Py_tp_finalize,
 
   // Instance dictionary is not part of PEP-384
 
@@ -1575,7 +1563,6 @@ static void inheritSlots(Thread* thread, const Type& type, const Type& base) {
 
   unsigned long type_flags = typeSlotUWordAt(type, kSlotFlags);
   unsigned long base_flags = typeSlotUWordAt(base, kSlotFlags);
-  inheritFinalize(thread, type, type_flags, base, base_flags);
   inheritFree(thread, type, type_flags, base, base_flags);
 }
 

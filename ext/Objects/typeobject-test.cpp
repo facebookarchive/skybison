@@ -3523,8 +3523,9 @@ TEST_F(TypeExtensionApiTest,
       &emptyCompareFunc);
 }
 
+// TODO(T84156637): remove Pyro-only filter after 3.8 update
 TEST_F(TypeExtensionApiTest,
-       FromSpecWithBasesDoesNotInheritFinalizeWhenHaveFinalizeFlagUnset) {
+       FromSpecWithBasesInheritsFinalizeRegardlessOfFlagPyro) {
   static PyType_Slot base_slots[2];
   base_slots[0] = {Py_tp_finalize,
                    reinterpret_cast<void*>(&emptyDestructorFunc)};
@@ -3546,7 +3547,8 @@ TEST_F(TypeExtensionApiTest,
   PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
 
   PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_finalize), nullptr);
+  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_finalize),
+            reinterpret_cast<void*>(&emptyDestructorFunc));
 }
 
 TEST_F(TypeExtensionApiTest,
