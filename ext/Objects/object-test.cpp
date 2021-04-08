@@ -696,8 +696,9 @@ TEST_F(ObjectExtensionApiTest, CallFinalizerFromDeallocWithNonZeroRefcntDies) {
                "non-zero refcount");
 }
 
+// TODO(T84156637): remove Pyro-only filter after 3.8 update
 TEST_F(ObjectExtensionApiTest,
-       CallFinalizerFromDeallocWithoutTpFinalizeFlagDoesNotCallTpFinalize) {
+       CallFinalizerFromDeallocWithoutTpFinalizeFlagCallsTpFinalizePyro) {
   static bool dealloc_called;
   static bool finalizer_called;
   dealloc_called = false;
@@ -732,7 +733,7 @@ TEST_F(ObjectExtensionApiTest,
   // Pyro and immmediately in the decref in CPython.
   collectGarbage();
   EXPECT_TRUE(dealloc_called);
-  EXPECT_FALSE(finalizer_called);
+  EXPECT_TRUE(finalizer_called);
 }
 
 TEST_F(ObjectExtensionApiTest,

@@ -162,14 +162,13 @@ PY_EXPORT PyObject* PyObject_Bytes(PyObject* pyobj) {
 
 PY_EXPORT void PyObject_CallFinalizer(PyObject* self) {
   PyTypeObject* type = Py_TYPE(self);
-  unsigned long type_flags = PyType_GetFlags(type);
   auto finalizer =
       reinterpret_cast<destructor>(PyType_GetSlot(type, Py_tp_finalize));
-  if (!(type_flags & Py_TPFLAGS_HAVE_FINALIZE) || finalizer == nullptr) {
+  if (finalizer == nullptr) {
     // Nothing to finalize.
     return;
   }
-  bool is_gc = type_flags & Py_TPFLAGS_HAVE_GC;
+  bool is_gc = (PyType_GetFlags(type) & Py_TPFLAGS_HAVE_GC) != 0;
   if (is_gc) {
     // TODO(T55208267): Support GC types
     UNIMPLEMENTED(
