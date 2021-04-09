@@ -126,6 +126,7 @@ from _builtins import (
     _instance_guard,
     _instance_overflow_dict,
     _instance_setattr,
+    _instancemethod_func,
     _int_check,
     _int_check_exact,
     _int_from_bytes,
@@ -4291,6 +4292,47 @@ class instance_proxy(bootstrap=True):
             return value
         _instance_setattr(instance, key, default)
         return default
+
+
+class instancemethod(bootstrap=True):
+    def __call__(self, *args, **kwargs):
+        func = _instancemethod_func(self)
+        return func(*args, **kwargs)
+
+    def __eq__(self, other):
+        _unimplemented()
+
+    def __ge__(self, other):
+        _unimplemented()
+
+    def __get__(self, obj, owner):
+        func = _instancemethod_func(self)
+        if obj is None:
+            return func
+        return method(func, obj)
+
+    # TODO(T87960349): Implement __getattribute__
+
+    def __gt__(self, other):
+        _unimplemented()
+
+    # instancemethod is not designed to be subclassed.
+    __init__ = None
+
+    # instancemethod is not designed to be subclassed.
+    __new__ = None
+
+    def __le__(self, other):
+        _unimplemented()
+
+    def __lt__(self, other):
+        _unimplemented()
+
+    def __ne__(self, other):
+        _unimplemented()
+
+    def __repr__(self):
+        _unimplemented()
 
 
 class int(bootstrap=True):

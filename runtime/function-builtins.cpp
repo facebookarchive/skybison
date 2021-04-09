@@ -59,6 +59,11 @@ static const BuiltinAttribute kBoundMethodAttributes[] = {
     {ID(__self__), RawBoundMethod::kSelfOffset, AttributeFlags::kReadOnly},
 };
 
+static const BuiltinAttribute kInstanceMethodAttributes[] = {
+    {ID(__func__), RawInstanceMethod::kFunctionOffset,
+     AttributeFlags::kReadOnly},
+};
+
 void initializeFunctionTypes(Thread* thread) {
   HandleScope scope(thread);
   Type type(&scope, addBuiltinType(thread, ID(function), LayoutId::kFunction,
@@ -71,6 +76,10 @@ void initializeFunctionTypes(Thread* thread) {
   addBuiltinType(thread, ID(method), LayoutId::kBoundMethod,
                  /*superclass_id=*/LayoutId::kObject, kBoundMethodAttributes,
                  BoundMethod::kSize, /*basetype=*/false);
+
+  addBuiltinType(thread, ID(instancemethod), LayoutId::kInstanceMethod,
+                 /*superclass_id=*/LayoutId::kObject, kInstanceMethodAttributes,
+                 InstanceMethod::kSize, /*basetype=*/false);
 }
 
 RawObject slotWrapperFunctionType(const Function& function) {

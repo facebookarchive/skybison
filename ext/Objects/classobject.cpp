@@ -7,16 +7,30 @@ PY_EXPORT int PyMethod_Check_Func(PyObject* obj) {
   return ApiHandle::fromPyObject(obj)->asObject().isBoundMethod();
 }
 
-PY_EXPORT int PyInstanceMethod_Check(PyObject* /* c */) {
-  UNIMPLEMENTED("PyInstanceMethod_Check");
+PY_EXPORT int PyInstanceMethod_Check(PyObject* obj) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object obj_obj(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  return obj_obj.isInstanceMethod();
 }
 
-PY_EXPORT PyObject* PyInstanceMethod_GET_FUNCTION_Func(PyObject* /* c */) {
-  UNIMPLEMENTED("PyInstanceMethod_GET_FUNCTION_Func");
+PY_EXPORT PyObject* PyInstanceMethod_GET_FUNCTION_Func(PyObject* obj) {
+  return ApiHandle::borrowedReference(
+      Thread::current()->runtime(),
+      InstanceMethod::cast(ApiHandle::fromPyObject(obj)->asObject())
+          .function());
 }
 
-PY_EXPORT PyObject* PyInstanceMethod_New(PyObject* /* c */) {
-  UNIMPLEMENTED("PyInstanceMethod_New");
+PY_EXPORT PyObject* PyInstanceMethod_New(PyObject* obj) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Object callable(&scope, ApiHandle::fromPyObject(obj)->asObject());
+  Runtime* runtime = thread->runtime();
+  InstanceMethod method(&scope,
+                        runtime->newInstanceWithSize(LayoutId::kInstanceMethod,
+                                                     InstanceMethod::kSize));
+  method.setFunction(*callable);
+  return ApiHandle::newReference(runtime, *method);
 }
 
 PY_EXPORT PyObject* PyMethod_Function(PyObject* obj) {

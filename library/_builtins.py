@@ -573,6 +573,10 @@ def _instance_setattr(obj, name, value):
     _builtin()
 
 
+def _instancemethod_func(obj):
+    _builtin()
+
+
 def _int_check(obj):
     "$intrinsic$"
     _builtin()

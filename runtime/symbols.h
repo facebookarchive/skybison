@@ -652,6 +652,7 @@ class Runtime;
   V(indexOf)                                                                   \
   V(instance)                                                                  \
   V(instance_proxy)                                                            \
+  V(instancemethod)                                                            \
   V(int)                                                                       \
   V(invert)                                                                    \
   V(ior)                                                                       \

@@ -2943,6 +2943,16 @@ RawObject FUNC(_builtins, _int_check_exact)(Thread*, Arguments args) {
   return Bool::fromBool(arg.isSmallInt() || arg.isLargeInt());
 }
 
+RawObject FUNC(_builtins, _instancemethod_func)(Thread* thread,
+                                                Arguments args) {
+  HandleScope scope(thread);
+  Object obj(&scope, args.get(0));
+  if (!obj.isInstanceMethod()) {
+    return thread->raiseRequiresType(obj, ID(instancemethod));
+  }
+  return InstanceMethod::cast(*obj).function();
+}
+
 static RawObject positiveIntFromSmallStrWithBase10(RawSmallStr str) {
   word length = str.length();
   if (length == 0) {

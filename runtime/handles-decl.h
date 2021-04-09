@@ -56,6 +56,7 @@ class Handle;
   V(IncrementalNewlineDecoder)                                                 \
   V(IndexError)                                                                \
   V(Instance)                                                                  \
+  V(InstanceMethod)                                                            \
   V(Int)                                                                       \
   V(KeyError)                                                                  \
   V(LargeBytes)                                                                \

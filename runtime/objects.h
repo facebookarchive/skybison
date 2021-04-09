@@ -95,6 +95,7 @@ class Thread;
   V(Generator)                                                                 \
   V(GeneratorFrame)                                                            \
   V(IncrementalNewlineDecoder)                                                 \
+  V(InstanceMethod)                                                            \
   V(InstanceProxy)                                                             \
   V(Layout)                                                                    \
   V(List)                                                                      \
@@ -367,6 +368,7 @@ class RawObject {
   bool isIncrementalNewlineDecoder() const;
   bool isIndexError() const;
   bool isInstance() const;
+  bool isInstanceMethod() const;
   bool isInstanceProxy() const;
   bool isKeyError() const;
   bool isLargeBytes() const;
@@ -3778,6 +3780,20 @@ class RawFileIO : public RawUnderRawIOBase {
   RAW_OBJECT_COMMON_NO_CAST(FileIO);
 };
 
+class RawInstanceMethod : public RawInstance {
+ public:
+  // Getters and setters
+
+  RawObject function() const;
+  void setFunction(RawObject function) const;
+
+  // Layout.
+  static const int kFunctionOffset = RawHeapObject::kSize;
+  static const int kSize = kFunctionOffset + kPointerSize;
+
+  RAW_OBJECT_COMMON(InstanceMethod);
+};
+
 class RawInstanceProxy : public RawInstance {
  public:
   // Getters and setters
@@ -4254,6 +4270,10 @@ inline bool RawObject::isGeneratorFrame() const {
 
 inline bool RawObject::isIncrementalNewlineDecoder() const {
   return isHeapObjectWithLayout(LayoutId::kIncrementalNewlineDecoder);
+}
+
+inline bool RawObject::isInstanceMethod() const {
+  return isHeapObjectWithLayout(LayoutId::kInstanceMethod);
 }
 
 inline bool RawObject::isInstanceProxy() const {
@@ -7958,6 +7978,16 @@ inline bool RawStringIO::hasWritetranslate() const {
 inline void RawStringIO::setWritetranslate(bool writetranslate) const {
   instanceVariableAtPut(kWritetranslateOffset,
                         RawBool::fromBool(writetranslate));
+}
+
+// RawInstanceMethod
+
+inline RawObject RawInstanceMethod::function() const {
+  return instanceVariableAt(kFunctionOffset);
+}
+
+inline void RawInstanceMethod::setFunction(RawObject function) const {
+  return instanceVariableAtPut(kFunctionOffset, function);
 }
 
 // RawIncrementalNewlineDecoder
