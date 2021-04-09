@@ -2363,7 +2363,8 @@ class BoundMethodTests(unittest.TestCase):
 
         self.assertEqual(C().meth.__eq__(None), NotImplemented)
 
-    def test_bound_method_dunder_eq_respects_overriden_self_equality_for_non_identical_methods(
+    @supports_38_feature
+    def test_bound_method_dunder_eq_ignores_overriden_self_equality(
         self,
     ):
         class C:
@@ -2375,34 +2376,7 @@ class BoundMethodTests(unittest.TestCase):
 
         m0 = C().meth
         m1 = C().meth
-        self.assertTrue(m0.__eq__(m1))
-
-    def test_bound_method_dunder_eq_ignores_overriden_self_equality_for_identical_methods(
-        self,
-    ):
-        class C:
-            def meth(self):
-                pass
-
-            def __eq__(self, other):
-                return False
-
-        m = C().meth
-        self.assertTrue(m.__eq__(m))
-
-    def test_bound_method_dunder_eq_checks_func_before_self(self):
-        class C:
-            def meth1(self):
-                pass
-
-            def meth2(self):
-                pass
-
-            def __eq__(self, other):
-                raise ValueError
-
-        # This would raise ValueError if self were checked before func
-        self.assertFalse(C().meth1.__eq__(C().meth2))
+        self.assertFalse(m0.__eq__(m1))
 
 
 class CallableIteratorTest(unittest.TestCase):

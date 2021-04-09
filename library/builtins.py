@@ -5235,7 +5235,15 @@ class method(bootstrap=True):
         return self.__func__(self.__self__, *args, **kwargs)
 
     def __eq__(self, other):
-        _builtin()
+        if _type(self) is not method:
+            raise TypeError(
+                f"'__eq__' for 'method' objects doesn't apply to a '{_type(self).__name__}' object"
+            )
+        if _type(other) is not method:
+            return NotImplemented
+        if not self.__func__ == other.__func__:
+            return False
+        return self.__self__ is other.__self__
 
     def __getattr__(self, name):
         return getattr(self.__func__, name)
