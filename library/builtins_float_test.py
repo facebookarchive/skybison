@@ -616,6 +616,345 @@ class FloatTests(unittest.TestCase):
         self.assertEqual(float(b"\t 14.2\n"), 14.2)
         self.assertEqual(float(b" 14.21    "), 14.21)
 
+    def test_float_hex_returns_str(self):
+        """This fuzzes the sign, exponent and mantissa fields
+        to interesting values (0, 1, +-1 near the bias/rollover point, max-1, max).
+        This helps ensure that floats near behavior changes (particularly at the
+        at subnormal->normal boundary) encode to hex correctly."""
+
+        self.assertEqual((0.0).hex(), "0x0.0p+0")  # as_uint64_t: 0x0000000000000000
+        self.assertEqual(
+            (5e-324).hex(), "0x0.0000000000001p-1022"
+        )  # as_uint64_t: 0x0000000000000001
+        self.assertEqual(
+            (1.1125369292535997e-308).hex(), "0x0.7fffffffffffep-1022"
+        )  # as_uint64_t: 0x0007fffffffffffe
+        self.assertEqual(
+            (1.1125369292536e-308).hex(), "0x0.7ffffffffffffp-1022"
+        )  # as_uint64_t: 0x0007ffffffffffff
+        self.assertEqual(
+            (1.1125369292536007e-308).hex(), "0x0.8000000000000p-1022"
+        )  # as_uint64_t: 0x0008000000000000
+        self.assertEqual(
+            (1.112536929253601e-308).hex(), "0x0.8000000000001p-1022"
+        )  # as_uint64_t: 0x0008000000000001
+        self.assertEqual(
+            (2.2250738585072004e-308).hex(), "0x0.ffffffffffffep-1022"
+        )  # as_uint64_t: 0x000ffffffffffffe
+        self.assertEqual(
+            (2.225073858507201e-308).hex(), "0x0.fffffffffffffp-1022"
+        )  # as_uint64_t: 0x000fffffffffffff
+        self.assertEqual(
+            (2.2250738585072014e-308).hex(), "0x1.0000000000000p-1022"
+        )  # as_uint64_t: 0x0010000000000000
+        self.assertEqual(
+            (2.225073858507202e-308).hex(), "0x1.0000000000001p-1022"
+        )  # as_uint64_t: 0x0010000000000001
+        self.assertEqual(
+            (3.337610787760801e-308).hex(), "0x1.7fffffffffffep-1022"
+        )  # as_uint64_t: 0x0017fffffffffffe
+        self.assertEqual(
+            (3.3376107877608016e-308).hex(), "0x1.7ffffffffffffp-1022"
+        )  # as_uint64_t: 0x0017ffffffffffff
+        self.assertEqual(
+            (3.337610787760802e-308).hex(), "0x1.8000000000000p-1022"
+        )  # as_uint64_t: 0x0018000000000000
+        self.assertEqual(
+            (3.3376107877608026e-308).hex(), "0x1.8000000000001p-1022"
+        )  # as_uint64_t: 0x0018000000000001
+        self.assertEqual(
+            (4.450147717014402e-308).hex(), "0x1.ffffffffffffep-1022"
+        )  # as_uint64_t: 0x001ffffffffffffe
+        self.assertEqual(
+            (4.4501477170144023e-308).hex(), "0x1.fffffffffffffp-1022"
+        )  # as_uint64_t: 0x001fffffffffffff
+        self.assertEqual(
+            (4.450147717014403e-308).hex(), "0x1.0000000000000p-1021"
+        )  # as_uint64_t: 0x0020000000000000
+        self.assertEqual(
+            (4.450147717014404e-308).hex(), "0x1.0000000000001p-1021"
+        )  # as_uint64_t: 0x0020000000000001
+        self.assertEqual(
+            (6.675221575521602e-308).hex(), "0x1.7fffffffffffep-1021"
+        )  # as_uint64_t: 0x0027fffffffffffe
+        self.assertEqual(
+            (6.675221575521603e-308).hex(), "0x1.7ffffffffffffp-1021"
+        )  # as_uint64_t: 0x0027ffffffffffff
+        self.assertEqual(
+            (6.675221575521604e-308).hex(), "0x1.8000000000000p-1021"
+        )  # as_uint64_t: 0x0028000000000000
+        self.assertEqual(
+            (6.675221575521605e-308).hex(), "0x1.8000000000001p-1021"
+        )  # as_uint64_t: 0x0028000000000001
+        self.assertEqual(
+            (8.900295434028804e-308).hex(), "0x1.ffffffffffffep-1021"
+        )  # as_uint64_t: 0x002ffffffffffffe
+        self.assertEqual(
+            (8.900295434028805e-308).hex(), "0x1.fffffffffffffp-1021"
+        )  # as_uint64_t: 0x002fffffffffffff
+        self.assertEqual(
+            (0.5).hex(), "0x1.0000000000000p-1"
+        )  # as_uint64_t: 0x3fe0000000000000
+        self.assertEqual(
+            (0.5000000000000001).hex(), "0x1.0000000000001p-1"
+        )  # as_uint64_t: 0x3fe0000000000001
+        self.assertEqual(
+            (0.7499999999999998).hex(), "0x1.7fffffffffffep-1"
+        )  # as_uint64_t: 0x3fe7fffffffffffe
+        self.assertEqual(
+            (0.7499999999999999).hex(), "0x1.7ffffffffffffp-1"
+        )  # as_uint64_t: 0x3fe7ffffffffffff
+        self.assertEqual(
+            (0.75).hex(), "0x1.8000000000000p-1"
+        )  # as_uint64_t: 0x3fe8000000000000
+        self.assertEqual(
+            (0.7500000000000001).hex(), "0x1.8000000000001p-1"
+        )  # as_uint64_t: 0x3fe8000000000001
+        self.assertEqual(
+            (0.9999999999999998).hex(), "0x1.ffffffffffffep-1"
+        )  # as_uint64_t: 0x3feffffffffffffe
+        self.assertEqual(
+            (0.9999999999999999).hex(), "0x1.fffffffffffffp-1"
+        )  # as_uint64_t: 0x3fefffffffffffff
+        self.assertEqual(
+            (1.0).hex(), "0x1.0000000000000p+0"
+        )  # as_uint64_t: 0x3ff0000000000000
+        self.assertEqual(
+            (1.0000000000000002).hex(), "0x1.0000000000001p+0"
+        )  # as_uint64_t: 0x3ff0000000000001
+        self.assertEqual(
+            (1.4999999999999996).hex(), "0x1.7fffffffffffep+0"
+        )  # as_uint64_t: 0x3ff7fffffffffffe
+        self.assertEqual(
+            (1.4999999999999998).hex(), "0x1.7ffffffffffffp+0"
+        )  # as_uint64_t: 0x3ff7ffffffffffff
+        self.assertEqual(
+            (1.5).hex(), "0x1.8000000000000p+0"
+        )  # as_uint64_t: 0x3ff8000000000000
+        self.assertEqual(
+            (1.5000000000000002).hex(), "0x1.8000000000001p+0"
+        )  # as_uint64_t: 0x3ff8000000000001
+        self.assertEqual(
+            (1.9999999999999996).hex(), "0x1.ffffffffffffep+0"
+        )  # as_uint64_t: 0x3ffffffffffffffe
+        self.assertEqual(
+            (1.9999999999999998).hex(), "0x1.fffffffffffffp+0"
+        )  # as_uint64_t: 0x3fffffffffffffff
+        self.assertEqual(
+            (2.0).hex(), "0x1.0000000000000p+1"
+        )  # as_uint64_t: 0x4000000000000000
+        self.assertEqual(
+            (2.0000000000000004).hex(), "0x1.0000000000001p+1"
+        )  # as_uint64_t: 0x4000000000000001
+        self.assertEqual(
+            (2.999999999999999).hex(), "0x1.7fffffffffffep+1"
+        )  # as_uint64_t: 0x4007fffffffffffe
+        self.assertEqual(
+            (2.9999999999999996).hex(), "0x1.7ffffffffffffp+1"
+        )  # as_uint64_t: 0x4007ffffffffffff
+        self.assertEqual(
+            (3.0).hex(), "0x1.8000000000000p+1"
+        )  # as_uint64_t: 0x4008000000000000
+        self.assertEqual(
+            (3.0000000000000004).hex(), "0x1.8000000000001p+1"
+        )  # as_uint64_t: 0x4008000000000001
+        self.assertEqual(
+            (3.999999999999999).hex(), "0x1.ffffffffffffep+1"
+        )  # as_uint64_t: 0x400ffffffffffffe
+        self.assertEqual(
+            (3.9999999999999996).hex(), "0x1.fffffffffffffp+1"
+        )  # as_uint64_t: 0x400fffffffffffff
+        self.assertEqual(
+            (8.98846567431158e307).hex(), "0x1.0000000000000p+1023"
+        )  # as_uint64_t: 0x7fe0000000000000
+        self.assertEqual(
+            (8.988465674311582e307).hex(), "0x1.0000000000001p+1023"
+        )  # as_uint64_t: 0x7fe0000000000001
+        self.assertEqual(
+            (1.3482698511467365e308).hex(), "0x1.7fffffffffffep+1023"
+        )  # as_uint64_t: 0x7fe7fffffffffffe
+        self.assertEqual(
+            (1.3482698511467367e308).hex(), "0x1.7ffffffffffffp+1023"
+        )  # as_uint64_t: 0x7fe7ffffffffffff
+        self.assertEqual(
+            (1.348269851146737e308).hex(), "0x1.8000000000000p+1023"
+        )  # as_uint64_t: 0x7fe8000000000000
+        self.assertEqual(
+            (1.3482698511467371e308).hex(), "0x1.8000000000001p+1023"
+        )  # as_uint64_t: 0x7fe8000000000001
+        self.assertEqual(
+            (1.7976931348623155e308).hex(), "0x1.ffffffffffffep+1023"
+        )  # as_uint64_t: 0x7feffffffffffffe
+        self.assertEqual(
+            (1.7976931348623157e308).hex(), "0x1.fffffffffffffp+1023"
+        )  # as_uint64_t: 0x7fefffffffffffff
+        self.assertEqual((-0.0).hex(), "-0x0.0p+0")  # as_uint64_t: 0x8000000000000000
+        self.assertEqual(
+            (-5e-324).hex(), "-0x0.0000000000001p-1022"
+        )  # as_uint64_t: 0x8000000000000001
+        self.assertEqual(
+            (-1.1125369292535997e-308).hex(), "-0x0.7fffffffffffep-1022"
+        )  # as_uint64_t: 0x8007fffffffffffe
+        self.assertEqual(
+            (-1.1125369292536e-308).hex(), "-0x0.7ffffffffffffp-1022"
+        )  # as_uint64_t: 0x8007ffffffffffff
+        self.assertEqual(
+            (-1.1125369292536007e-308).hex(), "-0x0.8000000000000p-1022"
+        )  # as_uint64_t: 0x8008000000000000
+        self.assertEqual(
+            (-1.112536929253601e-308).hex(), "-0x0.8000000000001p-1022"
+        )  # as_uint64_t: 0x8008000000000001
+        self.assertEqual(
+            (-2.2250738585072004e-308).hex(), "-0x0.ffffffffffffep-1022"
+        )  # as_uint64_t: 0x800ffffffffffffe
+        self.assertEqual(
+            (-2.225073858507201e-308).hex(), "-0x0.fffffffffffffp-1022"
+        )  # as_uint64_t: 0x800fffffffffffff
+        self.assertEqual(
+            (-2.2250738585072014e-308).hex(), "-0x1.0000000000000p-1022"
+        )  # as_uint64_t: 0x8010000000000000
+        self.assertEqual(
+            (-2.225073858507202e-308).hex(), "-0x1.0000000000001p-1022"
+        )  # as_uint64_t: 0x8010000000000001
+        self.assertEqual(
+            (-3.337610787760801e-308).hex(), "-0x1.7fffffffffffep-1022"
+        )  # as_uint64_t: 0x8017fffffffffffe
+        self.assertEqual(
+            (-3.3376107877608016e-308).hex(), "-0x1.7ffffffffffffp-1022"
+        )  # as_uint64_t: 0x8017ffffffffffff
+        self.assertEqual(
+            (-3.337610787760802e-308).hex(), "-0x1.8000000000000p-1022"
+        )  # as_uint64_t: 0x8018000000000000
+        self.assertEqual(
+            (-3.3376107877608026e-308).hex(), "-0x1.8000000000001p-1022"
+        )  # as_uint64_t: 0x8018000000000001
+        self.assertEqual(
+            (-4.450147717014402e-308).hex(), "-0x1.ffffffffffffep-1022"
+        )  # as_uint64_t: 0x801ffffffffffffe
+        self.assertEqual(
+            (-4.4501477170144023e-308).hex(), "-0x1.fffffffffffffp-1022"
+        )  # as_uint64_t: 0x801fffffffffffff
+        self.assertEqual(
+            (-4.450147717014403e-308).hex(), "-0x1.0000000000000p-1021"
+        )  # as_uint64_t: 0x8020000000000000
+        self.assertEqual(
+            (-4.450147717014404e-308).hex(), "-0x1.0000000000001p-1021"
+        )  # as_uint64_t: 0x8020000000000001
+        self.assertEqual(
+            (-6.675221575521602e-308).hex(), "-0x1.7fffffffffffep-1021"
+        )  # as_uint64_t: 0x8027fffffffffffe
+        self.assertEqual(
+            (-6.675221575521603e-308).hex(), "-0x1.7ffffffffffffp-1021"
+        )  # as_uint64_t: 0x8027ffffffffffff
+        self.assertEqual(
+            (-6.675221575521604e-308).hex(), "-0x1.8000000000000p-1021"
+        )  # as_uint64_t: 0x8028000000000000
+        self.assertEqual(
+            (-6.675221575521605e-308).hex(), "-0x1.8000000000001p-1021"
+        )  # as_uint64_t: 0x8028000000000001
+        self.assertEqual(
+            (-8.900295434028804e-308).hex(), "-0x1.ffffffffffffep-1021"
+        )  # as_uint64_t: 0x802ffffffffffffe
+        self.assertEqual(
+            (-8.900295434028805e-308).hex(), "-0x1.fffffffffffffp-1021"
+        )  # as_uint64_t: 0x802fffffffffffff
+        self.assertEqual(
+            (-0.5).hex(), "-0x1.0000000000000p-1"
+        )  # as_uint64_t: 0xbfe0000000000000
+        self.assertEqual(
+            (-0.5000000000000001).hex(), "-0x1.0000000000001p-1"
+        )  # as_uint64_t: 0xbfe0000000000001
+        self.assertEqual(
+            (-0.7499999999999998).hex(), "-0x1.7fffffffffffep-1"
+        )  # as_uint64_t: 0xbfe7fffffffffffe
+        self.assertEqual(
+            (-0.7499999999999999).hex(), "-0x1.7ffffffffffffp-1"
+        )  # as_uint64_t: 0xbfe7ffffffffffff
+        self.assertEqual(
+            (-0.75).hex(), "-0x1.8000000000000p-1"
+        )  # as_uint64_t: 0xbfe8000000000000
+        self.assertEqual(
+            (-0.7500000000000001).hex(), "-0x1.8000000000001p-1"
+        )  # as_uint64_t: 0xbfe8000000000001
+        self.assertEqual(
+            (-0.9999999999999998).hex(), "-0x1.ffffffffffffep-1"
+        )  # as_uint64_t: 0xbfeffffffffffffe
+        self.assertEqual(
+            (-0.9999999999999999).hex(), "-0x1.fffffffffffffp-1"
+        )  # as_uint64_t: 0xbfefffffffffffff
+        self.assertEqual(
+            (-1.0).hex(), "-0x1.0000000000000p+0"
+        )  # as_uint64_t: 0xbff0000000000000
+        self.assertEqual(
+            (-1.0000000000000002).hex(), "-0x1.0000000000001p+0"
+        )  # as_uint64_t: 0xbff0000000000001
+        self.assertEqual(
+            (-1.4999999999999996).hex(), "-0x1.7fffffffffffep+0"
+        )  # as_uint64_t: 0xbff7fffffffffffe
+        self.assertEqual(
+            (-1.4999999999999998).hex(), "-0x1.7ffffffffffffp+0"
+        )  # as_uint64_t: 0xbff7ffffffffffff
+        self.assertEqual(
+            (-1.5).hex(), "-0x1.8000000000000p+0"
+        )  # as_uint64_t: 0xbff8000000000000
+        self.assertEqual(
+            (-1.5000000000000002).hex(), "-0x1.8000000000001p+0"
+        )  # as_uint64_t: 0xbff8000000000001
+        self.assertEqual(
+            (-1.9999999999999996).hex(), "-0x1.ffffffffffffep+0"
+        )  # as_uint64_t: 0xbffffffffffffffe
+        self.assertEqual(
+            (-1.9999999999999998).hex(), "-0x1.fffffffffffffp+0"
+        )  # as_uint64_t: 0xbfffffffffffffff
+        self.assertEqual(
+            (-2.0).hex(), "-0x1.0000000000000p+1"
+        )  # as_uint64_t: 0xc000000000000000
+        self.assertEqual(
+            (-2.0000000000000004).hex(), "-0x1.0000000000001p+1"
+        )  # as_uint64_t: 0xc000000000000001
+        self.assertEqual(
+            (-2.999999999999999).hex(), "-0x1.7fffffffffffep+1"
+        )  # as_uint64_t: 0xc007fffffffffffe
+        self.assertEqual(
+            (-2.9999999999999996).hex(), "-0x1.7ffffffffffffp+1"
+        )  # as_uint64_t: 0xc007ffffffffffff
+        self.assertEqual(
+            (-3.0).hex(), "-0x1.8000000000000p+1"
+        )  # as_uint64_t: 0xc008000000000000
+        self.assertEqual(
+            (-3.0000000000000004).hex(), "-0x1.8000000000001p+1"
+        )  # as_uint64_t: 0xc008000000000001
+        self.assertEqual(
+            (-3.999999999999999).hex(), "-0x1.ffffffffffffep+1"
+        )  # as_uint64_t: 0xc00ffffffffffffe
+        self.assertEqual(
+            (-3.9999999999999996).hex(), "-0x1.fffffffffffffp+1"
+        )  # as_uint64_t: 0xc00fffffffffffff
+        self.assertEqual(
+            (-8.98846567431158e307).hex(), "-0x1.0000000000000p+1023"
+        )  # as_uint64_t: 0xffe0000000000000
+        self.assertEqual(
+            (-8.988465674311582e307).hex(), "-0x1.0000000000001p+1023"
+        )  # as_uint64_t: 0xffe0000000000001
+        self.assertEqual(
+            (-1.3482698511467365e308).hex(), "-0x1.7fffffffffffep+1023"
+        )  # as_uint64_t: 0xffe7fffffffffffe
+        self.assertEqual(
+            (-1.3482698511467367e308).hex(), "-0x1.7ffffffffffffp+1023"
+        )  # as_uint64_t: 0xffe7ffffffffffff
+        self.assertEqual(
+            (-1.348269851146737e308).hex(), "-0x1.8000000000000p+1023"
+        )  # as_uint64_t: 0xffe8000000000000
+        self.assertEqual(
+            (-1.3482698511467371e308).hex(), "-0x1.8000000000001p+1023"
+        )  # as_uint64_t: 0xffe8000000000001
+        self.assertEqual(
+            (-1.7976931348623155e308).hex(), "-0x1.ffffffffffffep+1023"
+        )  # as_uint64_t: 0xffeffffffffffffe
+        self.assertEqual(
+            (-1.7976931348623157e308).hex(), "-0x1.fffffffffffffp+1023"
+        )  # as_uint64_t: 0xffefffffffffffff
+
 
 class FloatDunderFormatTests(unittest.TestCase):
     def test_empty_format_returns_str(self):

@@ -1093,9 +1093,14 @@ RawObject formatDoubleHexadecimalSimple(Runtime* runtime, double value) {
     return runtime->newStrFromCStr("nan");
   }
 
-  if (exponent == min_exp && mantissa == 0) {
-    return is_negative ? runtime->newStrFromCStr("-0x0.0p+0")
-                       : runtime->newStrFromCStr("0x0.0p+0");
+  const bool is_subnormal = exponent == min_exp;
+  if (is_subnormal) {
+    if (mantissa != 0) {
+      exponent += 1;
+    } else {
+      return is_negative ? runtime->newStrFromCStr("-0x0.0p+0")
+                         : runtime->newStrFromCStr("0x0.0p+0");
+    }
   }
 
   int exponent_sign;
@@ -1121,7 +1126,7 @@ RawObject formatDoubleHexadecimalSimple(Runtime* runtime, double value) {
   }
 
   *--poutput = '.';
-  *--poutput = '1';
+  *--poutput = is_subnormal ? '0' : '1';
   *--poutput = 'x';
   *--poutput = '0';
   if (is_negative) {
