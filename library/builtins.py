@@ -2828,47 +2828,118 @@ class code(bootstrap=True):
         )
         return result if result != -1 else -2
 
-    def replace(
+    def replace(  # noqa: C901
         self,
-        co_argcount=-1,
-        co_posonlyargcount=-1,
-        co_kwonlyargcount=-1,
-        co_nlocals=-1,
-        co_stacksize=-1,
-        co_flags=-1,
-        co_firstlineno=-1,
-        co_code=None,
-        co_consts=None,
-        co_names=None,
-        co_varnames=None,
-        co_freevars=None,
-        co_cellvars=None,
-        co_filename=None,
-        co_name=None,
-        co_lnotab=None,
+        co_argcount=_Unbound,
+        co_posonlyargcount=_Unbound,
+        co_kwonlyargcount=_Unbound,
+        co_nlocals=_Unbound,
+        co_stacksize=_Unbound,
+        co_flags=_Unbound,
+        co_firstlineno=_Unbound,
+        co_code=_Unbound,
+        co_consts=_Unbound,
+        co_names=_Unbound,
+        co_varnames=_Unbound,
+        co_freevars=_Unbound,
+        co_cellvars=_Unbound,
+        co_filename=_Unbound,
+        co_name=_Unbound,
+        co_lnotab=_Unbound,
     ):
-        return code.__new__(
+        co_argcount = (
+            _int(co_argcount) if co_argcount is not _Unbound else self.co_argcount
+        )
+        co_posonlyargcount = (
+            _int(co_posonlyargcount)
+            if co_posonlyargcount is not _Unbound
+            else self.co_posonlyargcount
+        )
+        co_kwonlyargcount = (
+            _int(co_kwonlyargcount)
+            if co_kwonlyargcount is not _Unbound
+            else self.co_kwonlyargcount
+        )
+        co_nlocals = _int(co_nlocals) if co_nlocals is not _Unbound else self.co_nlocals
+        co_stacksize = (
+            _int(co_stacksize) if co_stacksize is not _Unbound else self.co_stacksize
+        )
+        co_flags = _int(co_flags) if co_flags is not _Unbound else self.co_flags
+        if co_code is _Unbound:
+            co_code = self.co_code
+        else:
+            _bytes_guard(co_code)
+        if co_consts is _Unbound:
+            co_consts = self.co_consts
+        else:
+            _tuple_guard(co_consts)
+        if co_names is _Unbound:
+            co_names = self.co_names
+        else:
+            _tuple_guard(co_names)
+        if co_varnames is _Unbound:
+            co_varnames = self.co_varnames
+        else:
+            _tuple_guard(co_varnames)
+        if co_filename is _Unbound:
+            co_filename = self.co_filename
+        else:
+            _str_guard(co_filename)
+        if co_name is _Unbound:
+            co_name = self.co_name
+        else:
+            _str_guard(co_name)
+        co_firstlineno = (
+            _int(co_firstlineno)
+            if co_firstlineno is not _Unbound
+            else self.co_firstlineno
+        )
+        if co_lnotab is _Unbound:
+            co_lnotab = self.co_lnotab
+        else:
+            _bytes_guard(co_lnotab)
+        if co_freevars is _Unbound:
+            co_freevars = self.co_freevars
+        else:
+            _tuple_guard(co_freevars)
+        if co_cellvars is _Unbound:
+            co_cellvars = self.co_cellvars
+        else:
+            _tuple_guard(co_cellvars)
+
+        if _int_check(co_argcount) and co_argcount < 0:
+            raise ValueError("co_argcount must be a positive integer")
+        if _int_check(co_posonlyargcount) and co_posonlyargcount < 0:
+            raise ValueError("co_posonlyargcount must be a positive integer")
+        if _int_check(co_kwonlyargcount) and co_kwonlyargcount < 0:
+            raise ValueError("co_kwonlyargcount must be a positive integer")
+        if _int_check(co_nlocals) and co_nlocals < 0:
+            raise ValueError("co_nlocals must be a positive integer")
+        if _int_check(co_stacksize) and co_stacksize < 0:
+            raise ValueError("co_stacksize must be a positive integer")
+        if _int_check(co_flags) and co_flags < 0:
+            raise ValueError("co_flags must be a positive integer")
+        if _int_check(co_firstlineno) and co_firstlineno < 0:
+            raise ValueError("co_firstlineno must be a positive integer")
+
+        return _code_new(
             code,
-            co_argcount if co_argcount is not -1 else self.co_argcount,
-            co_posonlyargcount
-            if co_posonlyargcount is not -1
-            else self.co_posonlyargcount,
-            co_kwonlyargcount
-            if co_kwonlyargcount is not -1
-            else self.co_kwonlyargcount,
-            co_nlocals if co_nlocals is not -1 else self.co_nlocals,
-            co_stacksize if co_stacksize is not -1 else self.co_stacksize,
-            co_flags if co_flags is not -1 else self.co_flags,
-            co_code if co_code is not None else self.co_code,
-            co_consts if co_consts is not None else self.co_consts,
-            co_names if co_names is not None else self.co_names,
-            co_varnames if co_varnames is not None else self.co_varnames,
-            co_filename if co_filename is not None else self.co_filename,
-            co_name if co_name is not None else self.co_name,
-            co_firstlineno if co_firstlineno is not -1 else self.co_firstlineno,
-            co_lnotab if co_lnotab is not None else self.co_lnotab,
-            co_freevars if co_freevars is not None else self.co_freevars,
-            co_cellvars if co_cellvars is not None else self.co_cellvars,
+            co_argcount,
+            co_posonlyargcount,
+            co_kwonlyargcount,
+            co_nlocals,
+            co_stacksize,
+            co_flags,
+            co_code,
+            co_consts,
+            co_names,
+            co_varnames,
+            co_filename,
+            co_name,
+            co_firstlineno,
+            co_lnotab,
+            co_freevars,
+            co_cellvars,
         )
 
 

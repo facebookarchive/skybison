@@ -2121,16 +2121,13 @@ RawObject FUNC(_builtins, _code_new)(Thread* thread, Arguments args) {
     return thread->raiseWithFmt(LayoutId::kValueError,
                                 "nlocals must not be negative");
   }
+
   word stacksize = intUnderlying(args.get(5)).asWord();
-  if (stacksize < 0) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "stacksize must not be negative");
-  }
   word flags = intUnderlying(args.get(6)).asWord();
-  if (flags < 0) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "flags must not be negative");
+  if (argcount < posonlyargcount || stacksize < 0 || flags < 0) {
+    return thread->raiseBadInternalCall();
   }
+
   Object code(&scope, args.get(7));
   Object consts(&scope, args.get(8));
   Object names(&scope, args.get(9));
@@ -2138,10 +2135,6 @@ RawObject FUNC(_builtins, _code_new)(Thread* thread, Arguments args) {
   Object filename(&scope, args.get(11));
   Object name(&scope, args.get(12));
   word firstlineno = intUnderlying(args.get(13)).asWord();
-  if (firstlineno < 0) {
-    return thread->raiseWithFmt(LayoutId::kValueError,
-                                "firstlineno must not be negative");
-  }
   Object lnotab(&scope, args.get(14));
   Object freevars(&scope, args.get(15));
   Object cellvars(&scope, args.get(16));

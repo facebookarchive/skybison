@@ -211,7 +211,7 @@ class Thread {
   void raiseBadArgument();
 
   // Raises a SystemError exception for PyErr_BadInternalCall.
-  void raiseBadInternalCall();
+  RawObject raiseBadInternalCall();
 
   // Raises a MemoryError exception and returns an Error that must be returned
   // up the stack by the caller.

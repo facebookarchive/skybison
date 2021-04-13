@@ -152,7 +152,9 @@ void initializeRuntimePaths(Thread* thread) {
   HandleScope scope(thread);
   Object result(&scope, thread->invokeFunction0(ID(sys), ID(_calculate_path)));
   if (result.isError()) {
-    return thread->raiseBadInternalCall();
+    thread->clearPendingException();
+    thread->raiseBadInternalCall();
+    return;
   }
   CHECK(result.isTuple(), "sys._calculate_path must return tuple");
   Tuple paths(&scope, *result);

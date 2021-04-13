@@ -2655,7 +2655,7 @@ class CodeTests(unittest.TestCase):
             b"",
             (),
             (),
-            ("a", "b"),
+            ("a", "b", "c"),
             "filename",
             "name",
             1,
@@ -2871,8 +2871,8 @@ class CodeTests(unittest.TestCase):
         self.assertIn("an integer is required (got type str)", str(context.exception))
 
     @supports_38_feature
-    def test_dunder_new_with_negative_stacksize_raises_value_error(self):
-        with self.assertRaises(ValueError) as context:
+    def test_dunder_new_with_negative_stacksize_raises_system_error(self):
+        with self.assertRaises(SystemError):
             self.CodeType(
                 1,
                 0,
@@ -2891,7 +2891,6 @@ class CodeTests(unittest.TestCase):
                 (),
                 (),
             )
-        self.assertIn("stacksize must not be negative", str(context.exception))
 
     @supports_38_feature
     def test_dunder_new_with_non_int_flags_raises_type_error(self):
@@ -2917,8 +2916,8 @@ class CodeTests(unittest.TestCase):
         self.assertIn("an integer is required (got type str)", str(context.exception))
 
     @supports_38_feature
-    def test_dunder_new_with_negative_flags_raises_value_error(self):
-        with self.assertRaises(ValueError) as context:
+    def test_dunder_new_with_negative_flags_raises_system_error(self):
+        with self.assertRaises(SystemError):
             self.CodeType(
                 1,
                 0,
@@ -2937,7 +2936,6 @@ class CodeTests(unittest.TestCase):
                 (),
                 (),
             )
-        self.assertIn("flags must not be negative", str(context.exception))
 
     @supports_38_feature
     def test_dunder_new_with_non_bytes_code_raises_type_error(self):
@@ -3007,27 +3005,26 @@ class CodeTests(unittest.TestCase):
         self.assertIn("an integer is required (got type str)", str(context.exception))
 
     @supports_38_feature
-    def test_dunder_new_with_negative_firstlineno_raises_value_error(self):
-        with self.assertRaises(ValueError) as context:
-            self.CodeType(
-                1,
-                0,
-                1,
-                4,
-                1,
-                1,
-                b"",
-                (),
-                (),
-                ("a", "b"),
-                "filename",
-                "name",
-                -1,
-                b"",
-                (),
-                (),
-            )
-        self.assertIn("firstlineno must not be negative", str(context.exception))
+    def test_dunder_new_with_negative_firstlineno_returns_code_object(self):
+        result = self.CodeType(
+            1,
+            0,
+            1,
+            4,
+            1,
+            1,
+            b"",
+            (),
+            (),
+            ("a", "b"),
+            "filename",
+            "name",
+            -1,
+            b"",
+            (),
+            (),
+        )
+        self.assertIsInstance(result, self.CodeType)
 
     @supports_38_feature
     def test_dunder_new_with_non_bytes_lnotab_raises_type_error(self):
@@ -3119,9 +3116,16 @@ class CodeTests(unittest.TestCase):
 
     @supports_38_feature
     def test_replace_with_argcount_replaces_argcount(self):
-        self.assertNotEqual(self.SAMPLE.co_argcount, 0)
-        result = self.SAMPLE.replace(co_argcount=0)
-        self.assertEqual(result.co_argcount, 0)
+        self.assertNotEqual(self.SAMPLE.co_argcount, 2)
+        self.assertLessEqual(self.SAMPLE.co_posonlyargcount, 2)
+        result = self.SAMPLE.replace(co_argcount=2)
+        self.assertEqual(result.co_argcount, 2)
+
+    @supports_38_feature
+    def test_replace_with_argcount_less_than_posonlyargcount_raises_system_error(self):
+        self.assertGreater(self.SAMPLE.co_posonlyargcount, 0)
+        with self.assertRaises(SystemError):
+            self.SAMPLE.replace(co_argcount=0)
 
     @supports_38_feature
     def test_replace_with_non_int_posonlyargcount_raises_type_error(self):
@@ -3278,6 +3282,30 @@ class CodeTests(unittest.TestCase):
     def test_replace_with_negative_firstlineno_raises_value_error(self):
         with self.assertRaises(ValueError):
             self.SAMPLE.replace(co_firstlineno=-7)
+
+    @supports_38_feature
+    def test_dunder_new_with_existing_negative_firstlineno_raises_value_error(self):
+        code = self.CodeType(
+            1,
+            0,
+            1,
+            4,
+            1,
+            1,
+            b"",
+            (),
+            (),
+            ("a", "b"),
+            "filename",
+            "name",
+            -1,
+            b"",
+            (),
+            (),
+        )
+        self.assertLess(code.co_firstlineno, 0)
+        with self.assertRaises(ValueError):
+            code.replace()
 
     @supports_38_feature
     def test_replace_with_firstlineno_replaces_firstlineno(self):

@@ -623,8 +623,9 @@ void Thread::raiseBadArgument() {
                "bad argument type for built-in operation");
 }
 
-void Thread::raiseBadInternalCall() {
-  raiseWithFmt(LayoutId::kSystemError, "bad argument to internal function");
+RawObject Thread::raiseBadInternalCall() {
+  return raiseWithFmt(LayoutId::kSystemError,
+                      "bad argument to internal function");
 }
 
 RawObject Thread::raiseMemoryError() {
