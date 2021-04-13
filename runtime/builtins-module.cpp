@@ -76,6 +76,45 @@ RawObject setAttribute(Thread* thread, const Object& object, const Object& name,
   return NoneType::object();
 }
 
+bool FUNC(builtins, _index_intrinsic)(Thread* thread) {
+  RawObject value = thread->stackTop();
+  if (thread->runtime()->isInstanceOfInt(value)) {
+    thread->stackPop();
+    thread->stackSetTop(value);
+    return true;
+  }
+  return false;
+}
+
+bool FUNC(builtins, _index_or_int_intrinsic)(Thread* thread) {
+  RawObject value = thread->stackTop();
+  if (value.isBool()) {
+    thread->stackPop();
+    thread->stackSetTop(convertBoolToInt(value));
+    return true;
+  }
+  if (value.isSmallInt() || value.isLargeInt()) {
+    thread->stackPop();
+    thread->stackSetTop(value);
+  }
+  return false;
+}
+
+bool FUNC(builtins, _obj_as_int_intrinsic)(Thread* thread) {
+  RawObject value = thread->stackTop();
+  if (value.isBool()) {
+    thread->stackPop();
+    thread->stackSetTop(convertBoolToInt(value));
+    return true;
+  }
+  if (thread->runtime()->isInstanceOfInt(value)) {
+    thread->stackPop();
+    thread->stackSetTop(intUnderlying(value));
+    return true;
+  }
+  return false;
+}
+
 bool FUNC(builtins, abs_intrinsic)(Thread* thread) {
   RawObject obj = thread->stackTop();
   if (obj.isSmallInt()) {
@@ -91,16 +130,6 @@ bool FUNC(builtins, abs_intrinsic)(Thread* thread) {
     thread->stackPop();
     double value = Float::cast(obj).value();
     thread->stackSetTop(thread->runtime()->newFloat(std::fabs(value)));
-    return true;
-  }
-  return false;
-}
-
-bool FUNC(builtins, _index_intrinsic)(Thread* thread) {
-  RawObject value = thread->stackTop();
-  if (thread->runtime()->isInstanceOfInt(value)) {
-    thread->stackPop();
-    thread->stackSetTop(value);
     return true;
   }
   return false;

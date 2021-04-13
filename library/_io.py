@@ -31,7 +31,7 @@ from _codecs import (
     getincrementalencoder as _codecs_getincrementalencoder,
 )
 from _thread import LockType as _thread_Lock
-from builtins import BlockingIOError, _index, _int, _non_heaptype, _type_name
+from builtins import BlockingIOError, _index, _non_heaptype, _obj_as_int, _type_name
 from errno import EAGAIN as errno_EAGAIN, EISDIR as errno_EISDIR
 
 from _builtins import (
@@ -1108,7 +1108,7 @@ class BytesIO(_BufferedIOBase, bootstrap=True):
         result = _BytesIO_seek(self, pos, whence)
         if result is not _Unbound:
             return result
-        return _BytesIO_seek(self, _index(pos), _int(whence))
+        return _BytesIO_seek(self, _index(pos), _obj_as_int(whence))
 
     def tell(self):
         _BytesIO_closed_guard(self)
@@ -2060,7 +2060,7 @@ class StringIO(_TextIOBase, bootstrap=True):
         result = _StringIO_seek(self, offset, whence)
         if result is not _Unbound:
             return result
-        return _StringIO_seek(self, _index(offset), _int(whence))
+        return _StringIO_seek(self, _index(offset), _obj_as_int(whence))
 
     def tell(self):  # noqa: C901
         _StringIO_closed_guard(self)

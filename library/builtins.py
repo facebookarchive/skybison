@@ -1405,6 +1405,52 @@ def _index(obj) -> int:
     raise TypeError(f"__index__ returned non-int (type {_type(result).__name__})")
 
 
+def _index_or_int(obj) -> int:
+    "$intrinsic$"
+    # equivalent to _PyLong_FromNbIndexOrNbInt
+    if _int_check_exact(obj):
+        return obj
+    dunder_index = _object_type_getattr(obj, "__index__")
+    if dunder_index is not _Unbound:
+        result = dunder_index()
+        if _int_check_exact(result):
+            return result
+        if _int_check(result):
+            _warn(
+                f"__index__ returned non-int (type {_type(result).__name__}).  "
+                "The ability to return an instance of a strict subclass of int "
+                "is deprecated, and may be removed in a future version of Python.",
+                DeprecationWarning,
+                stacklevel=1,
+            )
+            return result
+        raise TypeError(f"__index__ returned non-int (type {_type(result).__name__})")
+
+    dunder_int = _object_type_getattr(obj, "__int__")
+    if dunder_int is _Unbound:
+        raise TypeError(f"an integer is required (got type {_type(obj).__name__})")
+
+    result = dunder_int()
+    if not _int_check(result):
+        raise TypeError(f"__int__ returned non-int (type {_type(result).__name__})")
+    if not _int_check_exact(result):
+        _warn(
+            f"__int__ returned non-int (type {_type(result).__name__}).  "
+            "The ability to return an instance of a strict subclass of int "
+            "is deprecated, and may be removed in a future version of Python.",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+    _warn(
+        f"an integer is required (got type {_type(result).__name__}).  "
+        "Implicit conversion to integers using __int__ is deprecated, "
+        "and may be removed in a future version of Python.",
+        DeprecationWarning,
+        stacklevel=1,
+    )
+    return result
+
+
 def _int(obj) -> int:
     # equivalent to _PyLong_FromNbInt
     if _int_check_exact(obj):
@@ -1618,6 +1664,16 @@ def _number_check(obj) -> bool:
     return _object_type_hasattr(obj, "__int__") or _object_type_hasattr(
         obj, "__float__"
     )
+
+
+def _obj_as_int(obj):
+    "$intrinsic$"
+    # equivalent to PyLong_AsLong
+    if _int_check_exact(obj):
+        return obj
+    if _int_check(obj):
+        return _int_new_from_int(int, obj)
+    return _index_or_int(obj)
 
 
 def _range_getitem(self: range, idx: int) -> int:
@@ -2718,19 +2774,19 @@ class code(bootstrap=True):
         freevars=(),
         cellvars=(),
     ):
-        argcount = _int(argcount)
-        posonlyargcount = _int(posonlyargcount)
-        kwonlyargcount = _int(kwonlyargcount)
-        nlocals = _int(nlocals)
-        stacksize = _int(stacksize)
-        flags = _int(flags)
+        argcount = _obj_as_int(argcount)
+        posonlyargcount = _obj_as_int(posonlyargcount)
+        kwonlyargcount = _obj_as_int(kwonlyargcount)
+        nlocals = _obj_as_int(nlocals)
+        stacksize = _obj_as_int(stacksize)
+        flags = _obj_as_int(flags)
         _bytes_guard(code)
         _tuple_guard(consts)
         _tuple_guard(names)
         _tuple_guard(varnames)
         _str_guard(filename)
         _str_guard(name)
-        firstlineno = _int(firstlineno)
+        firstlineno = _obj_as_int(firstlineno)
         _bytes_guard(lnotab)
         _tuple_guard(freevars)
         _tuple_guard(cellvars)
@@ -4428,7 +4484,7 @@ class int(bootstrap=True):
             if _object_type_hasattr(x, "__int__"):
                 return _int_new_from_int(cls, _int(x))
             if _object_type_hasattr(x, "__index__"):
-                return _int_new_from_int(cls, _index(x))
+                return _int_new_from_int(cls, _index_or_int(x))
             dunder_trunc = _object_type_getattr(x, "__trunc__")
             if dunder_trunc is not _Unbound:
                 result = dunder_trunc()
@@ -4436,10 +4492,10 @@ class int(bootstrap=True):
                     return result
                 if _int_check(result):
                     return _int_new_from_int(cls, result)
-                if _object_type_hasattr(result, "__int__"):
-                    return _int_new_from_int(cls, _int(result))
-                if _object_type_hasattr(result, "__index__"):
-                    return _int_new_from_int(cls, _index(result))
+                if _object_type_hasattr(result, "__index__") or _object_type_hasattr(
+                    result, "__int__"
+                ):
+                    return _int_new_from_int(cls, _index_or_int(result))
                 raise TypeError(
                     f"__trunc__ returned non-Integral (type {_type(result).__name__})"
                 )

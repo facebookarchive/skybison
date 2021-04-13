@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Array.array module TODO(T55711876): provide an implemenation"""
 
-from builtins import _float, _index, _int
+from builtins import _float, _index, _obj_as_int
 from operator import length_hint
 
 from _builtins import (
@@ -58,7 +58,7 @@ def _array_value(typecode, value):
         _unimplemented()
     if _float_check(value):
         raise TypeError("array item must be integer")
-    return _int(value)
+    return _obj_as_int(value)
 
 
 class array(bootstrap=True):

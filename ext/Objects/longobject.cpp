@@ -110,7 +110,8 @@ static T asInt(Thread* thread, PyObject* pylong, const char* type_name,
   HandleScope scope(thread);
   Object long_obj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
   if (!thread->runtime()->isInstanceOfInt(*long_obj)) {
-    long_obj = thread->invokeFunction1(ID(builtins), ID(_int), long_obj);
+    long_obj =
+        thread->invokeFunction1(ID(builtins), ID(_index_or_int), long_obj);
     if (long_obj.isError()) {
       return -1;
     }
@@ -147,7 +148,8 @@ static T asIntWithoutOverflowCheck(PyObject* pylong) {
   HandleScope scope(thread);
   Object long_obj(&scope, ApiHandle::fromPyObject(pylong)->asObject());
   if (!thread->runtime()->isInstanceOfInt(*long_obj)) {
-    long_obj = thread->invokeFunction1(ID(builtins), ID(_int), long_obj);
+    long_obj =
+        thread->invokeFunction1(ID(builtins), ID(_index_or_int), long_obj);
     if (long_obj.isError()) {
       return -1;
     }

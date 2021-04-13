@@ -384,10 +384,10 @@ class Runtime;
   V(_generator__yield_from)                                                    \
   V(_has_read1)                                                                \
   V(_import_all_from)                                                          \
+  V(_index_or_int)                                                             \
   V(_init)                                                                     \
   V(_instance)                                                                 \
   V(_instance_dunder_dict_set)                                                 \
-  V(_int)                                                                      \
   V(_int_ctor)                                                                 \
   V(_int_ctor_obj)                                                             \
   V(_int_new_from_str)                                                         \

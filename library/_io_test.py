@@ -1009,25 +1009,16 @@ class BytesIOTests(unittest.TestCase):
         with self.assertRaises(UserWarning):
             f.seek(pos)
 
-    def test_seek_with_class_whence_raises_type_error(self):
+    @supports_38_feature
+    def test_seek_with_class_whence_calls_dunder_index(self):
         class C:
             def __index__(self):
                 raise UserWarning("foo")
 
         f = _io.BytesIO(b"")
         whence = C()
-        with self.assertRaises(TypeError):
+        with self.assertRaises(UserWarning):
             f.seek(0, whence)
-
-    def test_seek_with_raising_dunder_int_raises_type_error(self):
-        class C:
-            def __int__(self):
-                raise UserWarning("foo")
-
-        f = _io.BytesIO(b"")
-        pos = C()
-        with self.assertRaises(TypeError):
-            f.seek(pos)
 
     def test_seek_with_float_offset_raises_type_error(self):
         f = _io.BytesIO(b"")
@@ -3705,22 +3696,14 @@ class StringIOTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             string_io.seek(0, "not-int")
 
-    def test_seek_with_index_covertible_whence_raises_type_error(self):
+    @supports_38_feature
+    def test_seek_accepts_index_covertible_whence(self):
         class IndexLike:
             def __index__(self):
-                return 5
-
-        string_io = _io.StringIO("hello world")
-        with self.assertRaises(TypeError):
-            string_io.seek(0, IndexLike())
-
-    def test_seek_accepts_int_convertible_whence(self):
-        class IntLike:
-            def __int__(self):
                 return 0
 
         string_io = _io.StringIO("hello world")
-        self.assertEqual(string_io.seek(1, IntLike()), 1)
+        self.assertEqual(string_io.seek(1, IndexLike()), 1)
 
     def test_seek_can_overseek(self):
         string_io = _io.StringIO("foo\n")

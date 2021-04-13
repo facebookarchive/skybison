@@ -2,7 +2,7 @@
 # $builtin-init-module$
 """ctypes support module"""
 
-from builtins import _int
+from builtins import _obj_as_int
 from weakref import ref
 
 from _builtins import (
@@ -249,7 +249,7 @@ class _SimpleCData(_CData, metaclass=PyCSimpleType):
             if value is _Unbound:
                 self._value = 0
             else:
-                self._value = _int(value)
+                self._value = _obj_as_int(value)
         else:
             _unimplemented()
 
