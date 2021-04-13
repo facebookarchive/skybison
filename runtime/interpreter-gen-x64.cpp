@@ -516,7 +516,7 @@ void emitIcLookupPolymorphic(EmitEnv* env, Label* not_found, Register r_dst,
   __ shll(r_scratch, Immediate(4));
   __ movq(r_caches,
           Address(r_caches, r_scratch, TIMES_1,
-                  heapObjectDisp(0) + kIcEntryValueOffset * kPointerSize));
+                  heapObjectDisp(kIcEntryValueOffset * kPointerSize)));
   __ leaq(r_caches, Address(r_caches, heapObjectDisp(0)));
   Label done;
   for (int i = 0; i < kIcPointersPerPolyCache; i += kIcPointersPerEntry) {
@@ -779,8 +779,7 @@ void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
   // if (0 <= index && index < length) {
   // length >= 0 always holds. Therefore, ABOVE_EQUAL == NOT_CARRY if r_key
   // contains a negative value (sign bit == 1) or r_key >= r_list_length.
-  __ cmpq(r_key,
-          Address(r_container, heapObjectDisp(0) + List::kNumItemsOffset));
+  __ cmpq(r_key, Address(r_container, heapObjectDisp(List::kNumItemsOffset)));
   __ jcc(ABOVE_EQUAL, &slow_path, Assembler::kNearJump);
 
   // Push list.at(index)
@@ -849,13 +848,12 @@ void emitHandler<STORE_SUBSCR_LIST>(EmitEnv* env) {
   // if (0 <= index && index < length) {
   // length >= 0 always holds. Therefore, ABOVE_EQUAL == NOT_CARRY if r_key
   // contains a negative value (sign bit == 1) or r_key >= r_list_length.
-  __ cmpq(r_key,
-          Address(r_container, heapObjectDisp(0) + List::kNumItemsOffset));
+  __ cmpq(r_key, Address(r_container, heapObjectDisp(List::kNumItemsOffset)));
   __ jcc(ABOVE_EQUAL, &slow_path, Assembler::kNearJump);
 
   // &list.at(index)
   __ movq(r_container,
-          Address(r_container, heapObjectDisp(0) + List::kItemsOffset));
+          Address(r_container, heapObjectDisp(List::kItemsOffset)));
   // r_key is a SmallInt, so r_key already stores the index value * 2.
   // Therefore, applying TIMES_4 will compute index * 8.
   static_assert(Object::kSmallIntTag == 0, "unexpected tag for SmallInt");
