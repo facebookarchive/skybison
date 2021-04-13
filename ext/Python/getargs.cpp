@@ -2354,7 +2354,7 @@ PY_EXPORT PyObject* const* _PyArg_UnpackKeywords(
 
   /* copy keyword args using kwtuple to drive process */
   int reqlimit = minkw ? maxpos + minkw : minpos;
-  for (int i = 0; i < maxargs; i++) {
+  for (int i = Py_MAX(nargs, posonly); i < maxargs; i++) {
     PyObject* current_arg;
     if (nkwargs) {
       const char* keyword = i >= posonly ? parser->keywords[i] : nullptr;
