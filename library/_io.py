@@ -25,7 +25,7 @@ is an in-memory stream for text.
 Argument names are not part of the specification, and only the arguments
 of open() are intended to be used as keyword arguments."""
 
-import builtins
+import builtins  # noqa: F401
 from _codecs import (
     getincrementaldecoder as _codecs_getincrementaldecoder,
     getincrementalencoder as _codecs_getincrementalencoder,
@@ -39,17 +39,15 @@ from _builtins import (
     _builtin,
     _bytearray_len,
     _bytes_check,
-    _bytes_len,
     _byteslike_check,
-    _byteslike_guard,
     _float_check,
     _int_check,
-    _int_guard,
     _memoryview_check,
     _object_type_getattr,
     _object_type_hasattr,
     _os_write,
     _str_check,
+    _str_guard,
     _str_len,
     _type,
     _Unbound,
@@ -686,9 +684,6 @@ class _BufferedIOBase(_IOBase, bootstrap=True):
 
 
 class _BufferedIOMixin(_BufferedIOBase, bootstrap=True):
-    def __getstate__(self):
-        raise TypeError(f"can not serialize a '{self.__class__.__name__}' object")
-
     def __init__(self, raw):
         self._raw = raw
 
@@ -1183,6 +1178,9 @@ class FileIO(_RawIOBase, bootstrap=True):
 
         flags = _os_parse_mode(mode)
         self.name = file
+
+        # TODO(T86943617): call sys.audit
+
         if fd < 0:
             # file was not an int, so we have to open it
             if not closefd:
@@ -1227,9 +1225,6 @@ class FileIO(_RawIOBase, bootstrap=True):
         if not self.closed and self._closefd:
             _warn(f"unclosed file {self!r}", ResourceWarning, stacklevel=2, source=self)
             self.close()
-
-    def __getstate__(self):
-        raise TypeError(f"cannot serialize '{_type_name(self.__class__)}' object")
 
     def __repr__(self):
         class_name = f"_io.{self.__class__.__qualname__}"
@@ -2145,6 +2140,13 @@ def open(  # noqa: C901
         raise ValueError("binary mode doesn't take an errors argument")
     if binary and newline is not None:
         raise ValueError("binary mode doesn't take a newline argument")
+    if binary and buffering == 1:
+        _warn(
+            "line buffering (buffering=1) isn't supported in "
+            "binary mode, the default buffer size will be used",
+            RuntimeWarning,
+            2,
+        )
     raw = FileIO(
         file,
         (creating and "x" or "")
@@ -2188,4 +2190,5 @@ def open(  # noqa: C901
 
 
 def open_code(path):
+    _str_guard(path)
     return open(path, "rb")

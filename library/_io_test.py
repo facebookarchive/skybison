@@ -1274,13 +1274,6 @@ class FileIOTests(unittest.TestCase):
         with _io.FileIO(_getfd(), closefd=False) as f:
             self.assertFalse(f.closefd)
 
-    def test_dunder_getstate_always_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
-            with _io.FileIO(_getfd(), mode="r") as f:
-                f.__getstate__()
-
-        self.assertEqual(str(context.exception), "cannot serialize '_io.FileIO' object")
-
     def test_dunder_init_with_float_file_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
             _io.FileIO(3.14)
@@ -1509,9 +1502,9 @@ class FileIOTests(unittest.TestCase):
         w = os.fdopen(w, "w")
         w.write("hello")
         w.close()
-        f = _io.FileIO(r, mode="w")
-        self.assertFalse(f.readable())
-        self.assertEqual(f.readall(), b"hello")
+        with _io.FileIO(r, mode="w") as f:
+            self.assertFalse(f.readable())
+            self.assertEqual(f.readall(), b"hello")
 
     def test_readall_returns_bytes(self):
         with _io.FileIO(_getfd(), mode="r") as f:
@@ -1522,8 +1515,8 @@ class FileIOTests(unittest.TestCase):
         w = os.fdopen(w, "w")
         w.write("hello")
         w.close()
-        f = _io.FileIO(r, mode="r")
-        result = f.readall()
+        with _io.FileIO(r, mode="r") as f:
+            result = f.readall()
         self.assertIsInstance(result, bytes)
         self.assertEqual(result, b"hello")
 
@@ -1538,8 +1531,8 @@ class FileIOTests(unittest.TestCase):
         w = os.fdopen(w, "w")
         w.write("foo" * 1000)
         w.close()
-        f = _io.FileIO(r, mode="r")
-        result = f.readall()
+        with _io.FileIO(r, mode="r") as f:
+            result = f.readall()
         self.assertIsInstance(result, bytes)
         self.assertEqual(result, b"foo" * 1000)
 
@@ -1567,26 +1560,14 @@ with open('{fifo}', 'wb') as f:
         with self.assertRaises(TypeError):
             _io.FileIO.readinto(5, bytearray(b"hello"))
 
-    def test_readinto_with_bad_file_descriptor_raises_os_error(self):
-        r, w = os.pipe()
-        w = os.fdopen(w, "w")
-        w.write("hello")
-        w.close()
-        f = _io.FileIO(r, mode="r")
-        barr = bytearray(b"ab")
-        r = os.fdopen(r, "r")
-        r.close()
-        with self.assertRaises(OSError):
-            f.readinto(barr)
-
     def test_readinto_with_array_reads_bytes_into_array(self):
         r, w = os.pipe()
         w = os.fdopen(w, "w")
         w.write("hello")
         w.close()
-        f = _io.FileIO(r, mode="r")
         arr = array.array("b", [1, 2, 3])
-        self.assertEqual(f.readinto(arr), 3)
+        with _io.FileIO(r, mode="r") as f:
+            self.assertEqual(f.readinto(arr), 3)
         self.assertEqual(bytes(arr), b"hel")
 
     def test_readinto_with_bytearray_reads_bytes_into_bytearray(self):
@@ -1594,9 +1575,9 @@ with open('{fifo}', 'wb') as f:
         w = os.fdopen(w, "w")
         w.write("hello")
         w.close()
-        f = _io.FileIO(r, mode="r")
         barr = bytearray(b"abc")
-        self.assertEqual(f.readinto(barr), 3)
+        with _io.FileIO(r, mode="r") as f:
+            self.assertEqual(f.readinto(barr), 3)
         self.assertEqual(barr, b"hel")
 
     def test_readinto_with_bytes_raises_type_error(self):
@@ -1604,30 +1585,30 @@ with open('{fifo}', 'wb') as f:
         w = os.fdopen(w, "w")
         w.write("hello")
         w.close()
-        f = _io.FileIO(r, mode="r")
         b = b"abc"
-        with self.assertRaises(TypeError):
-            f.readinto(b)
+        with _io.FileIO(r, mode="r") as f:
+            with self.assertRaises(TypeError):
+                f.readinto(b)
 
     def test_readinto_with_memoryview_of_bytes_raises_type_error(self):
         r, w = os.pipe()
         w = os.fdopen(w, "w")
         w.write("hello")
         w.close()
-        f = _io.FileIO(r, mode="r")
         view = memoryview(b"abc")
-        with self.assertRaises(TypeError):
-            f.readinto(view)
+        with _io.FileIO(r, mode="r") as f:
+            with self.assertRaises(TypeError):
+                f.readinto(view)
 
     def test_readinto_with_memoryview_of_mmap_reads_bytes_to_pointer(self):
         r, w = os.pipe()
         w = os.fdopen(w, "w")
         w.write("hello")
         w.close()
-        f = _io.FileIO(r, mode="r")
         mm = mmap.mmap(-1, 2)
         view = memoryview(mm)
-        self.assertEqual(f.readinto(view), 2)
+        with _io.FileIO(r, mode="r") as f:
+            self.assertEqual(f.readinto(view), 2)
         self.assertEqual(bytes(view), b"he")
 
     def test_readinto_with_mmap_reads_bytes_to_memory(self):
@@ -1635,9 +1616,9 @@ with open('{fifo}', 'wb') as f:
         w = os.fdopen(w, "w")
         w.write("hello")
         w.close()
-        f = _io.FileIO(r, mode="r")
         mm = mmap.mmap(-1, 2)
-        self.assertEqual(f.readinto(mm), 2)
+        with _io.FileIO(r, mode="r") as f:
+            self.assertEqual(f.readinto(mm), 2)
         view = memoryview(mm)
         self.assertEqual(bytes(view), b"he")
 
@@ -1646,20 +1627,20 @@ with open('{fifo}', 'wb') as f:
         w = os.fdopen(w, "w")
         w.write("hello")
         w.close()
-        f = _io.FileIO(r, mode="r")
         barr = bytearray(b"abc")
-        f.close()
-        with self.assertRaises(ValueError):
-            f.readinto(barr)
+        with _io.FileIO(r, mode="r") as f:
+            f.close()
+            with self.assertRaises(ValueError):
+                f.readinto(barr)
 
     def test_readinto_with_empty_bytearray_returns_zero(self):
         r, w = os.pipe()
         w = os.fdopen(w, "w")
         w.write("hello")
         w.close()
-        f = _io.FileIO(r, mode="r")
         barr = bytearray(b"")
-        self.assertEqual(f.readinto(barr), 0)
+        with _io.FileIO(r, mode="r") as f:
+            self.assertEqual(f.readinto(barr), 0)
         self.assertEqual(barr, b"")
 
     def test_seek_with_float_raises_type_error(self):
@@ -1854,12 +1835,10 @@ class FspathTests(unittest.TestCase):
 
 class OpenTests(unittest.TestCase):
     def test_open_with_bad_mode_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaisesRegex(
+            TypeError, r"open\(\) argument .* must be str, not int"
+        ):
             _io.open(0, mode=5)
-
-        self.assertEqual(
-            str(context.exception), "open() argument 2 must be str, not int"
-        )
 
     def test_open_with_bad_buffering_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
@@ -1870,20 +1849,16 @@ class OpenTests(unittest.TestCase):
         )
 
     def test_open_with_bad_encoding_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaisesRegex(
+            TypeError, r"open\(\) argument .* must be str or None, not int"
+        ):
             _io.open(0, encoding=5)
 
-        self.assertEqual(
-            str(context.exception), "open() argument 4 must be str or None, not int"
-        )
-
     def test_open_with_bad_errors_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaisesRegex(
+            TypeError, r"open\(\) argument .* must be str or None, not int"
+        ):
             _io.open(0, errors=5)
-
-        self.assertEqual(
-            str(context.exception), "open() argument 5 must be str or None, not int"
-        )
 
     def test_open_with_duplicate_mode_raises_value_error(self):
         with self.assertRaises(ValueError) as context:
@@ -2037,9 +2012,15 @@ class OpenTests(unittest.TestCase):
 
     @supports_38_feature
     def test_open_code_returns_buffered_reader(self):
-        fd = _getfd()
-        with _io.open_code(fd) as result:
-            self.assertIsInstance(result, _io.BufferedReader)
+        with tempfile.TemporaryDirectory() as tempdir:
+            filename = "temp.txt"
+            full_path = os.path.join(tempdir, filename)
+
+            with open(full_path, "w") as fp:
+                fp.write("foobar")
+
+            with _io.open_code(full_path) as result:
+                self.assertIsInstance(result, _io.BufferedReader)
 
 
 @pyro_only
@@ -2048,10 +2029,6 @@ class UnderBufferedIOMixinTests(unittest.TestCase):
         with _io.FileIO(_getfd(), closefd=True) as f:
             result = _BufferedIOMixin(f)
             self.assertIs(result.raw, f)
-
-    def test_dunder_getstate_always_raises_type_error(self):
-        result = _BufferedIOMixin(None)
-        self.assertRaises(TypeError, result.__getstate__)
 
     def test_dunder_repr_returns_str(self):
         result = _BufferedIOMixin(None)
@@ -2695,28 +2672,22 @@ class TextIOWrapperTests(unittest.TestCase):
         )
 
     def test_dunder_init_with_non_str_encoding_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaisesRegex(
+            TypeError, r"TextIOWrapper\(\) argument .* must be str or None, not int"
+        ):
             _io.TextIOWrapper("hello", encoding=5)
-        self.assertEqual(
-            str(context.exception),
-            "TextIOWrapper() argument 2 must be str or None, not int",
-        )
 
     def test_dunder_init_with_non_str_errors_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaisesRegex(
+            TypeError, r"TextIOWrapper\(\) argument .* must be str or None, not int"
+        ):
             _io.TextIOWrapper("hello", errors=5)
-        self.assertEqual(
-            str(context.exception),
-            "TextIOWrapper() argument 'errors' must be str or None, not int",
-        )
 
     def test_dunder_init_with_non_str_newline_raises_type_error(self):
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaisesRegex(
+            TypeError, r"TextIOWrapper\(\) argument .* must be str or None, not int"
+        ):
             _io.TextIOWrapper("hello", newline=5)
-        self.assertEqual(
-            str(context.exception),
-            "TextIOWrapper() argument 4 must be str or None, not int",
-        )
 
     def test_dunder_init_with_non_int_line_buffering_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
@@ -3750,11 +3721,10 @@ class StringIOTests(unittest.TestCase):
 
     def test_seek_with_bigint_whence_raises_overflow_error(self):
         string_io = _io.StringIO("foo\n")
-        with self.assertRaises(OverflowError) as context:
+        with self.assertRaisesRegex(
+            OverflowError, r"Python int too large to convert to C .*"
+        ):
             string_io.seek(1, 2 ** 65)
-        self.assertEqual(
-            str(context.exception), "Python int too large to convert to C long"
-        )
 
     def test_seekable_with_open_StringIO_returns_true(self):
         string_io = _io.StringIO()
