@@ -9,6 +9,7 @@ from _builtins import (
     _int_check,
     _structseq_new_type,
     _Unbound,
+    _unimplemented,
 )
 from _builtins import maxunicode  # noqa: F401
 from _path import dirname as _dirname, join as _join
@@ -155,6 +156,10 @@ def _getframe(depth=0):
 
 
 abiflags = ""
+
+
+def addaudithook(hook):
+    _unimplemented()  # TODO(T86943617): implement
 
 
 def audit(event, *args):
