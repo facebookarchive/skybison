@@ -17,6 +17,7 @@ from _builtins import (
     _bool_check,
     _bool_guard,
     _bound_method,
+    _bound_method_guard,
     _builtin,
     _builtin_type,
     _byte_guard,
@@ -5371,6 +5372,10 @@ class method(bootstrap=True):
         if not self.__func__ == other.__func__:
             return False
         return self.__self__ is other.__self__
+
+    def __hash__(self):
+        _bound_method_guard(self)
+        return hash(self.__self__) ^ hash(self.__func__)
 
     def __getattr__(self, name):
         return getattr(self.__func__, name)

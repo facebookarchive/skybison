@@ -55,6 +55,10 @@ def _bound_method(fn, owner):
     _builtin()
 
 
+def _bound_method_guard(obj):
+    _builtin()
+
+
 def _builtin_type(name):
     """Returns the builtin type with name `name`. This even works before the
     type is initialized via a `class` statement and is intended to be used when

@@ -676,6 +676,13 @@ RawObject FUNC(_builtins, _bound_method)(Thread* thread, Arguments args) {
   return thread->runtime()->newBoundMethod(function, owner);
 }
 
+RawObject FUNC(_builtins, _bound_method_guard)(Thread* thread, Arguments args) {
+  if (args.get(0).isBoundMethod()) {
+    return NoneType::object();
+  }
+  return raiseRequiresFromCaller(thread, args, ID(method));
+}
+
 RawObject FUNC(_builtins, _builtin_type)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object name(&scope, args.get(0));

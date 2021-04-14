@@ -2376,6 +2376,42 @@ class BoundMethodTests(unittest.TestCase):
         m1 = C().meth
         self.assertFalse(m0.__eq__(m1))
 
+    def test_dunder_hash_calls_self_and_function_hash(self):
+        class C:
+            __hash__ = Mock(name="__hash__", return_value=42)
+
+        class D:
+            def __call__(self):
+                pass
+
+            __hash__ = Mock(name="__hash__", return_value=1)
+
+        from types import MethodType
+
+        self_obj = C()
+        callable = D()
+        m = MethodType(callable, self_obj)
+        self.assertIs(type(hash(m)), int)
+        C.__hash__.assert_called_once()
+        D.__hash__.assert_called_once()
+
+    def test_dunder_hash_with_equal_objects_returns_equal_values(self):
+        class C:
+            def meth(self):
+                pass
+
+        from types import MethodType
+
+        self_obj = C()
+        m0 = MethodType(C.meth, self_obj)
+        m1 = MethodType(C.meth, self_obj)
+        m2 = self_obj.meth
+        self.assertEqual(hash(m0), hash(m0))
+        self.assertIsNot(m0, m1)
+        self.assertEqual(hash(m0), hash(m1))
+        self.assertIsNot(m0, m2)
+        self.assertEqual(hash(m0), hash(m2))
+
 
 class CallableIteratorTest(unittest.TestCase):
     def test_callable_iterator_iterates_till_sentinel(self):
