@@ -157,6 +157,10 @@ def _getframe(depth=0):
 abiflags = ""
 
 
+def audit(event, *args):
+    pass  # TODO(T86943617): implement
+
+
 base_exec_prefix = None  # will be set by _init
 
 
