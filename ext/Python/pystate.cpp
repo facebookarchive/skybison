@@ -161,7 +161,7 @@ PY_EXPORT PyInterpreterState* PyInterpreterState_Head() {
 }
 
 PY_EXPORT PyInterpreterState* PyInterpreterState_Main() {
-  UNIMPLEMENTED("PyInterpreterState_Main");
+  return reinterpret_cast<PyInterpreterState*>(Thread::current()->runtime());
 }
 
 PY_EXPORT PyInterpreterState* PyInterpreterState_Next(
@@ -175,7 +175,7 @@ PY_EXPORT PyThreadState* PyInterpreterState_ThreadHead(
 }
 
 PY_EXPORT PyInterpreterState* _PyInterpreterState_Get(void) {
-  UNIMPLEMENTED("_PyInterpreterState_Get");
+  return reinterpret_cast<PyInterpreterState*>(Thread::current()->runtime());
 }
 
 PY_EXPORT void _PyState_ClearModules() {
