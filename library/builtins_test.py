@@ -2255,14 +2255,14 @@ class BoolTests(unittest.TestCase):
 
 
 class BoundMethodTests(unittest.TestCase):
-    def test_bound_method_dunder_func(self):
+    def test_dunder_func_returns_function(self):
         class Foo:
             def foo(self):
                 pass
 
         self.assertIs(Foo.foo, Foo().foo.__func__)
 
-    def test_bound_method_dunder_self(self):
+    def test_dunder_self_returns_self_member(self):
         class Foo:
             def foo(self):
                 pass
@@ -2270,7 +2270,7 @@ class BoundMethodTests(unittest.TestCase):
         f = Foo()
         self.assertIs(f, f.foo.__self__)
 
-    def test_bound_method_doc(self):
+    def test_dunder_doc_returns_function_dunder_doc(self):
         class Foo:
             def foo(self):
                 "This is the docstring of foo"
@@ -2279,7 +2279,7 @@ class BoundMethodTests(unittest.TestCase):
         self.assertEqual(Foo().foo.__doc__, "This is the docstring of foo")
         self.assertIs(Foo.foo.__doc__, Foo().foo.__doc__)
 
-    def test_bound_method_readonly_attributes(self):
+    def test_write_readonly_attributes_raises_attribute_error(self):
         class Foo:
             def foo(self):
                 "This is the docstring of foo"
@@ -2295,7 +2295,7 @@ class BoundMethodTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             f.__doc__ = "hey!"
 
-    def test_bound_method_getattribute(self):
+    def test_getattribute_returns_function_attribute(self):
         class C:
             def meth(self):
                 pass
@@ -2306,7 +2306,7 @@ class BoundMethodTests(unittest.TestCase):
         bound = c.meth
         self.assertEqual(bound.attr, 42)
 
-    def test_bound_method_dunder_eq_with_invalid_self_raises_type_error(self):
+    def test_dunder_eq_with_invalid_self_raises_type_error(self):
         class C:
             def meth(self):
                 pass
@@ -2314,7 +2314,7 @@ class BoundMethodTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             type(C().meth).__eq__(None, None)
 
-    def test_bound_method_is_not_same_with_same_method_on_same_instance(self):
+    def test_is_not_same_with_same_method_on_same_instance(self):
         class C:
             def meth(self):
                 pass
@@ -2324,7 +2324,7 @@ class BoundMethodTests(unittest.TestCase):
         bound_meth2 = c.meth
         self.assertFalse(bound_meth1 is bound_meth2)
 
-    def test_bound_method_equal_with_same_method_on_same_instance(self):
+    def test_equal_with_same_method_on_same_instance(self):
         class C:
             def meth(self):
                 pass
@@ -2334,7 +2334,7 @@ class BoundMethodTests(unittest.TestCase):
         bound_meth2 = c.meth
         self.assertTrue(bound_meth1.__eq__(bound_meth2))
 
-    def test_bound_method_not_equal_with_same_method_on_different_instances(self):
+    def test_not_equal_with_same_method_on_different_instances(self):
         class C:
             def meth(self):
                 pass
@@ -2343,7 +2343,7 @@ class BoundMethodTests(unittest.TestCase):
         bound_meth2 = C().meth
         self.assertFalse(bound_meth1.__eq__(bound_meth2))
 
-    def test_bound_method_not_equal_with_different_method_on_same_instances(self):
+    def test_not_equal_with_different_method_on_same_instances(self):
         class C:
             def meth1(self):
                 pass
@@ -2356,7 +2356,7 @@ class BoundMethodTests(unittest.TestCase):
         bound_meth2 = c.meth2
         self.assertFalse(bound_meth1.__eq__(bound_meth2))
 
-    def test_bound_method_compared_to_non_bound_method_returns_not_implemented(self):
+    def test_compared_to_non_bound_method_returns_not_implemented(self):
         class C:
             def meth(self):
                 pass
@@ -2364,9 +2364,7 @@ class BoundMethodTests(unittest.TestCase):
         self.assertEqual(C().meth.__eq__(None), NotImplemented)
 
     @supports_38_feature
-    def test_bound_method_dunder_eq_ignores_overriden_self_equality(
-        self,
-    ):
+    def test_dunder_eq_ignores_overriden_self_equality(self):
         class C:
             def meth(self):
                 pass
