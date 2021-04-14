@@ -31,6 +31,7 @@ asyncio/base_tasks.py
 asyncio/constants.py
 asyncio/coroutines.py
 asyncio/events.py
+asyncio/exceptions.py
 asyncio/format_helpers.py
 asyncio/futures.py
 asyncio/locks.py
