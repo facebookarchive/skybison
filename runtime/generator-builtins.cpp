@@ -6,6 +6,7 @@
 #include "exception-builtins.h"
 #include "frame.h"
 #include "modules.h"
+#include "objects.h"
 #include "type-builtins.h"
 
 namespace py {
@@ -443,7 +444,9 @@ static RawObject asyncGenAcloseSend(Thread* thread, RawObject raw_self_obj,
 
   AsyncGeneratorOpIterBase::State state = self.state();
   if (state == AsyncGeneratorOpIterBase::State::Closed) {
-    return thread->raiseStopIteration();
+    return thread->raiseWithFmt(
+        LayoutId::kRuntimeError,
+        "cannot reuse already awaited aclose()/athrow()");
   }
 
   // Depending on whether the close operation has been applied yet either
@@ -541,7 +544,9 @@ RawObject METH(async_generator_aclose, throw)(Thread* thread, Arguments args) {
 
   AsyncGeneratorOpIterBase::State state = self.state();
   if (state == AsyncGeneratorOpIterBase::State::Closed) {
-    return thread->raiseStopIteration();
+    return thread->raiseWithFmt(
+        LayoutId::kRuntimeError,
+        "cannot reuse already awaited aclose()/athrow()");
   }
   if (state == AsyncGeneratorOpIterBase::State::Init) {
     return thread->raiseWithFmt(
@@ -595,7 +600,9 @@ static RawObject asyncGenAsendSend(Thread* thread, RawObject raw_self_obj,
   AsyncGeneratorAsend self(&scope, *self_obj);
   AsyncGeneratorOpIterBase::State state = self.state();
   if (state == AsyncGeneratorOpIterBase::State::Closed) {
-    return thread->raiseStopIteration();
+    return thread->raiseWithFmt(
+        LayoutId::kRuntimeError,
+        "cannot reuse already awaited __anext__()/asend()");
   }
   // Only use primed value for initial send, and only if no other specific value
   // is provided.
@@ -656,7 +663,9 @@ RawObject METH(async_generator_asend, throw)(Thread* thread, Arguments args) {
 
   AsyncGeneratorOpIterBase::State state = self.state();
   if (state == AsyncGeneratorOpIterBase::State::Closed) {
-    return thread->raiseStopIteration();
+    return thread->raiseWithFmt(
+        LayoutId::kRuntimeError,
+        "cannot reuse already awaited __anext__()/asend()");
   }
 
   // Throw into generator
@@ -716,7 +725,9 @@ static RawObject asyncGenAthrowSend(Thread* thread, RawObject raw_self_obj,
 
   AsyncGeneratorOpIterBase::State state = self.state();
   if (state == AsyncGeneratorOpIterBase::State::Closed) {
-    return thread->raiseStopIteration();
+    return thread->raiseWithFmt(
+        LayoutId::kRuntimeError,
+        "cannot reuse already awaited aclose()/athrow()");
   }
 
   // Depending on whether the throw operation has been applied yet either
@@ -802,7 +813,9 @@ RawObject METH(async_generator_athrow, throw)(Thread* thread, Arguments args) {
 
   AsyncGeneratorOpIterBase::State state = self.state();
   if (state == AsyncGeneratorOpIterBase::State::Closed) {
-    return thread->raiseStopIteration();
+    return thread->raiseWithFmt(
+        LayoutId::kRuntimeError,
+        "cannot reuse already awaited aclose()/athrow()");
   }
 
   if (state == AsyncGeneratorOpIterBase::State::Init) {

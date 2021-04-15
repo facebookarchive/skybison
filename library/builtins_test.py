@@ -576,6 +576,7 @@ class AsyncGeneratorAcloseTests(unittest.TestCase):
         op_iter.close()
         self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
+    @supports_38_feature
     def test_send_state_closed_raises_stop_iteration_state_closed(self):
         async def f():
             yield 1
@@ -584,9 +585,10 @@ class AsyncGeneratorAcloseTests(unittest.TestCase):
         op_iter = f().aclose()
         op_iter.close()
 
-        with self.assertRaises(StopIteration) as exc:
+        with self.assertRaises(
+            RuntimeError, msg="cannot reuse already awaited aclose()/athrow()"
+        ):
             op_iter.send(None)
-        self.assertIsNone(exc.exception.value)
 
         self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
@@ -883,6 +885,7 @@ class AsyncGeneratorAcloseTests(unittest.TestCase):
 
         self._assertOpIterState(op_iter, "_STATE_ITER")
 
+    @supports_38_feature
     def test_throw_state_closed_raises_stop_iteration_state_closed(self):
         async def f():
             yield 1
@@ -891,9 +894,10 @@ class AsyncGeneratorAcloseTests(unittest.TestCase):
         op_iter = f().aclose()
         op_iter.close()
 
-        with self.assertRaises(StopIteration) as exc:
+        with self.assertRaises(
+            RuntimeError, msg="cannot reuse already awaited aclose()/athrow()"
+        ):
             op_iter.throw(None, None, None)
-        self.assertIsNone(exc.exception.value)
 
         self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
@@ -1128,6 +1132,7 @@ class AsyncGeneratorAsendTests(unittest.TestCase):
         op_iter.close()
         self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
+    @supports_38_feature
     def test_send_state_closed_raises_stop_iteration_state_closed(self):
         async def f():
             yield 1
@@ -1136,9 +1141,10 @@ class AsyncGeneratorAsendTests(unittest.TestCase):
         op_iter = f().asend(None)
         op_iter.close()
 
-        with self.assertRaises(StopIteration) as exc:
+        with self.assertRaises(
+            RuntimeError, msg="cannot reuse already awaited __anext__()/asend()"
+        ):
             op_iter.send(None)
-        self.assertIsNone(exc.exception.value)
 
         self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
@@ -1353,6 +1359,7 @@ class AsyncGeneratorAsendTests(unittest.TestCase):
 
         self._assertOpIterState(op_iter, "_STATE_ITER")
 
+    @supports_38_feature
     def test_throw_state_closed_raises_stop_iteration_state_closed(self):
         async def f():
             yield 1
@@ -1361,9 +1368,10 @@ class AsyncGeneratorAsendTests(unittest.TestCase):
         op_iter = f().asend(None)
         op_iter.close()
 
-        with self.assertRaises(StopIteration) as exc:
+        with self.assertRaises(
+            RuntimeError, msg="cannot reuse already awaited __anext__()/asend()"
+        ):
             op_iter.throw(None, None, None)
-        self.assertIsNone(exc.exception.value)
 
         self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
@@ -1553,6 +1561,7 @@ class AsyncGeneratorAthrowTests(unittest.TestCase):
         op_iter.close()
         self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
+    @supports_38_feature
     def test_send_state_closed_raises_stop_iteration_state_closed(self):
         async def f():
             yield 1
@@ -1561,9 +1570,10 @@ class AsyncGeneratorAthrowTests(unittest.TestCase):
         op_iter = f().athrow(ValueError, 1)
         op_iter.close()
 
-        with self.assertRaises(StopIteration) as exc:
+        with self.assertRaises(
+            RuntimeError, msg="cannot reuse already awaited aclose()/athrow()"
+        ):
             op_iter.send(None)
-        self.assertIsNone(exc.exception.value)
 
         self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
@@ -1824,6 +1834,7 @@ class AsyncGeneratorAthrowTests(unittest.TestCase):
 
         self._assertOpIterState(op_iter, "_STATE_ITER")
 
+    @supports_38_feature
     def test_throw_state_closed_raises_stop_iteration_state_closed(self):
         async def f():
             yield 1
@@ -1832,9 +1843,10 @@ class AsyncGeneratorAthrowTests(unittest.TestCase):
         op_iter = f().athrow(ValueError, 1)
         op_iter.close()
 
-        with self.assertRaises(StopIteration) as exc:
+        with self.assertRaises(
+            RuntimeError, msg="cannot reuse already awaited aclose()/athrow()"
+        ):
             op_iter.throw(None, None, None)
-        self.assertIsNone(exc.exception.value)
 
         self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
