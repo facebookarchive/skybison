@@ -5282,6 +5282,10 @@ class ExceptionTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             e.with_traceback("not_a_traceback_obj")
 
+    def test_system_exit_with_value_sets_code(self):
+        exc = SystemExit(1111)
+        self.assertEqual(exc.code, 1111)
+
 
 class EvalTests(unittest.TestCase):
     def test_globals_none_accesses_function_globals(self):

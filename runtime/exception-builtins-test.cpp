@@ -363,20 +363,6 @@ exc = SystemExit(4, 5, 6)
   EXPECT_EQ(args.at(2), SmallInt::fromWord(6));
 }
 
-TEST_F(ExceptionBuiltinsTest, SystemExitGetValue) {
-  HandleScope scope(thread_);
-
-  ASSERT_FALSE(runFromCStr(runtime_, R"(
-exc = SystemExit(1111)
-result = exc.value
-)")
-                   .isError());
-
-  // The value attribute should contain the first constructor argument.
-  Object result(&scope, mainModuleAt(runtime_, "result"));
-  EXPECT_TRUE(isIntEqualsWord(*result, 1111));
-}
-
 TEST_F(ExceptionBuiltinsTest, ImportErrorConstructEmpty) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, "x = ImportError()").isError());

@@ -48,7 +48,7 @@ static const BuiltinAttribute kSyntaxErrorAttributes[] = {
 };
 
 static const BuiltinAttribute kSystemExitAttributes[] = {
-    {ID(value), RawSystemExit::kCodeOffset},
+    {ID(code), RawSystemExit::kCodeOffset},
 };
 
 static const BuiltinAttribute kUnicodeErrorBaseAttributes[] = {
