@@ -2149,11 +2149,6 @@ void emitHandler<POP_BLOCK>(EmitEnv* env) {
   emitNextOpcode(env);
 }
 
-template <typename T>
-void writeBytes(void* addr, T value) {
-  std::memcpy(addr, &value, sizeof(value));
-}
-
 word emitHandlerTable(EmitEnv* env);
 void emitSharedCode(EmitEnv* env);
 
