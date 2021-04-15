@@ -43,7 +43,6 @@ try:
 except ImportError:
     try:
         import _winreg
-
         import nt as _os
 
         _builtin_os = "nt"

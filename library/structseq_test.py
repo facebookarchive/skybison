@@ -4,8 +4,8 @@ import posix
 import sys
 import time
 import unittest
-from test.support import _TPFLAGS_HEAPTYPE
 
+from test.support import _TPFLAGS_HEAPTYPE
 from test_support import pyro_only
 
 
