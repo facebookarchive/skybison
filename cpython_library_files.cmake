@@ -1204,7 +1204,6 @@ test/subprocessdata/input_reader.py
 test/subprocessdata/qcat.py
 test/subprocessdata/qgrep.py
 test/subprocessdata/sigchild_ignore.py
-test/support/__init__.py
 test/support/script_helper.py
 test/support/testresult.py
 test/talos-2019-0758.pem

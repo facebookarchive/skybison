@@ -142,6 +142,7 @@ sysconfig_test.py
 termios_test.py
 test/mapping_tests.py
 test/seq_tests.py
+test/support/__init__.py
 test/test_asyncgen.py
 test/test_compiler/__init__.py
 test/test_compiler/__main__.py
