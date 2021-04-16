@@ -5,7 +5,7 @@
 #include "cpython-func.h"
 #include "cpython-types.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "dict-builtins.h"
 #include "globals.h"
 #include "handles-decl.h"

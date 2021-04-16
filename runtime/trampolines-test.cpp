@@ -2,7 +2,6 @@
 
 #include "gtest/gtest.h"
 
-#include "capi-handles.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "function-builtins.h"

@@ -3,7 +3,7 @@
 #include "cpython-data.h"
 #include "gtest/gtest.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "dict-builtins.h"
 #include "function-utils.h"
 #include "runtime.h"

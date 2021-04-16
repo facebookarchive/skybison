@@ -4,7 +4,7 @@
 #include "cpython-func.h"
 #include "cpython-types.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "runtime.h"
 
 namespace py {

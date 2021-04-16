@@ -1,4 +1,4 @@
-#include "capi-handles.h"
+#include "api-handle.h"
 
 #include <cstdint>
 
@@ -123,7 +123,7 @@ static void probeNext(IndexProbe* probe) {
   probe->index = (probe->index * 5 + 1 + probe->perturb) & probe->mask;
 }
 
-void* IdentityDict::at(RawObject key) {
+void* ApiHandleDict::at(RawObject key) {
   word index;
   int32_t item_index;
   if (lookup(key, &index, &item_index)) {
@@ -132,7 +132,7 @@ void* IdentityDict::at(RawObject key) {
   return nullptr;
 }
 
-void IdentityDict::atPut(RawObject key, void* value) {
+void ApiHandleDict::atPut(RawObject key, void* value) {
   RawObject* keys = this->keys();
   void** values = this->values();
 
@@ -160,13 +160,13 @@ void IdentityDict::atPut(RawObject key, void* value) {
   DCHECK(hasUsableItem(), "dict must have space for another item");
 }
 
-bool IdentityDict::includes(RawObject key) {
+bool ApiHandleDict::includes(RawObject key) {
   word index;
   int32_t item_index;
   return lookup(key, &index, &item_index);
 }
 
-void IdentityDict::initialize(word num_indices) {
+void ApiHandleDict::initialize(word num_indices) {
   setIndices(newIndices(num_indices));
   setNumIndices(num_indices);
 
@@ -176,7 +176,7 @@ void IdentityDict::initialize(word num_indices) {
   setValues(newValues(capacity));
 }
 
-bool IdentityDict::lookup(RawObject key, word* sparse, int32_t* dense) {
+bool ApiHandleDict::lookup(RawObject key, word* sparse, int32_t* dense) {
   uword hash = handleHash(key);
   int32_t* indices = this->indices();
   RawObject* keys = this->keys();
@@ -198,8 +198,8 @@ bool IdentityDict::lookup(RawObject key, word* sparse, int32_t* dense) {
   }
 }
 
-bool IdentityDict::lookupForInsertion(RawObject key, word* sparse,
-                                      int32_t* dense) {
+bool ApiHandleDict::lookupForInsertion(RawObject key, word* sparse,
+                                       int32_t* dense) {
   uword hash = handleHash(key);
   int32_t* indices = this->indices();
   RawObject* keys = this->keys();
@@ -226,7 +226,7 @@ bool IdentityDict::lookupForInsertion(RawObject key, word* sparse,
   }
 }
 
-void IdentityDict::rehash(word new_num_indices) {
+void ApiHandleDict::rehash(word new_num_indices) {
   int32_t end = nextIndex();
   int32_t* indices = this->indices();
   RawObject* keys = this->keys();
@@ -265,7 +265,7 @@ void IdentityDict::rehash(word new_num_indices) {
   std::free(values);
 }
 
-void* IdentityDict::remove(RawObject key) {
+void* ApiHandleDict::remove(RawObject key) {
   word index;
   int32_t item_index;
   if (!lookup(key, &index, &item_index)) {
@@ -280,7 +280,7 @@ void* IdentityDict::remove(RawObject key) {
   return result;
 }
 
-void IdentityDict::shrink() {
+void ApiHandleDict::shrink() {
   int32_t num_items = numItems();
   if (num_items < capacity() / kShrinkFactor) {
     // Ensure that the indices array is large enough to limit collisions.
@@ -289,7 +289,7 @@ void IdentityDict::shrink() {
   }
 }
 
-void IdentityDict::visit(PointerVisitor* visitor) {
+void ApiHandleDict::visit(PointerVisitor* visitor) {
   RawObject* keys = this->keys();
   if (keys == nullptr) return;
   word keys_length = capacity();
@@ -332,7 +332,7 @@ ApiHandle* ApiHandle::ensure(Runtime* runtime, RawObject obj) {
   }
 
   // Get the handle of a builtin instance
-  IdentityDict* handles = capiHandles(runtime);
+  ApiHandleDict* handles = capiHandles(runtime);
   void* value = handles->at(obj);
   if (value != nullptr) {
     ApiHandle* result = reinterpret_cast<ApiHandle*>(value);
@@ -402,8 +402,8 @@ RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
 }
 
 void ApiHandle::clearNotReferencedHandles(Runtime* runtime,
-                                          IdentityDict* handles,
-                                          IdentityDict* caches) {
+                                          ApiHandleDict* handles,
+                                          ApiHandleDict* caches) {
   // Objects have moved; rehash the caches first to reflect new addresses
   caches->rehash(caches->numIndices());
 
@@ -432,7 +432,7 @@ void ApiHandle::clearNotReferencedHandles(Runtime* runtime,
   handles->rehash(handles->numIndices());
 }
 
-void ApiHandle::disposeHandles(Runtime* runtime, IdentityDict* handles) {
+void ApiHandle::disposeHandles(Runtime* runtime, ApiHandleDict* handles) {
   int32_t end = handles->nextIndex();
   RawObject* keys = handles->keys();
   void** values = handles->values();
@@ -445,7 +445,7 @@ void ApiHandle::disposeHandles(Runtime* runtime, IdentityDict* handles) {
   }
 }
 
-void ApiHandle::visitReferences(IdentityDict* handles,
+void ApiHandle::visitReferences(ApiHandleDict* handles,
                                 PointerVisitor* visitor) {
   int32_t end = handles->nextIndex();
   RawObject* keys = handles->keys();
@@ -473,13 +473,13 @@ void* ApiHandle::cache(Runtime* runtime) {
   DCHECK(!isImmediate(this), "immediate handles do not have caches");
   if (!isManaged(this)) return nullptr;
 
-  IdentityDict* caches = capiCaches(runtime);
+  ApiHandleDict* caches = capiCaches(runtime);
   RawObject obj = asObject();
   return caches->at(obj);
 }
 
 void ApiHandle::setCache(Runtime* runtime, void* value) {
-  IdentityDict* caches = capiCaches(runtime);
+  ApiHandleDict* caches = capiCaches(runtime);
   RawObject obj = asObject();
   caches->atPut(obj, value);
 }

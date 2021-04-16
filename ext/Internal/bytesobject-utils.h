@@ -1,6 +1,6 @@
 #pragma once
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "handles-decl.h"
 #include "runtime.h"
 

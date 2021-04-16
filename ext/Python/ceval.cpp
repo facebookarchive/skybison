@@ -1,7 +1,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "dict-builtins.h"
 #include "module-builtins.h"
 #include "runtime.h"

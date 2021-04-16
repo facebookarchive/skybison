@@ -3,10 +3,10 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 
+#include "api-handle.h"
 #include "attributedict.h"
 #include "builtins-module.h"
 #include "bytes-builtins.h"
-#include "capi-handles.h"
 #include "capi.h"
 #include "dict-builtins.h"
 #include "frame.h"

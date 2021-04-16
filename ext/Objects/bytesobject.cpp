@@ -3,11 +3,11 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 
+#include "api-handle.h"
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "byteslike.h"
 #include "bytesobject-utils.h"
-#include "capi-handles.h"
 #include "runtime.h"
 #include "utils.h"
 

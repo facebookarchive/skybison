@@ -1,6 +1,6 @@
 #include "type-utils.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "globals.h"
 #include "handles.h"
 #include "runtime.h"

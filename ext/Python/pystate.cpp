@@ -1,6 +1,6 @@
 #include "cpython-func.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "capi-state.h"
 #include "module-builtins.h"
 #include "modules.h"

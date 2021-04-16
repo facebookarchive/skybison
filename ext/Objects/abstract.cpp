@@ -4,11 +4,11 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 
+#include "api-handle.h"
 #include "array-module.h"
 #include "attributedict.h"
 #include "bytearrayobject-utils.h"
 #include "bytesobject-utils.h"
-#include "capi-handles.h"
 #include "capi.h"
 #include "exception-builtins.h"
 #include "formatter.h"

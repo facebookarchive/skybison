@@ -1,6 +1,6 @@
+#include "api-handle.h"
 #include "bytearray-builtins.h"
 #include "bytearrayobject-utils.h"
-#include "capi-handles.h"
 #include "runtime.h"
 
 namespace py {

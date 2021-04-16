@@ -3,7 +3,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "runtime.h"
 #include "set-builtins.h"
 #include "tuple-builtins.h"

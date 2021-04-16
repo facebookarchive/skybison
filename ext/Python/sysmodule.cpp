@@ -5,7 +5,7 @@
 
 #include "cpython-data.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "list-builtins.h"
 #include "module-builtins.h"
 #include "os.h"

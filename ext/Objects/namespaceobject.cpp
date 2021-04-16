@@ -1,5 +1,5 @@
+#include "api-handle.h"
 #include "bytecode.h"
-#include "capi-handles.h"
 #include "dict-builtins.h"
 #include "interpreter.h"
 #include "runtime.h"

@@ -1,6 +1,6 @@
 #include "capi-trampolines.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "capi.h"
 #include "dict-builtins.h"
 #include "runtime.h"

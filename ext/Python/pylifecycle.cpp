@@ -9,7 +9,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "capi.h"
 #include "exception-builtins.h"
 #include "file.h"

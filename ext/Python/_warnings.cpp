@@ -5,7 +5,7 @@
 #include "cpython-data.h"
 #include "cpython-types.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "modules.h"
 #include "runtime.h"
 #include "utils.h"

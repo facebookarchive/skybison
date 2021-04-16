@@ -3,7 +3,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "float-builtins.h"
 #include "handles.h"
 #include "int-builtins.h"

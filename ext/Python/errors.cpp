@@ -6,7 +6,7 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "fileutils.h"

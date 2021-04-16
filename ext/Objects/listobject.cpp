@@ -2,7 +2,7 @@
 
 #include "cpython-func.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "handles.h"
 #include "list-builtins.h"
 #include "objects.h"

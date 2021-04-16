@@ -1,4 +1,4 @@
-#include "capi-handles.h"
+#include "api-handle.h"
 
 #include "gtest/gtest.h"
 
@@ -15,7 +15,7 @@ namespace py {
 namespace testing {
 
 using CApiHandlesDeathTest = RuntimeFixture;
-using CApiHandlesTest = RuntimeFixture;
+using ApiHandleTest = RuntimeFixture;
 
 static RawObject initializeExtensionType(PyObject* extension_type) {
   Thread* thread = Thread::current();
@@ -36,7 +36,7 @@ static RawObject initializeExtensionType(PyObject* extension_type) {
   return *type;
 }
 
-TEST_F(CApiHandlesTest, BorrowedApiHandles) {
+TEST_F(ApiHandleTest, BorrowedApiHandles) {
   HandleScope scope(thread_);
 
   // Create a new object and a new reference to that object.
@@ -57,75 +57,74 @@ TEST_F(CApiHandlesTest, BorrowedApiHandles) {
   EXPECT_EQ(another_ref->refcnt(), refcnt + 1);
 }
 
-TEST_F(CApiHandlesTest, BuiltinHeapAllocatedIntObjectReturnsApiHandle) {
+TEST_F(ApiHandleTest, BuiltinHeapAllocatedIntObjectReturnsApiHandle) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newInt(SmallInt::kMaxValue + 1));
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
   EXPECT_NE(handle, nullptr);
   EXPECT_FALSE(ApiHandle::isImmediate(handle));
-  IdentityDict* dict = capiHandles(runtime_);
+  ApiHandleDict* dict = capiHandles(runtime_);
   EXPECT_EQ(dict->at(*obj), handle);
   handle->decref();
 }
 
-TEST_F(CApiHandlesTest, BuiltinImmediateIntObjectReturnsImmediateApiHandle) {
+TEST_F(ApiHandleTest, BuiltinImmediateIntObjectReturnsImmediateApiHandle) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newInt(1));
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
-  IdentityDict* dict = capiHandles(runtime_);
+  ApiHandleDict* dict = capiHandles(runtime_);
   EXPECT_EQ(dict->at(*obj), nullptr);
   handle->decref();
 }
 
-TEST_F(CApiHandlesTest, BuiltinImmediateTrueObjectReturnsImmediateApiHandle) {
+TEST_F(ApiHandleTest, BuiltinImmediateTrueObjectReturnsImmediateApiHandle) {
   HandleScope scope(thread_);
   Object obj(&scope, Bool::trueObj());
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
-  IdentityDict* dict = capiHandles(runtime_);
+  ApiHandleDict* dict = capiHandles(runtime_);
   EXPECT_EQ(dict->at(*obj), nullptr);
   handle->decref();
 }
 
-TEST_F(CApiHandlesTest, BuiltinImmediateFalseObjectReturnsImmediateApiHandle) {
+TEST_F(ApiHandleTest, BuiltinImmediateFalseObjectReturnsImmediateApiHandle) {
   HandleScope scope(thread_);
   Object obj(&scope, Bool::falseObj());
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
-  IdentityDict* dict = capiHandles(runtime_);
+  ApiHandleDict* dict = capiHandles(runtime_);
   EXPECT_EQ(dict->at(*obj), nullptr);
   handle->decref();
 }
 
-TEST_F(CApiHandlesTest,
+TEST_F(ApiHandleTest,
        BuiltinImmediateNotImplementedObjectReturnsImmediateApiHandle) {
   HandleScope scope(thread_);
   Object obj(&scope, NotImplementedType::object());
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
-  IdentityDict* dict = capiHandles(runtime_);
+  ApiHandleDict* dict = capiHandles(runtime_);
   EXPECT_EQ(dict->at(*obj), nullptr);
   handle->decref();
 }
 
-TEST_F(CApiHandlesTest,
-       BuiltinImmediateUnboundObjectReturnsImmediateApiHandle) {
+TEST_F(ApiHandleTest, BuiltinImmediateUnboundObjectReturnsImmediateApiHandle) {
   HandleScope scope(thread_);
   Object obj(&scope, Unbound::object());
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
   EXPECT_NE(handle, nullptr);
   EXPECT_TRUE(ApiHandle::isImmediate(handle));
-  IdentityDict* dict = capiHandles(runtime_);
+  ApiHandleDict* dict = capiHandles(runtime_);
   EXPECT_EQ(dict->at(*obj), nullptr);
   handle->decref();
 }
 
-TEST_F(CApiHandlesTest, ApiHandleReturnsBuiltinIntObject) {
+TEST_F(ApiHandleTest, ApiHandleReturnsBuiltinIntObject) {
   HandleScope scope(thread_);
 
   Object obj(&scope, runtime_->newInt(1));
@@ -134,10 +133,10 @@ TEST_F(CApiHandlesTest, ApiHandleReturnsBuiltinIntObject) {
   EXPECT_TRUE(isIntEqualsWord(*handle_obj, 1));
 }
 
-TEST_F(CApiHandlesTest, BuiltinObjectReturnsApiHandle) {
+TEST_F(ApiHandleTest, BuiltinObjectReturnsApiHandle) {
   HandleScope scope(thread_);
 
-  IdentityDict* dict = capiHandles(runtime_);
+  ApiHandleDict* dict = capiHandles(runtime_);
   Object obj(&scope, runtime_->newList());
   ASSERT_FALSE(dict->includes(*obj));
 
@@ -147,7 +146,7 @@ TEST_F(CApiHandlesTest, BuiltinObjectReturnsApiHandle) {
   EXPECT_TRUE(dict->includes(*obj));
 }
 
-TEST_F(CApiHandlesTest, BuiltinObjectReturnsSameApiHandle) {
+TEST_F(ApiHandleTest, BuiltinObjectReturnsSameApiHandle) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newList());
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
@@ -155,7 +154,7 @@ TEST_F(CApiHandlesTest, BuiltinObjectReturnsSameApiHandle) {
   EXPECT_EQ(handle, handle2);
 }
 
-TEST_F(CApiHandlesTest, ApiHandleReturnsBuiltinObject) {
+TEST_F(ApiHandleTest, ApiHandleReturnsBuiltinObject) {
   HandleScope scope(thread_);
   Object obj(&scope, runtime_->newList());
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
@@ -163,7 +162,7 @@ TEST_F(CApiHandlesTest, ApiHandleReturnsBuiltinObject) {
   EXPECT_TRUE(handle_obj.isList());
 }
 
-TEST_F(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
+TEST_F(ApiHandleTest, ExtensionInstanceObjectReturnsPyObject) {
   HandleScope scope(thread_);
 
   // Create type
@@ -181,7 +180,7 @@ TEST_F(CApiHandlesTest, ExtensionInstanceObjectReturnsPyObject) {
   EXPECT_EQ(result, &pyobj);
 }
 
-TEST_F(CApiHandlesTest, RuntimeInstanceObjectReturnsPyObject) {
+TEST_F(ApiHandleTest, RuntimeInstanceObjectReturnsPyObject) {
   HandleScope scope(thread_);
 
   // Create instance
@@ -194,7 +193,7 @@ TEST_F(CApiHandlesTest, RuntimeInstanceObjectReturnsPyObject) {
   EXPECT_EQ(*obj, *instance);
 }
 
-TEST_F(CApiHandlesTest,
+TEST_F(ApiHandleTest,
        CheckFunctionResultNonNullptrWithoutPendingExceptionReturnsResult) {
   RawObject value = SmallInt::fromWord(1234);
   ApiHandle* handle = ApiHandle::newReference(runtime_, value);
@@ -202,7 +201,7 @@ TEST_F(CApiHandlesTest,
   EXPECT_EQ(result, value);
 }
 
-TEST_F(CApiHandlesTest,
+TEST_F(ApiHandleTest,
        CheckFunctionResultNullptrWithPendingExceptionReturnsError) {
   thread_->raiseBadArgument();  // TypeError
   RawObject result = ApiHandle::checkFunctionResult(thread_, nullptr);
@@ -211,7 +210,7 @@ TEST_F(CApiHandlesTest,
   EXPECT_TRUE(thread_->pendingExceptionMatches(LayoutId::kTypeError));
 }
 
-TEST_F(CApiHandlesTest,
+TEST_F(ApiHandleTest,
        CheckFunctionResultNullptrWithoutPendingExceptionRaisesSystemError) {
   EXPECT_FALSE(thread_->hasPendingException());
   RawObject result = ApiHandle::checkFunctionResult(thread_, nullptr);
@@ -220,7 +219,7 @@ TEST_F(CApiHandlesTest,
   EXPECT_TRUE(thread_->pendingExceptionMatches(LayoutId::kSystemError));
 }
 
-TEST_F(CApiHandlesTest,
+TEST_F(ApiHandleTest,
        CheckFunctionResultNonNullptrWithPendingExceptionRaisesSystemError) {
   thread_->raiseBadArgument();  // TypeError
   ApiHandle* handle =
@@ -231,7 +230,7 @@ TEST_F(CApiHandlesTest,
   EXPECT_TRUE(thread_->pendingExceptionMatches(LayoutId::kSystemError));
 }
 
-TEST_F(CApiHandlesTest, Cache) {
+TEST_F(ApiHandleTest, Cache) {
   HandleScope scope(thread_);
 
   auto handle1 = ApiHandle::newReference(runtime_, runtime_->newList());
@@ -259,12 +258,12 @@ TEST_F(CApiHandlesTest, Cache) {
 
   Object key(&scope, handle1->asObject());
   handle1->dispose(runtime_);
-  IdentityDict* caches = capiCaches(runtime_);
+  ApiHandleDict* caches = capiCaches(runtime_);
   EXPECT_FALSE(caches->includes(*key));
   EXPECT_EQ(handle2->cache(runtime_), buffer1);
 }
 
-TEST_F(CApiHandlesTest, VisitReferences) {
+TEST_F(ApiHandleTest, VisitReferences) {
   HandleScope scope(thread_);
 
   Object obj1(&scope, runtime_->newInt(123));

@@ -4,7 +4,7 @@
 #include "cpython-data.h"
 #include "cpython-types.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "handles.h"
 #include "modsupport-internal.h"
 #include "module-builtins.h"

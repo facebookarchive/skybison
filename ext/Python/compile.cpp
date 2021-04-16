@@ -2,8 +2,8 @@
 #include "cpython-func.h"
 #include "cpython-types.h"
 
+#include "api-handle.h"
 #include "builtins-module.h"
-#include "capi-handles.h"
 #include "globals.h"
 #include "runtime.h"
 #include "str-builtins.h"

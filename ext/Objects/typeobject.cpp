@@ -7,9 +7,9 @@
 #include "cpython-types.h"
 #include "structmember.h"
 
+#include "api-handle.h"
 #include "attributedict.h"
 #include "builtins-module.h"
-#include "capi-handles.h"
 #include "capi.h"
 #include "dict-builtins.h"
 #include "function-builtins.h"

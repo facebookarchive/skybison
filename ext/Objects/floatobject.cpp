@@ -6,9 +6,9 @@
 #include "cpython-data.h"
 #include "cpython-func.h"
 
+#include "api-handle.h"
 #include "bytearrayobject-utils.h"
 #include "bytesobject-utils.h"
-#include "capi-handles.h"
 #include "float-builtins.h"
 #include "objects.h"
 #include "runtime.h"

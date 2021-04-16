@@ -2,7 +2,7 @@
 
 #include "cpython-func.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 
 namespace py {
 

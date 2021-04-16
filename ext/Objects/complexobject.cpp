@@ -1,7 +1,7 @@
 #include <cerrno>
 #include <cmath>
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "float-builtins.h"
 #include "runtime.h"
 #include "type-builtins.h"

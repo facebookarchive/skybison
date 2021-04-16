@@ -2,7 +2,8 @@
 
 #include "cpython-types.h"
 
-#include "capi-handles.h"
+#include "api-handle-dict.h"
+#include "api-handle.h"
 #include "capi.h"
 #include "runtime.h"
 #include "vector.h"
@@ -13,7 +14,7 @@ struct CAPIState {
   // Some API functions promise to cache their return value and return the same
   // value for repeated invocations on a specific PyObject. Those value are
   // cached here.
-  IdentityDict caches;
+  ApiHandleDict caches;
 
   // A linked list of freed handles.
   // The last node is the frontier of allocated handles.
@@ -24,14 +25,14 @@ struct CAPIState {
   word handle_buffer_size;
 
   // C-API object handles
-  IdentityDict handles;
+  ApiHandleDict handles;
 
   Vector<PyObject*> modules;
 };
 
 static_assert(sizeof(CAPIState) < kCAPIStateSize, "kCAPIStateSize too small");
 
-inline IdentityDict* capiCaches(Runtime* runtime) {
+inline ApiHandleDict* capiCaches(Runtime* runtime) {
   return &runtime->capiState()->caches;
 }
 
@@ -39,7 +40,7 @@ inline FreeListNode** capiFreeHandles(Runtime* runtime) {
   return &runtime->capiState()->free_handles;
 }
 
-inline IdentityDict* capiHandles(Runtime* runtime) {
+inline ApiHandleDict* capiHandles(Runtime* runtime) {
   return &runtime->capiState()->handles;
 }
 

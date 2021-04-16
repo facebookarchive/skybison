@@ -1,6 +1,6 @@
 #include "cpython-func.h"
 
-#include "capi-handles.h"
+#include "api-handle.h"
 #include "runtime.h"
 #include "set-builtins.h"
 

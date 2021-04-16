@@ -868,10 +868,11 @@ target_link_libraries(
 add_library(
   extension
   OBJECT
+  ext/Internal/api-handle.cpp
+  ext/Internal/api-handle-dict.h
+  ext/Internal/api-handle.h
   ext/Internal/bytearrayobject-utils.h
   ext/Internal/bytesobject-utils.h
-  ext/Internal/capi-handles.cpp
-  ext/Internal/capi-handles.h
   ext/Internal/capi-state.cpp
   ext/Internal/capi-state.h
   ext/Internal/capi-trampolines.cpp
@@ -1089,7 +1090,7 @@ target_link_libraries(
 add_library(
   runtime-tests
   OBJECT
-  ext/Internal/capi-handles-test.cpp
+  ext/Internal/api-handle-test.cpp
   ext/Internal/trampolines-test.cpp
   runtime/array-module-test.cpp
   runtime/assembler-x64-test.cpp
