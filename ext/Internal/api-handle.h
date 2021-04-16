@@ -165,4 +165,10 @@ inline Py_ssize_t ApiHandle::refcnt() {
   return ob_refcnt & ~(kManagedBit | kBorrowedBit);
 }
 
+inline RawObject ApiHandle::stealReference(PyObject* py_obj) {
+  ApiHandle* handle = ApiHandle::fromPyObject(py_obj);
+  handle->decref();
+  return handle->asObject();
+}
+
 }  // namespace py

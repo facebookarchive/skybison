@@ -379,7 +379,7 @@ RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
     return thread->raiseWithFmt(LayoutId::kSystemError,
                                 "NULL return without exception set");
   }
-  RawObject result_obj = ApiHandle::stealReference(result);
+  RawObject result_obj = stealReference(result);
   if (has_pending_exception) {
     // TODO(T53569173): set the currently pending exception as the cause of the
     // newly raised SystemError
@@ -426,12 +426,6 @@ void ApiHandle::setCache(Runtime* runtime, void* value) {
   ApiHandleDict* caches = capiCaches(runtime);
   RawObject obj = asObject();
   caches->atPut(obj, value);
-}
-
-RawObject ApiHandle::stealReference(PyObject* py_obj) {
-  ApiHandle* handle = ApiHandle::fromPyObject(py_obj);
-  handle->decref();
-  return handle->asObject();
 }
 
 void ApiHandle::setRefcnt(Py_ssize_t count) {
