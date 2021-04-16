@@ -68,7 +68,7 @@ PY_EXPORT PyObject* PyDescr_NewClassMethod(PyTypeObject* type,
   Object type_obj(
       &scope,
       ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type))->asObject());
-  return ApiHandle::newReference(
+  return ApiHandle::newReferenceWithManaged(
       thread->runtime(), newClassMethod(thread, method, name, type_obj));
 }
 
@@ -79,15 +79,15 @@ PY_EXPORT PyObject* PyDictProxy_New(PyObject* mapping) {
   Object result(&scope, thread->invokeFunction1(ID(builtins), ID(mappingproxy),
                                                 mapping_obj));
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(thread->runtime(), *result);
+  return ApiHandle::newReferenceWithManaged(thread->runtime(), *result);
 }
 
 PY_EXPORT PyObject* PyDescr_NewGetSet(PyTypeObject*, PyGetSetDef* def) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object name(&scope, Runtime::internStrFromCStr(thread, def->name));
-  return ApiHandle::newReference(thread->runtime(),
-                                 newGetSet(thread, name, def));
+  return ApiHandle::newReferenceWithManaged(thread->runtime(),
+                                            newGetSet(thread, name, def));
 }
 
 PY_EXPORT PyObject* PyDescr_NewMember(PyTypeObject* /* e */,
@@ -102,8 +102,8 @@ PY_EXPORT PyObject* PyDescr_NewMethod(PyTypeObject* type, PyMethodDef* method) {
   Object type_obj(
       &scope,
       ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(type))->asObject());
-  return ApiHandle::newReference(thread->runtime(),
-                                 newMethod(thread, method, name, type_obj));
+  return ApiHandle::newReferenceWithManaged(
+      thread->runtime(), newMethod(thread, method, name, type_obj));
 }
 
 PY_EXPORT PyTypeObject* PyProperty_Type_Ptr() {

@@ -18,7 +18,7 @@ PY_EXPORT PyObject* PyMemoryView_FromMemory(char* memory, Py_ssize_t size,
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
   Object none(&scope, NoneType::object());
-  return ApiHandle::newReference(
+  return ApiHandle::newReferenceWithManaged(
       runtime,
       runtime->newMemoryViewFromCPtr(
           thread, none, memory, size,
@@ -34,7 +34,7 @@ PY_EXPORT PyObject* PyMemoryView_FromObject(PyObject* obj) {
   if (result.isError()) {
     return nullptr;
   }
-  return ApiHandle::newReference(thread->runtime(), *result);
+  return ApiHandle::newReferenceWithManaged(thread->runtime(), *result);
 }
 
 PY_EXPORT PyObject* PyMemoryView_GetContiguous(PyObject* /* j */, int /* e */,

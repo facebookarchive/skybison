@@ -19,9 +19,15 @@ class ApiHandle : public PyObject {
   // the handle.
   static ApiHandle* newReference(Runtime* runtime, RawObject obj);
 
+  // Returns a handle for a managed object. This must not be called with an
+  // extension object or an object for which `isEncodeableAsImmediate` is true.
+  static ApiHandle* newReferenceWithManaged(Runtime* runtime, RawObject obj);
+
   // Returns a handle for a managed object.  Does not affect the reference count
   // of the handle.
   static ApiHandle* borrowedReference(Runtime* runtime, RawObject obj);
+
+  static ApiHandle* handleFromImmediate(RawObject obj);
 
   // Returns the managed object associated with the handle.  Decrements the
   // reference count of handle.
@@ -72,12 +78,7 @@ class ApiHandle : public PyObject {
   static bool isImmediate(const PyObject* obj);
 
  private:
-  // Returns an owned handle for a managed object. If a handle does not already
-  // exist, a new handle is created.
-  static ApiHandle* ensure(Runtime* runtime, RawObject obj);
-
-  // Create a new runtime instance based on this ApiHandle
-  RawObject asInstance(RawObject type);
+  static bool isEncodeableAsImmediate(RawObject obj);
 
   static const Py_ssize_t kManagedBit = Py_ssize_t{1} << 63;
   static const Py_ssize_t kBorrowedBit = Py_ssize_t{1} << 62;
@@ -145,6 +146,11 @@ inline void ApiHandle::decref() {
   DCHECK((ob_refcnt & ~(kManagedBit | kBorrowedBit)) > 0,
          "Reference count underflowed");
   --ob_refcnt;
+}
+
+inline ApiHandle* ApiHandle::handleFromImmediate(RawObject obj) {
+  DCHECK(isEncodeableAsImmediate(obj), "expected immediate");
+  return reinterpret_cast<ApiHandle*>(obj.raw() ^ kImmediateTag);
 }
 
 inline Py_ssize_t ApiHandle::refcnt() {

@@ -322,14 +322,23 @@ RawNativeProxy ApiHandle::asNativeProxy() {
   return RawObject{reference_}.rawCast<RawNativeProxy>();
 }
 
-ApiHandle* ApiHandle::ensure(Runtime* runtime, RawObject obj) {
-  // Get the PyObject pointer from extension instances
+ApiHandle* ApiHandle::newReference(Runtime* runtime, RawObject obj) {
+  if (isEncodeableAsImmediate(obj)) {
+    return handleFromImmediate(obj);
+  }
   if (runtime->isInstanceOfNativeProxy(obj)) {
     ApiHandle* result = static_cast<ApiHandle*>(
         Int::cast(obj.rawCast<RawNativeProxy>().native()).asCPtr());
     result->incref();
     return result;
   }
+  return ApiHandle::newReferenceWithManaged(runtime, obj);
+}
+
+ApiHandle* ApiHandle::newReferenceWithManaged(Runtime* runtime, RawObject obj) {
+  DCHECK(!isEncodeableAsImmediate(obj), "immediates not handled here");
+  DCHECK(!runtime->isInstanceOfNativeProxy(obj),
+         "native proxy not handled here");
 
   // Get the handle of a builtin instance
   ApiHandleDict* handles = capiHandles(runtime);
@@ -351,28 +360,15 @@ ApiHandle* ApiHandle::ensure(Runtime* runtime, RawObject obj) {
   return handle;
 }
 
-// TODO(T58710656): Allow immediate handles for SmallStr
-// TODO(T58710677): Allow immediate handles for SmallBytes
-static bool isEncodeableAsImmediate(RawObject obj) {
-  DCHECK(!obj.isHeapObject(),
-         "this function should only be called on immediates");
-  // SmallStr and SmallBytes require solutions for C-API functions that read
-  // out char* whose lifetimes depend on the lifetimes of the PyObject*s.
-  return !obj.isSmallStr() && !obj.isSmallBytes();
-}
-
-ApiHandle* ApiHandle::newReference(Runtime* runtime, RawObject obj) {
-  if (!obj.isHeapObject() && isEncodeableAsImmediate(obj)) {
-    return reinterpret_cast<ApiHandle*>(obj.raw() ^ kImmediateTag);
-  }
-  return ApiHandle::ensure(runtime, obj);
-}
-
 ApiHandle* ApiHandle::borrowedReference(Runtime* runtime, RawObject obj) {
-  if (!obj.isHeapObject() && isEncodeableAsImmediate(obj)) {
-    return reinterpret_cast<ApiHandle*>(obj.raw() ^ kImmediateTag);
+  if (isEncodeableAsImmediate(obj)) {
+    return handleFromImmediate(obj);
   }
-  ApiHandle* result = ApiHandle::ensure(runtime, obj);
+  if (runtime->isInstanceOfNativeProxy(obj)) {
+    return static_cast<ApiHandle*>(
+        Int::cast(obj.rawCast<RawNativeProxy>().native()).asCPtr());
+  }
+  ApiHandle* result = ApiHandle::newReferenceWithManaged(runtime, obj);
   result->decref();
   return result;
 }
@@ -399,6 +395,14 @@ void ApiHandle::dispose(Runtime* runtime) {
   void* cache = capiCaches(runtime)->remove(obj);
   std::free(cache);
   freeHandle(runtime, this);
+}
+
+// TODO(T58710656): Allow immediate handles for SmallStr
+// TODO(T58710677): Allow immediate handles for SmallBytes
+bool ApiHandle::isEncodeableAsImmediate(RawObject obj) {
+  // SmallStr and SmallBytes require solutions for C-API functions that read
+  // out char* whose lifetimes depend on the lifetimes of the PyObject*s.
+  return !obj.isHeapObject() && !obj.isSmallStr() && !obj.isSmallBytes();
 }
 
 void ApiHandle::setCache(Runtime* runtime, void* value) {

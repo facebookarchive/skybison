@@ -25,14 +25,14 @@ PY_EXPORT PyObject* PyList_New(Py_ssize_t size) {
 
   Runtime* runtime = thread->runtime();
   if (size == 0) {
-    return ApiHandle::newReference(runtime, runtime->newList());
+    return ApiHandle::newReferenceWithManaged(runtime, runtime->newList());
   }
 
   HandleScope scope(thread);
   List list(&scope, runtime->newList());
   list.setItems(runtime->newMutableTuple(size));
   list.setNumItems(size);
-  return ApiHandle::newReference(runtime, *list);
+  return ApiHandle::newReferenceWithManaged(runtime, *list);
 }
 
 PY_EXPORT PyTypeObject* PyList_Type_Ptr() {
@@ -66,11 +66,11 @@ PY_EXPORT PyObject* PyList_AsTuple(PyObject* pylist) {
   List list(&scope, *list_obj);
   word length = list.numItems();
   if (length == 0) {
-    return ApiHandle::newReference(runtime, runtime->emptyTuple());
+    return ApiHandle::newReferenceWithManaged(runtime, runtime->emptyTuple());
   }
   MutableTuple result(&scope, runtime->newMutableTuple(length));
   result.replaceFromWith(0, Tuple::cast(list.items()), length);
-  return ApiHandle::newReference(runtime, result.becomeImmutable());
+  return ApiHandle::newReferenceWithManaged(runtime, result.becomeImmutable());
 }
 
 PY_EXPORT PyObject* PyList_GetItem(PyObject* pylist, Py_ssize_t i) {
@@ -188,8 +188,8 @@ PY_EXPORT PyObject* PyList_GetSlice(PyObject* pylist, Py_ssize_t low,
   } else if (high > length) {
     high = length;
   }
-  return ApiHandle::newReference(runtime,
-                                 listSlice(thread, list, low, high, 1));
+  return ApiHandle::newReferenceWithManaged(
+      runtime, listSlice(thread, list, low, high, 1));
 }
 
 PY_EXPORT int PyList_Insert(PyObject* pylist, Py_ssize_t where,

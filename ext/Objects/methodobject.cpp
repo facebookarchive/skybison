@@ -25,7 +25,7 @@ PY_EXPORT PyObject* PyCFunction_NewEx(PyMethodDef* method, PyObject* self,
                          module_name != nullptr
                              ? ApiHandle::fromPyObject(module_name)->asObject()
                              : NoneType::object());
-  return ApiHandle::newReference(
+  return ApiHandle::newReferenceWithManaged(
       thread->runtime(),
       newCFunction(thread, method, name, self_obj, module_name_obj));
 }

@@ -45,13 +45,11 @@ PY_EXPORT PyTypeObject* PyEnum_Type_Ptr() {
 }
 
 PY_EXPORT PyObject* PyNone_Ptr() {
-  return ApiHandle::borrowedReference(Thread::current()->runtime(),
-                                      NoneType::object());
+  return ApiHandle::handleFromImmediate(NoneType::object());
 }
 
 PY_EXPORT PyObject* PyNotImplemented_Ptr() {
-  return ApiHandle::borrowedReference(Thread::current()->runtime(),
-                                      NotImplementedType::object());
+  return ApiHandle::handleFromImmediate(NotImplementedType::object());
 }
 
 PY_EXPORT void _Py_Dealloc(PyObject* pyobj) {

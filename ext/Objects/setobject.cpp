@@ -21,7 +21,8 @@ PY_EXPORT PyObject* PyFrozenSet_New(PyObject* iterable) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   if (iterable == nullptr) {
-    return ApiHandle::newReference(runtime, runtime->emptyFrozenSet());
+    return ApiHandle::newReferenceWithManaged(runtime,
+                                              runtime->emptyFrozenSet());
   }
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(iterable)->asObject());
@@ -30,7 +31,7 @@ PY_EXPORT PyObject* PyFrozenSet_New(PyObject* iterable) {
   if (result.isError()) {
     return nullptr;
   }
-  return ApiHandle::newReference(runtime, *set);
+  return ApiHandle::newReferenceWithManaged(runtime, *set);
 }
 
 PY_EXPORT PyTypeObject* PyFrozenSet_Type_Ptr() {
@@ -156,7 +157,7 @@ PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   if (iterable == nullptr) {
-    return ApiHandle::newReference(runtime, runtime->newSet());
+    return ApiHandle::newReferenceWithManaged(runtime, runtime->newSet());
   }
 
   HandleScope scope(thread);
@@ -168,7 +169,7 @@ PY_EXPORT PyObject* PySet_New(PyObject* iterable) {
     return nullptr;
   }
 
-  return ApiHandle::newReference(runtime, *set);
+  return ApiHandle::newReferenceWithManaged(runtime, *set);
 }
 
 PY_EXPORT PyObject* PySet_Pop(PyObject* pyset) {

@@ -12,7 +12,8 @@ PY_EXPORT PyObject* PySeqIter_New(PyObject* seq) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
-  return ApiHandle::newReference(runtime, runtime->newSeqIterator(seq_obj));
+  return ApiHandle::newReferenceWithManaged(runtime,
+                                            runtime->newSeqIterator(seq_obj));
 }
 
 PY_EXPORT PyTypeObject* PySeqIter_Type_Ptr() {
@@ -30,7 +31,7 @@ PY_EXPORT PyObject* PyCallIter_New(PyObject* pycallable, PyObject* pysentinel) {
                 thread->invokeFunction2(ID(builtins), ID(callable_iterator),
                                         callable, sentinel));
   if (result.isErrorException()) return nullptr;
-  return ApiHandle::newReference(thread->runtime(), *result);
+  return ApiHandle::newReferenceWithManaged(thread->runtime(), *result);
 }
 
 PY_EXPORT int PyIter_Check_Func(PyObject* iter) {

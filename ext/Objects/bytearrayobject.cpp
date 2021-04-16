@@ -62,7 +62,7 @@ PY_EXPORT PyObject* PyByteArray_Concat(PyObject* a, PyObject* b) {
   if (result.isError()) return nullptr;
   result = thread->invokeFunction2(ID(operator), ID(iconcat), result, right);
   if (result.isError()) return nullptr;
-  return ApiHandle::newReference(runtime, *result);
+  return ApiHandle::newReferenceWithManaged(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
@@ -77,7 +77,7 @@ PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
 
   Runtime* runtime = thread->runtime();
   if (size == 0) {
-    return ApiHandle::newReference(runtime, runtime->newBytearray());
+    return ApiHandle::newReferenceWithManaged(runtime, runtime->newBytearray());
   }
 
   HandleScope scope(thread);
@@ -89,14 +89,14 @@ PY_EXPORT PyObject* PyByteArray_FromStringAndSize(const char* str,
     runtime->bytearrayExtend(thread, result,
                              {reinterpret_cast<const byte*>(str), size});
   }
-  return ApiHandle::newReference(runtime, *result);
+  return ApiHandle::newReferenceWithManaged(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyByteArray_FromObject(PyObject* obj) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   if (obj == nullptr) {
-    return ApiHandle::newReference(runtime, runtime->newBytearray());
+    return ApiHandle::newReferenceWithManaged(runtime, runtime->newBytearray());
   }
   HandleScope scope(thread);
   Object src(&scope, ApiHandle::fromPyObject(obj)->asObject());

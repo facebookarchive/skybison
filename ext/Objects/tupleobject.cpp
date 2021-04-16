@@ -18,11 +18,11 @@ PY_EXPORT PyTypeObject* PyTupleIter_Type_Ptr() {
 PY_EXPORT PyObject* PyTuple_New(Py_ssize_t length) {
   Runtime* runtime = Thread::current()->runtime();
   if (length == 0) {
-    return ApiHandle::newReference(runtime, runtime->emptyTuple());
+    return ApiHandle::newReferenceWithManaged(runtime, runtime->emptyTuple());
   }
   RawMutableTuple tuple = MutableTuple::cast(runtime->newMutableTuple(length));
   tuple.fill(NoneType::object());
-  return ApiHandle::newReference(runtime, tuple.becomeImmutable());
+  return ApiHandle::newReferenceWithManaged(runtime, tuple.becomeImmutable());
 }
 
 PY_EXPORT int PyTuple_CheckExact_Func(PyObject* obj) {
@@ -127,7 +127,7 @@ PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   if (n == 0) {
-    return ApiHandle::newReference(runtime, runtime->emptyTuple());
+    return ApiHandle::newReferenceWithManaged(runtime, runtime->emptyTuple());
   }
 
   HandleScope scope(thread);
@@ -139,7 +139,7 @@ PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
     tuple.atPut(i, ApiHandle::fromPyObject(item)->asObject());
   }
   va_end(vargs);
-  return ApiHandle::newReference(runtime, tuple.becomeImmutable());
+  return ApiHandle::newReferenceWithManaged(runtime, tuple.becomeImmutable());
 }
 
 PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* pytuple, Py_ssize_t low,
@@ -169,9 +169,9 @@ PY_EXPORT PyObject* PyTuple_GetSlice(PyObject* pytuple, Py_ssize_t low,
     high = len;
   }
   if (low == 0 && high == len && tuple_obj.isTuple()) {
-    return ApiHandle::newReference(runtime, *tuple);
+    return ApiHandle::newReferenceWithManaged(runtime, *tuple);
   }
-  return ApiHandle::newReference(
+  return ApiHandle::newReferenceWithManaged(
       runtime, runtime->tupleSubseq(thread, tuple, low, high - low));
 }
 

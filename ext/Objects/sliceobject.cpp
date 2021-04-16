@@ -27,7 +27,7 @@ PY_EXPORT PyObject* PySlice_New(PyObject* start, PyObject* stop,
     step_obj = ApiHandle::fromPyObject(step)->asObject();
   }
   Runtime* runtime = thread->runtime();
-  return ApiHandle::newReference(
+  return ApiHandle::newReferenceWithManaged(
       runtime, runtime->newSlice(start_obj, stop_obj, step_obj));
 }
 

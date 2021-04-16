@@ -54,7 +54,7 @@ PY_EXPORT PyObject* PyStructSequence_New(PyTypeObject* pytype) {
   Type type(&scope, ApiHandle::fromPyTypeObject(pytype)->asObject());
   Object result(&scope, structseqNew(thread, type));
   if (result.isErrorException()) return nullptr;
-  return ApiHandle::newReference(thread->runtime(), *result);
+  return ApiHandle::newReferenceWithManaged(thread->runtime(), *result);
 }
 
 PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
@@ -81,7 +81,7 @@ PY_EXPORT PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc* desc) {
                                          desc->n_in_sequence, flags));
   if (result.isErrorException()) return nullptr;
   return reinterpret_cast<PyTypeObject*>(
-      ApiHandle::newReference(runtime, *result));
+      ApiHandle::newReferenceWithManaged(runtime, *result));
 }
 
 }  // namespace py

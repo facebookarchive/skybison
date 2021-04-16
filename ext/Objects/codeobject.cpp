@@ -80,7 +80,7 @@ PY_EXPORT PyCodeObject* PyCode_NewWithPosOnlyArgs(
     return nullptr;
   }
 
-  return reinterpret_cast<PyCodeObject*>(ApiHandle::newReference(
+  return reinterpret_cast<PyCodeObject*>(ApiHandle::newReferenceWithManaged(
       runtime,
       runtime->newCode(argcount, posonlyargcount, kwonlyargcount, nlocals,
                        stacksize, flags, code_obj, consts_obj, names_obj,
@@ -110,7 +110,7 @@ PY_EXPORT PyCodeObject* PyCode_NewEmpty(const char* filename,
   Object empty_tuple(&scope, runtime->emptyTuple());
   Object filename_obj(&scope, Runtime::internStrFromCStr(thread, filename));
   Object name_obj(&scope, Runtime::internStrFromCStr(thread, funcname));
-  return reinterpret_cast<PyCodeObject*>(ApiHandle::newReference(
+  return reinterpret_cast<PyCodeObject*>(ApiHandle::newReferenceWithManaged(
       runtime, runtime->newCode(/*argcount=*/0,
                                 /*posonlyargcount=*/0,
                                 /*kwonlyargcount=*/0,

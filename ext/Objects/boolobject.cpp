@@ -15,13 +15,11 @@ PY_EXPORT PyTypeObject* PyBool_Type_Ptr() {
 }
 
 PY_EXPORT PyObject* PyTrue_Ptr() {
-  return ApiHandle::borrowedReference(Thread::current()->runtime(),
-                                      Bool::trueObj());
+  return ApiHandle::handleFromImmediate(Bool::trueObj());
 }
 
 PY_EXPORT PyObject* PyFalse_Ptr() {
-  return ApiHandle::borrowedReference(Thread::current()->runtime(),
-                                      Bool::falseObj());
+  return ApiHandle::handleFromImmediate(Bool::falseObj());
 }
 
 PY_EXPORT int PyBool_Check_Func(PyObject* obj) {
@@ -29,8 +27,7 @@ PY_EXPORT int PyBool_Check_Func(PyObject* obj) {
 }
 
 PY_EXPORT PyObject* PyBool_FromLong(long v) {
-  return ApiHandle::newReference(Thread::current()->runtime(),
-                                 Bool::fromBool(v));
+  return ApiHandle::handleFromImmediate(Bool::fromBool(v));
 }
 
 }  // namespace py

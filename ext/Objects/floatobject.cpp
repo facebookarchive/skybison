@@ -17,7 +17,7 @@
 namespace py {
 PY_EXPORT PyObject* PyFloat_FromDouble(double fval) {
   Runtime* runtime = Thread::current()->runtime();
-  return ApiHandle::newReference(runtime, runtime->newFloat(fval));
+  return ApiHandle::newReferenceWithManaged(runtime, runtime->newFloat(fval));
 }
 
 PY_EXPORT double PyFloat_AsDouble(PyObject* op) {
@@ -62,8 +62,9 @@ PY_EXPORT PyObject* PyFloat_FromString(PyObject* obj) {
       runtime->isInstanceOfBytes(*object) ||
       runtime->isInstanceOfBytearray(*object)) {
     object = thread->invokeFunction1(ID(builtins), ID(float), object);
-    return object.isError() ? nullptr
-                            : ApiHandle::newReference(runtime, *object);
+    return object.isError()
+               ? nullptr
+               : ApiHandle::newReferenceWithManaged(runtime, *object);
   }
 
   if (object.isMemoryView()) {
@@ -75,8 +76,9 @@ PY_EXPORT PyObject* PyFloat_FromString(PyObject* obj) {
     if (runtime->isInstanceOfBytes(*buffer)) {
       Bytes bytes(&scope, bytesUnderlying(*object));
       object = thread->invokeFunction1(ID(builtins), ID(float), bytes);
-      return object.isError() ? nullptr
-                              : ApiHandle::newReference(runtime, *object);
+      return object.isError()
+                 ? nullptr
+                 : ApiHandle::newReferenceWithManaged(runtime, *object);
     }
     Pointer underlying_pointer(&scope, *buffer);
     word length = memoryview.length();
@@ -84,15 +86,17 @@ PY_EXPORT PyObject* PyFloat_FromString(PyObject* obj) {
         reinterpret_cast<const char*>(underlying_pointer.cptr()), length));
 
     object = floatFromDigits(thread, copy.get(), length);
-    return object.isError() ? nullptr
-                            : ApiHandle::newReference(runtime, *object);
+    return object.isError()
+               ? nullptr
+               : ApiHandle::newReferenceWithManaged(runtime, *object);
   }
   // Maybe it otherwise supports the buffer protocol
   Object bytes(&scope, newBytesFromBuffer(thread, object));
   if (!bytes.isError()) {
     object = thread->invokeFunction1(ID(builtins), ID(float), bytes);
-    return object.isError() ? nullptr
-                            : ApiHandle::newReference(runtime, *object);
+    return object.isError()
+               ? nullptr
+               : ApiHandle::newReferenceWithManaged(runtime, *object);
   }
 
   thread->clearPendingException();

@@ -1820,7 +1820,7 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
 
   if (typeInheritSlots(thread, type, fixed_attr_base).isError()) return nullptr;
 
-  return ApiHandle::newReference(runtime, *type);
+  return ApiHandle::newReferenceWithManaged(runtime, *type);
 }
 
 PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,

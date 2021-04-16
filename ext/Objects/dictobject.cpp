@@ -132,7 +132,7 @@ PY_EXPORT PyTypeObject* PyDict_Type_Ptr() {
 
 PY_EXPORT PyObject* PyDict_New() {
   Runtime* runtime = Thread::current()->runtime();
-  return ApiHandle::newReference(runtime, runtime->newDict());
+  return ApiHandle::newReferenceWithManaged(runtime, runtime->newDict());
 }
 
 static PyObject* getItem(Thread* thread, const Object& dict_obj,
@@ -235,7 +235,7 @@ PY_EXPORT PyObject* PyDict_Copy(PyObject* pydict) {
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
-  return ApiHandle::newReference(runtime, dictCopy(thread, dict));
+  return ApiHandle::newReferenceWithManaged(runtime, dictCopy(thread, dict));
 }
 
 PY_EXPORT int PyDict_DelItem(PyObject* pydict, PyObject* key) {
@@ -301,7 +301,7 @@ PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
   Dict dict(&scope, *dict_obj);
   word len = dict.numItems();
   if (len == 0) {
-    return ApiHandle::newReference(runtime, runtime->newList());
+    return ApiHandle::newReferenceWithManaged(runtime, runtime->newList());
   }
 
   List result(&scope, runtime->newList());
@@ -313,7 +313,7 @@ PY_EXPORT PyObject* PyDict_Items(PyObject* pydict) {
   }
   result.setItems(*items);
   result.setNumItems(len);
-  return ApiHandle::newReference(runtime, *result);
+  return ApiHandle::newReferenceWithManaged(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
@@ -326,7 +326,7 @@ PY_EXPORT PyObject* PyDict_Keys(PyObject* pydict) {
     return nullptr;
   }
   Dict dict(&scope, *dict_obj);
-  return ApiHandle::newReference(runtime, dictKeys(thread, dict));
+  return ApiHandle::newReferenceWithManaged(runtime, dictKeys(thread, dict));
 }
 
 PY_EXPORT int PyDict_Merge(PyObject* left, PyObject* right,
@@ -424,7 +424,7 @@ PY_EXPORT PyObject* PyDict_Values(PyObject* pydict) {
   Dict dict(&scope, *dict_obj);
   word len = dict.numItems();
   if (len == 0) {
-    return ApiHandle::newReference(runtime, runtime->newList());
+    return ApiHandle::newReferenceWithManaged(runtime, runtime->newList());
   }
 
   List result(&scope, runtime->newList());
@@ -435,7 +435,7 @@ PY_EXPORT PyObject* PyDict_Values(PyObject* pydict) {
   }
   result.setItems(*values);
   result.setNumItems(len);
-  return ApiHandle::newReference(runtime, *result);
+  return ApiHandle::newReferenceWithManaged(runtime, *result);
 }
 
 PY_EXPORT PyObject* PyObject_GenericGetDict(PyObject* obj, void*) {
