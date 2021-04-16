@@ -37,7 +37,7 @@ class ApiHandleDict {
 
   void shrink();
 
-  void visit(PointerVisitor* visitor);
+  void visitKeys(PointerVisitor* visitor);
 
   // Getters and setters
   int32_t capacity() { return capacity_; }

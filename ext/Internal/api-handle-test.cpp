@@ -263,7 +263,7 @@ TEST_F(ApiHandleTest, Cache) {
   EXPECT_EQ(handle2->cache(runtime_), buffer1);
 }
 
-TEST_F(ApiHandleTest, VisitReferences) {
+TEST_F(ApiHandleTest, CapiHandlesVisit) {
   HandleScope scope(thread_);
 
   Object obj1(&scope, runtime_->newInt(123));
@@ -272,7 +272,7 @@ TEST_F(ApiHandleTest, VisitReferences) {
   ApiHandle::newReference(runtime_, *obj2);
 
   RememberingVisitor visitor;
-  ApiHandle::visitReferences(runtime_, &visitor);
+  capiHandlesVisit(runtime_, &visitor);
 
   // We should've visited obj2, but not obj1 since it is a SmallInt.
   EXPECT_FALSE(visitor.hasVisited(*obj1));

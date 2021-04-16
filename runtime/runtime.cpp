@@ -2153,8 +2153,8 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   // Visit modules
   visitor->visitPointer(&modules_, PointerKind::kRuntime);
 
-  // Visit C-API data.
-  capiStateVisit(this, visitor);
+  // Visit C-API handles.
+  capiHandlesVisit(this, visitor);
 
   // Visit symbols
   symbols_->visit(visitor);

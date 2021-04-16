@@ -21,14 +21,6 @@ static const word kHandleBlockSize = word{4} * kGiB;
 static const word kInitialCachesCapacity = 128;
 static const word kInitialHandlesCapacity = 256;
 
-void capiStateVisit(Runtime* runtime, PointerVisitor* visitor) {
-  ApiHandleDict* handles = capiHandles(runtime);
-  handles->visit(visitor);
-  ApiHandle::visitReferences(runtime, visitor);
-  ApiHandleDict* caches = capiCaches(runtime);
-  caches->visit(visitor);
-}
-
 void finalizeCAPIState(Runtime* runtime) {
   CAPIState* state = capiState(runtime);
   OS::freeMemory(state->handle_buffer, state->handle_buffer_size);

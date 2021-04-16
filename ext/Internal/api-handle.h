@@ -34,19 +34,6 @@ class ApiHandle : public PyObject {
 
   static ApiHandle* fromPyTypeObject(PyTypeObject* type);
 
-  // WARNING: This function should be called by the garbage collector.
-  // Clear out handles which are not referenced by managed objects or by an
-  // extension object.
-  static void clearNotReferencedHandles(Runtime* runtime);
-
-  // WARNING: This function should be called for shutdown.
-  // Dispose all handles, without trying to cleanly deallocate the object for
-  // runtime shutdown.
-  static void disposeHandles(Runtime* runtime);
-
-  // Visit all reference_ members of live ApiHandles.
-  static void visitReferences(Runtime* runtime, PointerVisitor* visitor);
-
   // Get the object from the handle's reference field.
   RawObject asObject();
 

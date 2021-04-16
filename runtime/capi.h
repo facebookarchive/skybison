@@ -54,7 +54,7 @@ void capiHandlesDispose(Runtime* runtime);
 // WARNING: This function should be called during garbage collection.
 void capiHandlesShrink(Runtime* runtime);
 
-void capiStateVisit(Runtime* runtime, PointerVisitor* visitor);
+void capiHandlesVisit(Runtime* runtime, PointerVisitor* visitor);
 
 void finalizeCAPIModules();
 void finalizeCAPIState(Runtime* runtime);

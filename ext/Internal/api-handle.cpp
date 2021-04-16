@@ -283,7 +283,7 @@ void ApiHandleDict::shrink() {
   }
 }
 
-void ApiHandleDict::visit(PointerVisitor* visitor) {
+void ApiHandleDict::visitKeys(PointerVisitor* visitor) {
   RawObject* keys = this->keys();
   if (keys == nullptr) return;
   word keys_length = capacity();
@@ -314,6 +314,12 @@ static void freeHandle(Runtime* runtime, ApiHandle* handle) {
   FreeListNode* node = reinterpret_cast<FreeListNode*>(handle);
   node->next = *free_handles;
   *free_handles = node;
+}
+
+RawNativeProxy ApiHandle::asNativeProxy() {
+  DCHECK(!isImmediate(this) && reference_ != 0,
+         "expected extension object handle");
+  return RawObject{reference_}.rawCast<RawNativeProxy>();
 }
 
 ApiHandle* ApiHandle::ensure(Runtime* runtime, RawObject obj) {
@@ -371,6 +377,36 @@ ApiHandle* ApiHandle::borrowedReference(Runtime* runtime, RawObject obj) {
   return result;
 }
 
+void* ApiHandle::cache(Runtime* runtime) {
+  // Only managed objects can have a cached value
+  DCHECK(!isImmediate(this), "immediate handles do not have caches");
+  if (!isManaged(this)) return nullptr;
+
+  ApiHandleDict* caches = capiCaches(runtime);
+  RawObject obj = asObject();
+  return caches->at(obj);
+}
+
+void ApiHandle::dispose(Runtime* runtime) {
+  DCHECK(isManaged(this), "Dispose should only be called on managed handles");
+
+  // TODO(T46009838): If a module handle is being disposed, this should register
+  // a weakref to call the module's m_free once's the module is collected
+
+  RawObject obj = asObject();
+  capiHandles(runtime)->remove(obj);
+
+  void* cache = capiCaches(runtime)->remove(obj);
+  std::free(cache);
+  freeHandle(runtime, this);
+}
+
+void ApiHandle::setCache(Runtime* runtime, void* value) {
+  ApiHandleDict* caches = capiCaches(runtime);
+  RawObject obj = asObject();
+  caches->atPut(obj, value);
+}
+
 RawObject ApiHandle::stealReference(PyObject* py_obj) {
   ApiHandle* handle = ApiHandle::fromPyObject(py_obj);
   handle->decref();
@@ -395,7 +431,25 @@ RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
   return result_obj;
 }
 
-void ApiHandle::clearNotReferencedHandles(Runtime* runtime) {
+void ApiHandle::setRefcnt(Py_ssize_t count) {
+  DCHECK((count & (kManagedBit | kBorrowedBit)) == 0,
+         "count must not have high bits set");
+  Py_ssize_t flags = ob_refcnt & (kManagedBit | kBorrowedBit);
+  ob_refcnt = count | flags;
+}
+
+RawObject capiHandleAsObject(void* handle) {
+  return reinterpret_cast<ApiHandle*>(handle)->asObject();
+}
+
+bool capiHandleFinalizableReference(void* handle, RawObject** out) {
+  ApiHandle* api_handle = reinterpret_cast<ApiHandle*>(handle);
+  *out = reinterpret_cast<RawObject*>(&api_handle->reference_);
+  return api_handle->refcnt() > 1 ||
+         HeapObject::cast(api_handle->asObject()).isForwarding();
+}
+
+void capiHandlesClearNotReferenced(Runtime* runtime) {
   ApiHandleDict* handles = capiHandles(runtime);
   ApiHandleDict* caches = capiCaches(runtime);
 
@@ -427,7 +481,7 @@ void ApiHandle::clearNotReferencedHandles(Runtime* runtime) {
   handles->rehash(handles->numIndices());
 }
 
-void ApiHandle::disposeHandles(Runtime* runtime) {
+void capiHandlesDispose(Runtime* runtime) {
   ApiHandleDict* handles = capiHandles(runtime);
   int32_t end = handles->nextIndex();
   RawObject* keys = handles->keys();
@@ -441,14 +495,17 @@ void ApiHandle::disposeHandles(Runtime* runtime) {
   }
 }
 
-void ApiHandle::visitReferences(Runtime* runtime, PointerVisitor* visitor) {
+void capiHandlesShrink(Runtime* runtime) { capiHandles(runtime)->shrink(); }
+
+void capiHandlesVisit(Runtime* runtime, PointerVisitor* visitor) {
   ApiHandleDict* handles = capiHandles(runtime);
+  handles->visitKeys(visitor);
+
   int32_t end = handles->nextIndex();
   RawObject* keys = handles->keys();
   void** values = handles->values();
   RawObject key = NoneType::object();
   void* value;
-
   for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
     ApiHandle* handle = reinterpret_cast<ApiHandle*>(value);
     if (ApiHandle::hasExtensionReference(handle)) {
@@ -456,71 +513,10 @@ void ApiHandle::visitReferences(Runtime* runtime, PointerVisitor* visitor) {
                             PointerKind::kApiHandle);
     }
   }
-}
-
-RawNativeProxy ApiHandle::asNativeProxy() {
-  DCHECK(!isImmediate(this) && reference_ != 0,
-         "expected extension object handle");
-  return RawObject{reference_}.rawCast<RawNativeProxy>();
-}
-
-void* ApiHandle::cache(Runtime* runtime) {
-  // Only managed objects can have a cached value
-  DCHECK(!isImmediate(this), "immediate handles do not have caches");
-  if (!isManaged(this)) return nullptr;
 
   ApiHandleDict* caches = capiCaches(runtime);
-  RawObject obj = asObject();
-  return caches->at(obj);
+  caches->visitKeys(visitor);
 }
-
-void ApiHandle::setCache(Runtime* runtime, void* value) {
-  ApiHandleDict* caches = capiCaches(runtime);
-  RawObject obj = asObject();
-  caches->atPut(obj, value);
-}
-
-void ApiHandle::dispose(Runtime* runtime) {
-  DCHECK(isManaged(this), "Dispose should only be called on managed handles");
-
-  // TODO(T46009838): If a module handle is being disposed, this should register
-  // a weakref to call the module's m_free once's the module is collected
-
-  RawObject obj = asObject();
-  capiHandles(runtime)->remove(obj);
-
-  void* cache = capiCaches(runtime)->remove(obj);
-  std::free(cache);
-  freeHandle(runtime, this);
-}
-
-void ApiHandle::setRefcnt(Py_ssize_t count) {
-  DCHECK((count & (kManagedBit | kBorrowedBit)) == 0,
-         "count must not have high bits set");
-  Py_ssize_t flags = ob_refcnt & (kManagedBit | kBorrowedBit);
-  ob_refcnt = count | flags;
-}
-
-RawObject capiHandleAsObject(void* handle) {
-  return reinterpret_cast<ApiHandle*>(handle)->asObject();
-}
-
-bool capiHandleFinalizableReference(void* handle, RawObject** out) {
-  ApiHandle* api_handle = reinterpret_cast<ApiHandle*>(handle);
-  *out = reinterpret_cast<RawObject*>(&api_handle->reference_);
-  return api_handle->refcnt() > 1 ||
-         HeapObject::cast(api_handle->asObject()).isForwarding();
-}
-
-void capiHandlesClearNotReferenced(Runtime* runtime) {
-  ApiHandle::clearNotReferencedHandles(runtime);
-}
-
-void capiHandlesDispose(Runtime* runtime) {
-  ApiHandle::disposeHandles(runtime);
-}
-
-void capiHandlesShrink(Runtime* runtime) { capiHandles(runtime)->shrink(); }
 
 void* objectBorrowedReference(Runtime* runtime, RawObject obj) {
   return ApiHandle::borrowedReference(runtime, obj);
