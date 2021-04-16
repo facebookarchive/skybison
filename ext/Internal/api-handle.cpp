@@ -160,12 +160,6 @@ void ApiHandleDict::atPut(RawObject key, void* value) {
   DCHECK(hasUsableItem(), "dict must have space for another item");
 }
 
-bool ApiHandleDict::includes(RawObject key) {
-  word index;
-  int32_t item_index;
-  return lookup(key, &index, &item_index);
-}
-
 void ApiHandleDict::initialize(word num_indices) {
   setIndices(newIndices(num_indices));
   setNumIndices(num_indices);

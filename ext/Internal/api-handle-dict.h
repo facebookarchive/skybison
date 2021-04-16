@@ -28,8 +28,6 @@ class ApiHandleDict {
 
   void atPut(RawObject key, void* value);
 
-  bool includes(RawObject key);
-
   void initialize(word num_indices);
 
   // Rehash the items into new storage with the given number of indices.

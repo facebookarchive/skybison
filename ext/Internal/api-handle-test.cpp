@@ -138,12 +138,12 @@ TEST_F(ApiHandleTest, BuiltinObjectReturnsApiHandle) {
 
   ApiHandleDict* dict = capiHandles(runtime_);
   Object obj(&scope, runtime_->newList());
-  ASSERT_FALSE(dict->includes(*obj));
+  ASSERT_FALSE(dict->at(*obj) != nullptr);
 
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
   EXPECT_NE(handle, nullptr);
 
-  EXPECT_TRUE(dict->includes(*obj));
+  EXPECT_TRUE(dict->at(*obj) != nullptr);
 }
 
 TEST_F(ApiHandleTest, BuiltinObjectReturnsSameApiHandle) {
@@ -259,7 +259,7 @@ TEST_F(ApiHandleTest, Cache) {
   Object key(&scope, handle1->asObject());
   handle1->dispose(runtime_);
   ApiHandleDict* caches = capiCaches(runtime_);
-  EXPECT_FALSE(caches->includes(*key));
+  EXPECT_FALSE(caches->at(*key) != nullptr);
   EXPECT_EQ(handle2->cache(runtime_), buffer1);
 }
 
