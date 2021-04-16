@@ -272,7 +272,7 @@ TEST_F(ApiHandleTest, VisitReferences) {
   ApiHandle::newReference(runtime_, *obj2);
 
   RememberingVisitor visitor;
-  ApiHandle::visitReferences(capiHandles(runtime_), &visitor);
+  ApiHandle::visitReferences(runtime_, &visitor);
 
   // We should've visited obj2, but not obj1 since it is a SmallInt.
   EXPECT_FALSE(visitor.hasVisited(*obj1));

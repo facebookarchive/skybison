@@ -26,8 +26,6 @@ extern "C" char* PyOS_Readline(FILE*, FILE*, const char*);
 
 namespace py {
 
-struct CAPIState;
-
 class PointerVisitor;
 
 class Thread;
@@ -56,7 +54,7 @@ void capiHandlesDispose(Runtime* runtime);
 // WARNING: This function should be called during garbage collection.
 void capiHandlesShrink(Runtime* runtime);
 
-void capiStateVisit(CAPIState* state, PointerVisitor* visitor);
+void capiStateVisit(Runtime* runtime, PointerVisitor* visitor);
 
 void finalizeCAPIModules();
 void finalizeCAPIState(Runtime* runtime);
@@ -67,7 +65,7 @@ void freeExtensionModules(Thread* thread);
 bool isBuiltinExtensionModule(const Str& name);
 
 void initializeCAPIModules();
-void initializeCAPIState(CAPIState* state);
+void initializeCAPIState(Runtime* runtime);
 
 // Runs the executable functions found in the PyModuleDef
 word moduleExecDef(Thread* thread, const Module& module, PyModuleDef* def);

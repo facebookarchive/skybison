@@ -21,14 +21,16 @@ static const word kHandleBlockSize = word{4} * kGiB;
 static const word kInitialCachesCapacity = 128;
 static const word kInitialHandlesCapacity = 256;
 
-void capiStateVisit(CAPIState* state, PointerVisitor* visitor) {
-  state->handles.visit(visitor);
-  ApiHandle::visitReferences(&state->handles, visitor);
-  state->caches.visit(visitor);
+void capiStateVisit(Runtime* runtime, PointerVisitor* visitor) {
+  ApiHandleDict* handles = capiHandles(runtime);
+  handles->visit(visitor);
+  ApiHandle::visitReferences(runtime, visitor);
+  ApiHandleDict* caches = capiCaches(runtime);
+  caches->visit(visitor);
 }
 
 void finalizeCAPIState(Runtime* runtime) {
-  CAPIState* state = runtime->capiState();
+  CAPIState* state = capiState(runtime);
   OS::freeMemory(state->handle_buffer, state->handle_buffer_size);
   state->~CAPIState();
 }
@@ -66,7 +68,8 @@ void freeExtensionModules(Thread* thread) {
   }
 }
 
-void initializeCAPIState(CAPIState* state) {
+void initializeCAPIState(Runtime* runtime) {
+  CAPIState* state = capiState(runtime);
   new (state) CAPIState;
   state->caches.initialize(kInitialCachesCapacity);
   state->handles.initialize(kInitialHandlesCapacity);

@@ -395,9 +395,10 @@ RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
   return result_obj;
 }
 
-void ApiHandle::clearNotReferencedHandles(Runtime* runtime,
-                                          ApiHandleDict* handles,
-                                          ApiHandleDict* caches) {
+void ApiHandle::clearNotReferencedHandles(Runtime* runtime) {
+  ApiHandleDict* handles = capiHandles(runtime);
+  ApiHandleDict* caches = capiCaches(runtime);
+
   // Objects have moved; rehash the caches first to reflect new addresses
   caches->rehash(caches->numIndices());
 
@@ -426,7 +427,8 @@ void ApiHandle::clearNotReferencedHandles(Runtime* runtime,
   handles->rehash(handles->numIndices());
 }
 
-void ApiHandle::disposeHandles(Runtime* runtime, ApiHandleDict* handles) {
+void ApiHandle::disposeHandles(Runtime* runtime) {
+  ApiHandleDict* handles = capiHandles(runtime);
   int32_t end = handles->nextIndex();
   RawObject* keys = handles->keys();
   void** values = handles->values();
@@ -439,8 +441,8 @@ void ApiHandle::disposeHandles(Runtime* runtime, ApiHandleDict* handles) {
   }
 }
 
-void ApiHandle::visitReferences(ApiHandleDict* handles,
-                                PointerVisitor* visitor) {
+void ApiHandle::visitReferences(Runtime* runtime, PointerVisitor* visitor) {
+  ApiHandleDict* handles = capiHandles(runtime);
   int32_t end = handles->nextIndex();
   RawObject* keys = handles->keys();
   void** values = handles->values();
@@ -511,12 +513,11 @@ bool capiHandleFinalizableReference(void* handle, RawObject** out) {
 }
 
 void capiHandlesClearNotReferenced(Runtime* runtime) {
-  ApiHandle::clearNotReferencedHandles(runtime, capiHandles(runtime),
-                                       capiCaches(runtime));
+  ApiHandle::clearNotReferencedHandles(runtime);
 }
 
 void capiHandlesDispose(Runtime* runtime) {
-  ApiHandle::disposeHandles(runtime, capiHandles(runtime));
+  ApiHandle::disposeHandles(runtime);
 }
 
 void capiHandlesShrink(Runtime* runtime) { capiHandles(runtime)->shrink(); }

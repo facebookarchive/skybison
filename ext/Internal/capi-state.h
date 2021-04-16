@@ -32,20 +32,24 @@ struct CAPIState {
 
 static_assert(sizeof(CAPIState) < kCAPIStateSize, "kCAPIStateSize too small");
 
+inline CAPIState* capiState(Runtime* runtime) {
+  return reinterpret_cast<CAPIState*>(runtime->capiStateData());
+}
+
 inline ApiHandleDict* capiCaches(Runtime* runtime) {
-  return &runtime->capiState()->caches;
+  return &capiState(runtime)->caches;
 }
 
 inline FreeListNode** capiFreeHandles(Runtime* runtime) {
-  return &runtime->capiState()->free_handles;
+  return &capiState(runtime)->free_handles;
 }
 
 inline ApiHandleDict* capiHandles(Runtime* runtime) {
-  return &runtime->capiState()->handles;
+  return &capiState(runtime)->handles;
 }
 
 inline Vector<PyObject*>* capiModules(Runtime* runtime) {
-  return &runtime->capiState()->modules;
+  return &capiState(runtime)->modules;
 }
 
 }  // namespace py

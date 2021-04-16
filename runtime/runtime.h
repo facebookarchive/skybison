@@ -436,7 +436,7 @@ class Runtime {
   // Returns modules mapping (aka `sys.modules`).
   RawObject modules() { return modules_; }
 
-  CAPIState* capiState() { return reinterpret_cast<CAPIState*>(capi_state_); }
+  char* capiStateData() { return capi_state_; }
 
   void setAtExit(AtExitFn func, void* ctx) {
     DCHECK(at_exit_ == nullptr,

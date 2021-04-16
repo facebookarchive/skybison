@@ -155,7 +155,7 @@ Runtime::Runtime(word heap_size, Interpreter* interpreter,
   initializeSymbols(thread);
   initializeLayouts();
   initializeTypes(thread);
-  initializeCAPIState(capiState());
+  initializeCAPIState(this);
   initializeModules(thread);
   initializeCAPIModules();
 
@@ -2154,7 +2154,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&modules_, PointerKind::kRuntime);
 
   // Visit C-API data.
-  capiStateVisit(capiState(), visitor);
+  capiStateVisit(this, visitor);
 
   // Visit symbols
   symbols_->visit(visitor);
