@@ -5152,13 +5152,13 @@ d = D()
 
 struct TpSlotRefcntTestObject {
   PyObject_HEAD
-  int initial_refcnt;
+  Py_ssize_t initial_refcnt;
 };
 
 static PyObject* makeTestRefcntInstanceWithSlots(const PyType_Slot* slots) {
   const PyType_Spec spec = {
       "foo",
-      sizeof(TpSlotTestObject),
+      sizeof(TpSlotRefcntTestObject),
       0,
       Py_TPFLAGS_DEFAULT,
       const_cast<PyType_Slot*>(slots),
@@ -5221,5 +5221,703 @@ TEST_F(TypeExtensionApiTest, UnarySlotOwnsReference) {
                 ->initial_refcnt);
   EXPECT_EQ(result, Py_None);
 }
+
+TEST_F(TypeExtensionApiTest, BinarySlotOwnsReference) {
+  binaryfunc func = [](PyObject* self, PyObject* other) -> PyObject* {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(other),
+        reinterpret_cast<TpSlotRefcntTestObject*>(other)->initial_refcnt + 1);
+    Py_RETURN_NONE;
+  };
+  // __add__ is created as a binary slot
+  static const PyType_Slot slots[] = {
+      {Py_nb_add, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr result(
+      PyObject_CallMethod(instance, "__add__", "O", other.get()));
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(other),
+      reinterpret_cast<TpSlotRefcntTestObject*>(other.get())->initial_refcnt);
+  EXPECT_EQ(result, Py_None);
+}
+
+TEST_F(TypeExtensionApiTest, BinarySwappedSlotOwnsReference) {
+  binaryfunc func = [](PyObject* self, PyObject* other) -> PyObject* {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    EXPECT_EQ(
+        Py_REFCNT(other),
+        reinterpret_cast<TpSlotRefcntTestObject*>(other)->initial_refcnt + 1);
+    Py_RETURN_NONE;
+  };
+  // __add__ is created as a binary slot
+  static const PyType_Slot slots[] = {
+      {Py_nb_add, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr result(
+      PyObject_CallMethod(instance, "__radd__", "O", other.get()));
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(other),
+      reinterpret_cast<TpSlotRefcntTestObject*>(other.get())->initial_refcnt);
+  EXPECT_EQ(result, Py_None);
+}
+
+TEST_F(TypeExtensionApiTest, TernarySlotOwnsReference) {
+  ternaryfunc func = [](PyObject* self, PyObject* other,
+                        PyObject* third) -> PyObject* {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(other),
+        reinterpret_cast<TpSlotRefcntTestObject*>(other)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(third),
+        reinterpret_cast<TpSlotRefcntTestObject*>(third)->initial_refcnt + 1);
+    Py_RETURN_NONE;
+  };
+  // __pow__ is created as a ternary slot
+  static const PyType_Slot slots[] = {
+      {Py_nb_power, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr third(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(third, nullptr);
+  PyObjectPtr result(
+      PyObject_CallMethod(instance, "__pow__", "OO", other.get(), third.get()));
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(other),
+      reinterpret_cast<TpSlotRefcntTestObject*>(other.get())->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(third),
+      reinterpret_cast<TpSlotRefcntTestObject*>(third.get())->initial_refcnt);
+  EXPECT_EQ(result, Py_None);
+}
+
+TEST_F(TypeExtensionApiTest, TernarySwappedSlotOwnsReference) {
+  ternaryfunc func = [](PyObject* self, PyObject* other,
+                        PyObject* third) -> PyObject* {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    EXPECT_EQ(
+        Py_REFCNT(other),
+        reinterpret_cast<TpSlotRefcntTestObject*>(other)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(third),
+        reinterpret_cast<TpSlotRefcntTestObject*>(third)->initial_refcnt + 1);
+    Py_RETURN_NONE;
+  };
+  // __pow__ is created as a ternary slot
+  static const PyType_Slot slots[] = {
+      {Py_nb_power, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr third(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(third, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__rpow__", "OO",
+                                         other.get(), third.get()));
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(other),
+      reinterpret_cast<TpSlotRefcntTestObject*>(other.get())->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(third),
+      reinterpret_cast<TpSlotRefcntTestObject*>(third.get())->initial_refcnt);
+  EXPECT_EQ(result, Py_None);
+}
+
+TEST_F(TypeExtensionApiTest, TernaryVarKwSlotOwnsReference) {
+  ternaryfunc func = [](PyObject* self, PyObject* other,
+                        PyObject* third) -> PyObject* {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    EXPECT_EQ(
+        Py_REFCNT(other),
+        reinterpret_cast<TpSlotRefcntTestObject*>(other)->initial_refcnt + 1);
+    EXPECT_EQ(
+        Py_REFCNT(third),
+        reinterpret_cast<TpSlotRefcntTestObject*>(third)->initial_refcnt + 1);
+    Py_RETURN_NONE;
+  };
+  // __pow__ is created as a ternary slot
+  static const PyType_Slot slots[] = {
+      {Py_nb_power, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr third(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(third, nullptr);
+  PyObjectPtr args(PyTuple_Pack(2, other.get(), third.get()));
+  PyObjectPtr pow(PyObject_GetAttrString(instance, "__pow__"));
+  PyObjectPtr result(PyObject_Call(pow, args, nullptr));
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  // TODO(T89073278): Revert to EQ(other, initial+1).
+  EXPECT_GE(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  // TODO(T89073278): Revert to EQ(other, initial+1).
+  EXPECT_GE(
+      Py_REFCNT(other),
+      reinterpret_cast<TpSlotRefcntTestObject*>(other.get())->initial_refcnt);
+  // TODO(T89073278): Revert to EQ(other, initial+1).
+  EXPECT_GE(
+      Py_REFCNT(third),
+      reinterpret_cast<TpSlotRefcntTestObject*>(third.get())->initial_refcnt);
+  EXPECT_EQ(result, Py_None);
+}
+
+TEST_F(TypeExtensionApiTest, SetattrSlotOwnsReference) {
+  setattrofunc func = [](PyObject* self, PyObject*, PyObject* third) -> int {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_LE(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    // The middle arg is not checked because it needs to be a string, not
+    // whatever object we use to hold a refcount.
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_LE(
+        Py_REFCNT(third),
+        reinterpret_cast<TpSlotRefcntTestObject*>(third)->initial_refcnt + 1);
+    return 0;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_tp_setattr, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(PyUnicode_FromString("name"));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr third(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(third, nullptr);
+  int result = PyObject_SetAttr(instance, other, third);
+  EXPECT_EQ(result, 0);
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  // The middle arg is not checked because it needs to be a string, not
+  // whatever object we use to hold a refcount.
+  EXPECT_EQ(
+      Py_REFCNT(third),
+      reinterpret_cast<TpSlotRefcntTestObject*>(third.get())->initial_refcnt);
+}
+
+TEST_F(TypeExtensionApiTest, DelattrWrapperOwnsReference) {
+  setattrofunc func = [](PyObject* self, PyObject*, PyObject*) -> int {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_LE(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    // The second arg is not checked because it needs to be a string, not
+    // whatever object we use to hold a refcount.
+    return 0;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_tp_setattr, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(PyUnicode_FromString("name"));
+  ASSERT_NE(other, nullptr);
+  // Need to set attribute before we can delete it.
+  PyObjectPtr value(PyLong_FromLong(5));
+  int result = PyObject_SetAttr(instance, other, value);
+  EXPECT_EQ(result, 0);
+  result = PyObject_DelAttr(instance, other);
+  EXPECT_EQ(result, 0);
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  // The second arg is not checked because it needs to be a string, not
+  // whatever object we use to hold a refcount.
+}
+
+TEST_F(TypeExtensionApiTest, RichCmpSlotOwnsReference) {
+  richcmpfunc func = [](PyObject* self, PyObject* other, int) -> PyObject* {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(other),
+        reinterpret_cast<TpSlotRefcntTestObject*>(other)->initial_refcnt + 1);
+    Py_RETURN_TRUE;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_tp_richcompare, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__eq__", "O", other.get()));
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(other),
+      reinterpret_cast<TpSlotRefcntTestObject*>(other.get())->initial_refcnt);
+  EXPECT_EQ(result, Py_True);
+}
+
+TEST_F(TypeExtensionApiTest, NextSlotOwnsReference) {
+  unaryfunc func = [](PyObject* obj) -> PyObject* {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(obj),
+        reinterpret_cast<TpSlotRefcntTestObject*>(obj)->initial_refcnt + 1);
+    Py_RETURN_NONE;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_tp_iternext, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__next__", nullptr));
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(result, Py_None);
+}
+
+TEST_F(TypeExtensionApiTest, DescrGetSlotOwnsReference) {
+  descrgetfunc func = [](PyObject* self, PyObject* other,
+                         PyObject* third) -> PyObject* {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(other),
+        reinterpret_cast<TpSlotRefcntTestObject*>(other)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(third),
+        reinterpret_cast<TpSlotRefcntTestObject*>(third)->initial_refcnt + 1);
+    Py_RETURN_NONE;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_tp_descr_get, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr third(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(third, nullptr);
+  PyObjectPtr result(
+      PyObject_CallMethod(instance, "__get__", "OO", other.get(), third.get()));
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(other),
+      reinterpret_cast<TpSlotRefcntTestObject*>(other.get())->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(third),
+      reinterpret_cast<TpSlotRefcntTestObject*>(third.get())->initial_refcnt);
+  EXPECT_EQ(result, Py_None);
+}
+
+TEST_F(TypeExtensionApiTest, DescrSetSlotOwnsReference) {
+  descrsetfunc func = [](PyObject* self, PyObject* other,
+                         PyObject* third) -> int {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(other),
+        reinterpret_cast<TpSlotRefcntTestObject*>(other)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(third),
+        reinterpret_cast<TpSlotRefcntTestObject*>(third)->initial_refcnt + 1);
+    return 0;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_tp_descr_set, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr third(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(third, nullptr);
+  PyObjectPtr result(
+      PyObject_CallMethod(instance, "__set__", "OO", other.get(), third.get()));
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(other),
+      reinterpret_cast<TpSlotRefcntTestObject*>(other.get())->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(third),
+      reinterpret_cast<TpSlotRefcntTestObject*>(third.get())->initial_refcnt);
+  EXPECT_EQ(result, Py_None);
+}
+
+TEST_F(TypeExtensionApiTest, DescrDeleteSlotOwnsReference) {
+  descrsetfunc func = [](PyObject* self, PyObject* other,
+                         PyObject* third) -> int {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(other),
+        reinterpret_cast<TpSlotRefcntTestObject*>(other)->initial_refcnt + 1);
+    EXPECT_EQ(third, nullptr);
+    return 0;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_tp_descr_set, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr result(
+      PyObject_CallMethod(instance, "__delete__", "O", other.get()));
+  EXPECT_EQ(result, Py_None);
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(other),
+      reinterpret_cast<TpSlotRefcntTestObject*>(other.get())->initial_refcnt);
+}
+
+TEST_F(TypeExtensionApiTest, SetitemSlotOwnsReference) {
+  objobjargproc func = [](PyObject* self, PyObject* other,
+                          PyObject* third) -> int {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(other),
+        reinterpret_cast<TpSlotRefcntTestObject*>(other)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(third),
+        reinterpret_cast<TpSlotRefcntTestObject*>(third)->initial_refcnt + 1);
+    return 0;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_mp_ass_subscript, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr third(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(third, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__setitem__", "OO",
+                                         other.get(), third.get()));
+  EXPECT_EQ(result, Py_None);
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(other),
+      reinterpret_cast<TpSlotRefcntTestObject*>(other.get())->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(third),
+      reinterpret_cast<TpSlotRefcntTestObject*>(third.get())->initial_refcnt);
+}
+
+TEST_F(TypeExtensionApiTest, DelitemSlotOwnsReference) {
+  objobjargproc func = [](PyObject* self, PyObject* other,
+                          PyObject* third) -> int {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(other),
+        reinterpret_cast<TpSlotRefcntTestObject*>(other)->initial_refcnt + 1);
+    EXPECT_EQ(third, nullptr);
+    return 0;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_mp_ass_subscript, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr result(
+      PyObject_CallMethod(instance, "__delitem__", "O", other.get()));
+  EXPECT_EQ(result, Py_None);
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(other),
+      reinterpret_cast<TpSlotRefcntTestObject*>(other.get())->initial_refcnt);
+}
+
+TEST_F(TypeExtensionApiTest, ContainsSlotOwnsReference) {
+  objobjproc func = [](PyObject* self, PyObject* other) -> int {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(other),
+        reinterpret_cast<TpSlotRefcntTestObject*>(other)->initial_refcnt + 1);
+    return 1;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_sq_contains, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr result(
+      PyObject_CallMethod(instance, "__contains__", "O", other.get()));
+  EXPECT_EQ(result, Py_True);
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(other),
+      reinterpret_cast<TpSlotRefcntTestObject*>(other.get())->initial_refcnt);
+}
+
+TEST_F(TypeExtensionApiTest, MulSlotOwnsReference) {
+  ssizeargfunc func = [](PyObject* self, Py_ssize_t) -> PyObject* {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    Py_RETURN_NONE;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_sq_repeat, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(PyLong_FromLong(5));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr result(
+      PyObject_CallMethod(instance, "__mul__", "O", other.get()));
+  EXPECT_EQ(result, Py_None);
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+}
+
+TEST_F(TypeExtensionApiTest, SequenceItemSlotOwnsReference) {
+  ssizeargfunc func = [](PyObject* self, Py_ssize_t) -> PyObject* {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    Py_RETURN_NONE;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_sq_item, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(PyLong_FromLong(5));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr result(
+      PyObject_CallMethod(instance, "__getitem__", "O", other.get()));
+  EXPECT_EQ(result, Py_None);
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+}
+
+TEST_F(TypeExtensionApiTest, SequenceSetItemSlotOwnsReference) {
+  ssizeobjargproc func = [](PyObject* self, Py_ssize_t,
+                            PyObject* third) -> int {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    // TODO(T89073278): Revert to EQ(other, initial+1).
+    EXPECT_GE(
+        Py_REFCNT(third),
+        reinterpret_cast<TpSlotRefcntTestObject*>(third)->initial_refcnt + 1);
+    return 0;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_sq_ass_item, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(PyLong_FromLong(5));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr third(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(third, nullptr);
+  PyObjectPtr result(PyObject_CallMethod(instance, "__setitem__", "OO",
+                                         other.get(), third.get()));
+  EXPECT_EQ(result, Py_None);
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+  EXPECT_EQ(
+      Py_REFCNT(third),
+      reinterpret_cast<TpSlotRefcntTestObject*>(third.get())->initial_refcnt);
+}
+
+TEST_F(TypeExtensionApiTest, SequenceDelItemSlotOwnsReference) {
+  ssizeobjargproc func = [](PyObject* self, Py_ssize_t,
+                            PyObject* third) -> int {
+    // We expect a refcount of 1 greater than the inital refcount since the
+    // method is called with a new reference.
+    EXPECT_EQ(
+        Py_REFCNT(self),
+        reinterpret_cast<TpSlotRefcntTestObject*>(self)->initial_refcnt + 1);
+    EXPECT_EQ(third, nullptr);
+    return 0;
+  };
+  static const PyType_Slot slots[] = {
+      {Py_sq_ass_item, reinterpret_cast<void*>(func)},
+      {0, nullptr},
+  };
+  PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr other(PyLong_FromLong(5));
+  ASSERT_NE(other, nullptr);
+  PyObjectPtr result(
+      PyObject_CallMethod(instance, "__delitem__", "O", other.get()));
+  EXPECT_EQ(result, Py_None);
+  // Once the call is complete the wrapper should decref the arg so we expect to
+  // see the original refcount.
+  EXPECT_EQ(Py_REFCNT(instance),
+            reinterpret_cast<TpSlotRefcntTestObject*>(instance.get())
+                ->initial_refcnt);
+}
+
 }  // namespace testing
 }  // namespace py
