@@ -50,7 +50,7 @@ PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
         "Type is unmanaged. Please initialize using PyType_FromSpec");
 
   HandleScope scope(Thread::current());
-  Type type(&scope, ApiHandle::fromPyTypeObject(type_obj)->asObject());
+  Type type(&scope, handle->asObjectNoImmediate());
   if (type.isBuiltin()) return Py_TPFLAGS_DEFAULT;
 
   if (!typeHasSlots(type)) {
@@ -947,7 +947,7 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot_id) {
   }
 
   HandleScope scope(thread);
-  Type type(&scope, handle->asObject());
+  Type type(&scope, handle->asObjectNoImmediate());
   if (!type.isCPythonHeaptype()) {
     if (slot_id == Py_tp_new) {
       return reinterpret_cast<void*>(&superclassTpNew);

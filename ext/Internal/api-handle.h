@@ -43,6 +43,10 @@ class ApiHandle : public PyObject {
   // Get the object from the handle's reference field.
   RawObject asObject();
 
+  RawObject asObjectImmediate();
+
+  RawObject asObjectNoImmediate();
+
   // Return native proxy belonging to an extension object.
   RawNativeProxy asNativeProxy();
 
@@ -114,9 +118,17 @@ static_assert(sizeof(FreeListNode) <= sizeof(ApiHandle),
               "Free ApiHandle should be usable as a FreeListNode");
 
 inline RawObject ApiHandle::asObject() {
-  if (isImmediate()) {
-    return RawObject{reinterpret_cast<uword>(this) ^ kImmediateTag};
-  }
+  if (isImmediate()) return asObjectImmediate();
+  return asObjectNoImmediate();
+}
+
+inline RawObject ApiHandle::asObjectImmediate() {
+  DCHECK(isImmediate(), "expected immediate");
+  return RawObject{reinterpret_cast<uword>(this) ^ kImmediateTag};
+}
+
+inline RawObject ApiHandle::asObjectNoImmediate() {
+  DCHECK(!isImmediate(), "must not be called with immediate object");
   DCHECK(reference_ != 0 || isManaged(),
          "A handle or native instance must point back to a heap instance");
   return RawObject{reference_};
@@ -191,8 +203,9 @@ inline Py_ssize_t ApiHandle::refcntNoImmediate() {
 
 inline RawObject ApiHandle::stealReference(PyObject* py_obj) {
   ApiHandle* handle = ApiHandle::fromPyObject(py_obj);
-  handle->decref();
-  return handle->asObject();
+  if (handle->isImmediate()) return handle->asObjectImmediate();
+  handle->decrefNoImmediate();
+  return handle->asObjectNoImmediate();
 }
 
 }  // namespace py

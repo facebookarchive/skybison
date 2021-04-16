@@ -396,7 +396,7 @@ void* ApiHandle::cache(Runtime* runtime) {
   if (!isManaged()) return nullptr;
 
   ApiHandleDict* caches = capiCaches(runtime);
-  RawObject obj = asObject();
+  RawObject obj = asObjectNoImmediate();
   return caches->at(obj);
 }
 
@@ -406,7 +406,7 @@ void ApiHandle::dispose(Runtime* runtime) {
   // TODO(T46009838): If a module handle is being disposed, this should register
   // a weakref to call the module's m_free once's the module is collected
 
-  RawObject obj = asObject();
+  RawObject obj = asObjectNoImmediate();
   capiHandles(runtime)->remove(obj);
 
   void* cache = capiCaches(runtime)->remove(obj);
@@ -424,7 +424,7 @@ bool ApiHandle::isEncodeableAsImmediate(RawObject obj) {
 
 void ApiHandle::setCache(Runtime* runtime, void* value) {
   ApiHandleDict* caches = capiCaches(runtime);
-  RawObject obj = asObject();
+  RawObject obj = asObjectNoImmediate();
   caches->atPut(obj, value);
 }
 
