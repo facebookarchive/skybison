@@ -54,13 +54,17 @@ class ApiHandle : public PyObject {
   // Remove the ApiHandle from the dictionary and free its memory
   void dispose(Runtime* runtime);
 
-  // Returns true if the PyObject* is an immediate ApiHandle or ApiHandle.
-  // Otherwise returns false since the PyObject* is an extension object.
-  static bool isManaged(const PyObject* obj);
+  // Returns true if the handle has `kManagedBit` set. This means it references
+  // an object on the managed heap that is not a NativeProxy, meaning exccept
+  // for the `ApiHandle` there is no associated object in the C/C++ heap.
+  bool isManaged();
 
-  // Returns the reference count of this object by masking the ManagedBit
-  // NOTE: This should only be called by the GC.
-  static bool hasExtensionReference(const PyObject* obj);
+  bool isImmediate();
+
+  // Returns true if the object had its reference count increased by C-API
+  // code. Internally this reads the refcount and ignores the borrowed/managed
+  // bits.
+  bool hasExtensionReference();
 
   // Increments the reference count of the handle to signal the addition of a
   // reference from extension code.
@@ -74,8 +78,6 @@ class ApiHandle : public PyObject {
   Py_ssize_t refcnt();
 
   void setRefcnt(Py_ssize_t count);
-
-  static bool isImmediate(const PyObject* obj);
 
  private:
   static bool isEncodeableAsImmediate(RawObject obj);
@@ -105,6 +107,15 @@ struct FreeListNode {
 static_assert(sizeof(FreeListNode) <= sizeof(ApiHandle),
               "Free ApiHandle should be usable as a FreeListNode");
 
+inline RawObject ApiHandle::asObject() {
+  if (isImmediate()) {
+    return RawObject{reinterpret_cast<uword>(this) ^ kImmediateTag};
+  }
+  DCHECK(reference_ != 0 || isManaged(),
+         "A handle or native instance must point back to a heap instance");
+  return RawObject{reference_};
+}
+
 inline ApiHandle* ApiHandle::fromPyObject(PyObject* py_obj) {
   return static_cast<ApiHandle*>(py_obj);
 }
@@ -113,27 +124,19 @@ inline ApiHandle* ApiHandle::fromPyTypeObject(PyTypeObject* type) {
   return fromPyObject(reinterpret_cast<PyObject*>(type));
 }
 
-inline RawObject ApiHandle::asObject() {
-  if (isImmediate(this)) {
-    return RawObject{reinterpret_cast<uword>(this) ^ kImmediateTag};
-  }
-  DCHECK(reference_ != 0 || isManaged(this),
-         "A handle or native instance must point back to a heap instance");
-  return RawObject{reference_};
+inline ApiHandle* ApiHandle::handleFromImmediate(RawObject obj) {
+  DCHECK(isEncodeableAsImmediate(obj), "expected immediate");
+  return reinterpret_cast<ApiHandle*>(obj.raw() ^ kImmediateTag);
 }
 
-inline bool ApiHandle::isManaged(const PyObject* obj) {
-  return isImmediate(obj) || (obj->ob_refcnt & kManagedBit) != 0;
-}
-
-inline bool ApiHandle::hasExtensionReference(const PyObject* obj) {
-  DCHECK(!isImmediate(obj),
+inline bool ApiHandle::hasExtensionReference() {
+  DCHECK(!isImmediate(),
          "Cannot get hasExtensionReference of immediate handle");
-  return (obj->ob_refcnt & ~kManagedBit) > 0;
+  return (ob_refcnt & ~kManagedBit) > 0;
 }
 
 inline void ApiHandle::incref() {
-  if (isImmediate(this)) return;
+  if (isImmediate()) return;
   DCHECK((ob_refcnt & ~(kManagedBit | kBorrowedBit)) <
              (std::numeric_limits<Py_ssize_t>::max() &
               ~(kManagedBit | kBorrowedBit)),
@@ -141,25 +144,25 @@ inline void ApiHandle::incref() {
   ++ob_refcnt;
 }
 
+inline bool ApiHandle::isImmediate() {
+  return (reinterpret_cast<uword>(this) & kImmediateMask) != 0;
+}
+
+inline bool ApiHandle::isManaged() {
+  DCHECK(!isImmediate(), "must not be called with an immediate");
+  return (ob_refcnt & kManagedBit) != 0;
+}
+
 inline void ApiHandle::decref() {
-  if (isImmediate(this)) return;
+  if (isImmediate()) return;
   DCHECK((ob_refcnt & ~(kManagedBit | kBorrowedBit)) > 0,
          "Reference count underflowed");
   --ob_refcnt;
 }
 
-inline ApiHandle* ApiHandle::handleFromImmediate(RawObject obj) {
-  DCHECK(isEncodeableAsImmediate(obj), "expected immediate");
-  return reinterpret_cast<ApiHandle*>(obj.raw() ^ kImmediateTag);
-}
-
 inline Py_ssize_t ApiHandle::refcnt() {
-  if (isImmediate(this)) return kBorrowedBit;
+  if (isImmediate()) return kBorrowedBit;
   return ob_refcnt & ~(kManagedBit | kBorrowedBit);
-}
-
-inline bool ApiHandle::isImmediate(const PyObject* obj) {
-  return (reinterpret_cast<uword>(obj) & kImmediateMask) != 0;
 }
 
 }  // namespace py

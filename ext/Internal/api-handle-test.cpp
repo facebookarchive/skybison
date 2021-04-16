@@ -62,7 +62,7 @@ TEST_F(ApiHandleTest, BuiltinHeapAllocatedIntObjectReturnsApiHandle) {
   Object obj(&scope, runtime_->newInt(SmallInt::kMaxValue + 1));
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
   EXPECT_NE(handle, nullptr);
-  EXPECT_FALSE(ApiHandle::isImmediate(handle));
+  EXPECT_FALSE(handle->isImmediate());
   ApiHandleDict* dict = capiHandles(runtime_);
   EXPECT_EQ(dict->at(*obj), handle);
   handle->decref();
@@ -73,7 +73,7 @@ TEST_F(ApiHandleTest, BuiltinImmediateIntObjectReturnsImmediateApiHandle) {
   Object obj(&scope, runtime_->newInt(1));
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
   EXPECT_NE(handle, nullptr);
-  EXPECT_TRUE(ApiHandle::isImmediate(handle));
+  EXPECT_TRUE(handle->isImmediate());
   ApiHandleDict* dict = capiHandles(runtime_);
   EXPECT_EQ(dict->at(*obj), nullptr);
   handle->decref();
@@ -84,7 +84,7 @@ TEST_F(ApiHandleTest, BuiltinImmediateTrueObjectReturnsImmediateApiHandle) {
   Object obj(&scope, Bool::trueObj());
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
   EXPECT_NE(handle, nullptr);
-  EXPECT_TRUE(ApiHandle::isImmediate(handle));
+  EXPECT_TRUE(handle->isImmediate());
   ApiHandleDict* dict = capiHandles(runtime_);
   EXPECT_EQ(dict->at(*obj), nullptr);
   handle->decref();
@@ -95,7 +95,7 @@ TEST_F(ApiHandleTest, BuiltinImmediateFalseObjectReturnsImmediateApiHandle) {
   Object obj(&scope, Bool::falseObj());
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
   EXPECT_NE(handle, nullptr);
-  EXPECT_TRUE(ApiHandle::isImmediate(handle));
+  EXPECT_TRUE(handle->isImmediate());
   ApiHandleDict* dict = capiHandles(runtime_);
   EXPECT_EQ(dict->at(*obj), nullptr);
   handle->decref();
@@ -107,7 +107,7 @@ TEST_F(ApiHandleTest,
   Object obj(&scope, NotImplementedType::object());
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
   EXPECT_NE(handle, nullptr);
-  EXPECT_TRUE(ApiHandle::isImmediate(handle));
+  EXPECT_TRUE(handle->isImmediate());
   ApiHandleDict* dict = capiHandles(runtime_);
   EXPECT_EQ(dict->at(*obj), nullptr);
   handle->decref();
@@ -118,7 +118,7 @@ TEST_F(ApiHandleTest, BuiltinImmediateUnboundObjectReturnsImmediateApiHandle) {
   Object obj(&scope, Unbound::object());
   ApiHandle* handle = ApiHandle::newReference(runtime_, *obj);
   EXPECT_NE(handle, nullptr);
-  EXPECT_TRUE(ApiHandle::isImmediate(handle));
+  EXPECT_TRUE(handle->isImmediate());
   ApiHandleDict* dict = capiHandles(runtime_);
   EXPECT_EQ(dict->at(*obj), nullptr);
   handle->decref();

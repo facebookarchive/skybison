@@ -317,8 +317,7 @@ static void freeHandle(Runtime* runtime, ApiHandle* handle) {
 }
 
 RawNativeProxy ApiHandle::asNativeProxy() {
-  DCHECK(!isImmediate(this) && reference_ != 0,
-         "expected extension object handle");
+  DCHECK(!isImmediate() && reference_ != 0, "expected extension object handle");
   return RawObject{reference_}.rawCast<RawNativeProxy>();
 }
 
@@ -373,10 +372,28 @@ ApiHandle* ApiHandle::borrowedReference(Runtime* runtime, RawObject obj) {
   return result;
 }
 
+RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
+  bool has_pending_exception = thread->hasPendingException();
+  if (result == nullptr) {
+    if (has_pending_exception) return Error::exception();
+    return thread->raiseWithFmt(LayoutId::kSystemError,
+                                "NULL return without exception set");
+  }
+  RawObject result_obj = ApiHandle::stealReference(result);
+  if (has_pending_exception) {
+    // TODO(T53569173): set the currently pending exception as the cause of the
+    // newly raised SystemError
+    thread->clearPendingException();
+    return thread->raiseWithFmt(LayoutId::kSystemError,
+                                "non-NULL return with exception set");
+  }
+  return result_obj;
+}
+
 void* ApiHandle::cache(Runtime* runtime) {
   // Only managed objects can have a cached value
-  DCHECK(!isImmediate(this), "immediate handles do not have caches");
-  if (!isManaged(this)) return nullptr;
+  DCHECK(!isImmediate(), "immediate handles do not have caches");
+  if (!isManaged()) return nullptr;
 
   ApiHandleDict* caches = capiCaches(runtime);
   RawObject obj = asObject();
@@ -384,7 +401,7 @@ void* ApiHandle::cache(Runtime* runtime) {
 }
 
 void ApiHandle::dispose(Runtime* runtime) {
-  DCHECK(isManaged(this), "Dispose should only be called on managed handles");
+  DCHECK(isManaged(), "Dispose should only be called on managed handles");
 
   // TODO(T46009838): If a module handle is being disposed, this should register
   // a weakref to call the module's m_free once's the module is collected
@@ -417,25 +434,8 @@ RawObject ApiHandle::stealReference(PyObject* py_obj) {
   return handle->asObject();
 }
 
-RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
-  bool has_pending_exception = thread->hasPendingException();
-  if (result == nullptr) {
-    if (has_pending_exception) return Error::exception();
-    return thread->raiseWithFmt(LayoutId::kSystemError,
-                                "NULL return without exception set");
-  }
-  RawObject result_obj = ApiHandle::stealReference(result);
-  if (has_pending_exception) {
-    // TODO(T53569173): set the currently pending exception as the cause of the
-    // newly raised SystemError
-    thread->clearPendingException();
-    return thread->raiseWithFmt(LayoutId::kSystemError,
-                                "non-NULL return with exception set");
-  }
-  return result_obj;
-}
-
 void ApiHandle::setRefcnt(Py_ssize_t count) {
+  if (isImmediate()) return;
   DCHECK((count & (kManagedBit | kBorrowedBit)) == 0,
          "count must not have high bits set");
   Py_ssize_t flags = ob_refcnt & (kManagedBit | kBorrowedBit);
@@ -471,7 +471,7 @@ void capiHandlesClearNotReferenced(Runtime* runtime) {
   void* value;
   for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
     ApiHandle* handle = static_cast<ApiHandle*>(value);
-    if (!ApiHandle::hasExtensionReference(handle)) {
+    if (!handle->hasExtensionReference()) {
       // TODO(T56760343): Remove the cache lookup. This should become simpler
       // when it is easier to associate a cache with a handle or when the need
       // for caches is eliminated.
@@ -512,7 +512,7 @@ void capiHandlesVisit(Runtime* runtime, PointerVisitor* visitor) {
   void* value;
   for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
     ApiHandle* handle = reinterpret_cast<ApiHandle*>(value);
-    if (ApiHandle::hasExtensionReference(handle)) {
+    if (handle->hasExtensionReference()) {
       visitor->visitPointer(reinterpret_cast<RawObject*>(&handle->reference_),
                             PointerKind::kApiHandle);
     }

@@ -45,7 +45,8 @@ PY_EXPORT int PyType_Check_Func(PyObject* obj) {
 }
 
 PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
-  CHECK(ApiHandle::isManaged(reinterpret_cast<PyObject*>(type_obj)),
+  ApiHandle* handle = ApiHandle::fromPyTypeObject(type_obj);
+  CHECK(handle->isManaged(),
         "Type is unmanaged. Please initialize using PyType_FromSpec");
 
   HandleScope scope(Thread::current());
@@ -939,13 +940,14 @@ PY_EXPORT void* PyType_GetSlot(PyTypeObject* type_obj, int slot_id) {
     return nullptr;
   }
 
-  if (!ApiHandle::isManaged(reinterpret_cast<PyObject*>(type_obj))) {
+  ApiHandle* handle = ApiHandle::fromPyTypeObject(type_obj);
+  if (!handle->isManaged()) {
     thread->raiseBadInternalCall();
     return nullptr;
   }
 
   HandleScope scope(thread);
-  Type type(&scope, ApiHandle::fromPyTypeObject(type_obj)->asObject());
+  Type type(&scope, handle->asObject());
   if (!type.isCPythonHeaptype()) {
     if (slot_id == Py_tp_new) {
       return reinterpret_cast<void*>(&superclassTpNew);
@@ -1825,12 +1827,13 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
 
 PY_EXPORT PyObject* PyType_GenericAlloc(PyTypeObject* type_obj,
                                         Py_ssize_t nitems) {
-  DCHECK(ApiHandle::isManaged(reinterpret_cast<PyObject*>(type_obj)),
+  ApiHandle* handle = ApiHandle::fromPyTypeObject(type_obj);
+  DCHECK(handle->isManaged(),
          "Type is unmanaged. Please initialize using PyType_FromSpec");
 
   Thread* thread = Thread::current();
   HandleScope scope(thread);
-  Type type(&scope, ApiHandle::fromPyTypeObject(type_obj)->asObject());
+  Type type(&scope, handle->asObject());
   DCHECK(!type.isBuiltin(),
          "Type is unmanaged. Please initialize using PyType_FromSpec");
   DCHECK(typeHasSlots(type),

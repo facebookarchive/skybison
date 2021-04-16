@@ -70,8 +70,8 @@ PY_EXPORT void _Py_NewReference(PyObject*) {
 }
 
 PY_EXPORT void Py_INCREF_Func(PyObject* obj) {
-  if (ApiHandle::isManaged(obj)) return ApiHandle::fromPyObject(obj)->incref();
-  obj->ob_refcnt++;
+  ApiHandle* handle = ApiHandle::fromPyObject(obj);
+  handle->incref();
 }
 
 PY_EXPORT Py_ssize_t Py_REFCNT_Func(PyObject* obj) {
@@ -85,7 +85,12 @@ PY_EXPORT void Py_SET_REFCNT_Func(PyObject* obj, Py_ssize_t refcnt) {
 }
 
 PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
-  if (ApiHandle::isManaged(obj)) return ApiHandle::fromPyObject(obj)->decref();
+  ApiHandle* handle = ApiHandle::fromPyObject(obj);
+  if (handle->isImmediate()) return;
+  if (handle->isManaged()) {
+    handle->decref();
+    return;
+  }
   // All extension objects have a reference count of 1 which describes the
   // reference from the heap. Therefore, only the garbage collector can cause
   // an object to have its reference go below 1.
@@ -95,8 +100,9 @@ PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
 }
 
 PY_EXPORT Py_ssize_t* Py_SIZE_Func(PyVarObject* obj) {
-  DCHECK(!ApiHandle::isManaged(reinterpret_cast<PyObject*>(obj)),
-         "Py_SIZE should only be necessary for user-defined extension types");
+  DCHECK(
+      !ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(obj))->isManaged(),
+      "Py_SIZE should only be necessary for user-defined extension types");
   return &(obj->ob_size);
 }
 
