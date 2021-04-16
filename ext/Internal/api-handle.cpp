@@ -328,7 +328,7 @@ ApiHandle* ApiHandle::newReference(Runtime* runtime, RawObject obj) {
   if (runtime->isInstanceOfNativeProxy(obj)) {
     ApiHandle* result = static_cast<ApiHandle*>(
         Int::cast(obj.rawCast<RawNativeProxy>().native()).asCPtr());
-    result->incref();
+    result->increfNoImmediate();
     return result;
   }
   return ApiHandle::newReferenceWithManaged(runtime, obj);
@@ -344,7 +344,7 @@ ApiHandle* ApiHandle::newReferenceWithManaged(Runtime* runtime, RawObject obj) {
   void* value = handles->at(obj);
   if (value != nullptr) {
     ApiHandle* result = reinterpret_cast<ApiHandle*>(value);
-    result->incref();
+    result->increfNoImmediate();
     return result;
   }
 
@@ -368,7 +368,7 @@ ApiHandle* ApiHandle::borrowedReference(Runtime* runtime, RawObject obj) {
         Int::cast(obj.rawCast<RawNativeProxy>().native()).asCPtr());
   }
   ApiHandle* result = ApiHandle::newReferenceWithManaged(runtime, obj);
-  result->decref();
+  result->decrefNoImmediate();
   return result;
 }
 

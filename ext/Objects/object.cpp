@@ -87,16 +87,10 @@ PY_EXPORT void Py_SET_REFCNT_Func(PyObject* obj, Py_ssize_t refcnt) {
 PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
   ApiHandle* handle = ApiHandle::fromPyObject(obj);
   if (handle->isImmediate()) return;
-  if (handle->isManaged()) {
-    handle->decref();
-    return;
+  handle->decrefNoImmediate();
+  if (handle->ob_refcnt == 0) {
+    _Py_Dealloc(obj);
   }
-  // All extension objects have a reference count of 1 which describes the
-  // reference from the heap. Therefore, only the garbage collector can cause
-  // an object to have its reference go below 1.
-  DCHECK(obj->ob_refcnt > 1, "Reference count underflowed");
-  obj->ob_refcnt--;
-  if (obj->ob_refcnt == 0) _Py_Dealloc(obj);
 }
 
 PY_EXPORT Py_ssize_t* Py_SIZE_Func(PyVarObject* obj) {
