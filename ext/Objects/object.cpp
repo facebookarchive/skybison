@@ -76,18 +76,14 @@ PY_EXPORT void Py_INCREF_Func(PyObject* obj) {
   obj->ob_refcnt++;
 }
 
-PY_EXPORT Py_ssize_t* Py_REFCNT_Func(PyObject* obj) {
-  if (ApiHandle::isImmediate(obj)) {
-    // Immediate values do not have handles and therefore do not have a
-    // reference count value that can be used as an lvalue. Neverthless, most
-    // callers are only interested in reading the value of the reference count
-    // rather than writing to it. Returning the address of a value in the
-    // .rodata segment allows us to give the read-only callers a useful value
-    // and it will also catch situations where a caller errantly tries to
-    // modify the reference count.
-    return const_cast<Py_ssize_t*>(&kImmediateRefcnt);
-  }
-  return &obj->ob_refcnt;
+PY_EXPORT Py_ssize_t Py_REFCNT_Func(PyObject* obj) {
+  ApiHandle* handle = ApiHandle::fromPyObject(obj);
+  return handle->refcnt();
+}
+
+PY_EXPORT void Py_SET_REFCNT_Func(PyObject* obj, Py_ssize_t refcnt) {
+  ApiHandle* handle = ApiHandle::fromPyObject(obj);
+  handle->setRefcnt(refcnt);
 }
 
 PY_EXPORT void Py_DECREF_Func(PyObject* obj) {

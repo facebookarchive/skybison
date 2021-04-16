@@ -498,6 +498,13 @@ void ApiHandle::dispose(Runtime* runtime) {
   freeHandle(runtime, this);
 }
 
+void ApiHandle::setRefcnt(Py_ssize_t count) {
+  DCHECK((count & (kManagedBit | kBorrowedBit)) == 0,
+         "count must not have high bits set");
+  Py_ssize_t flags = ob_refcnt & (kManagedBit | kBorrowedBit);
+  ob_refcnt = count | flags;
+}
+
 RawObject capiHandleAsObject(void* handle) {
   return reinterpret_cast<ApiHandle*>(handle)->asObject();
 }

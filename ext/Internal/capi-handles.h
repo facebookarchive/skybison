@@ -93,7 +93,7 @@ class IdentityDict {
   friend class ApiHandle;
 };
 
-static const word kImmediateRefcnt = 1L << 30;
+static const Py_ssize_t kImmediateRefcnt = Py_ssize_t{1} << 62;
 
 class ApiHandle : public PyObject {
  public:
@@ -161,7 +161,9 @@ class ApiHandle : public PyObject {
   void decref();
 
   // Returns the number of references to this handle from extension code.
-  word refcnt();
+  Py_ssize_t refcnt();
+
+  void setRefcnt(Py_ssize_t count);
 
   static bool isImmediate(const PyObject* obj);
 
@@ -173,8 +175,9 @@ class ApiHandle : public PyObject {
   // Create a new runtime instance based on this ApiHandle
   RawObject asInstance(RawObject type);
 
-  static const long kManagedBit = 1L << 31;
-  static const long kBorrowedBit = 1L << 30;
+  static const Py_ssize_t kManagedBit = Py_ssize_t{1} << 63;
+  static const Py_ssize_t kBorrowedBit = Py_ssize_t{1} << 62;
+
   static const long kImmediateTag = 0x1;
   static const long kImmediateMask = 0x7;
 
@@ -226,20 +229,23 @@ inline bool ApiHandle::hasExtensionReference(const PyObject* obj) {
 
 inline void ApiHandle::incref() {
   if (isImmediate(this)) return;
-  DCHECK((refcnt() & ~kManagedBit) < (kManagedBit - 1),
+  DCHECK((ob_refcnt & ~(kManagedBit | kBorrowedBit)) <
+             (std::numeric_limits<Py_ssize_t>::max() &
+              ~(kManagedBit | kBorrowedBit)),
          "Reference count overflowed");
   ++ob_refcnt;
 }
 
 inline void ApiHandle::decref() {
   if (isImmediate(this)) return;
-  DCHECK((refcnt() & ~kManagedBit) > 0, "Reference count underflowed");
+  DCHECK((ob_refcnt & ~(kManagedBit | kBorrowedBit)) > 0,
+         "Reference count underflowed");
   --ob_refcnt;
 }
 
-inline word ApiHandle::refcnt() {
+inline Py_ssize_t ApiHandle::refcnt() {
   if (isImmediate(this)) return kBorrowedBit;
-  return ob_refcnt;
+  return ob_refcnt & ~(kManagedBit | kBorrowedBit);
 }
 
 inline bool ApiHandle::isImmediate(const PyObject* obj) {
