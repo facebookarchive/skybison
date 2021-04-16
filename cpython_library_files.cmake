@@ -1418,7 +1418,6 @@ test/test_embed.py
 test/test_ensurepip.py
 test/test_enum.py
 test/test_enumerate.py
-test/test_eof.py
 test/test_epoll.py
 test/test_errno.py
 test/test_exception_hierarchy.py

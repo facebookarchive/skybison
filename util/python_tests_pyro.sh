@@ -48,7 +48,6 @@ CPYTHON_TESTS=(
   test_dynamicclassattribute.py
   test_embed.py
   test_ensurepip.py
-  test_eof.py
   test_errno.py
   test_exception_variations.py
   test_filecmp.py
@@ -99,6 +98,7 @@ PYRO_PATCHED_CPYTHON_TESTS=(
   test_asyncgen.py
   test_coroutines.py
   test_dict.py
+  test_eof.py
   test_hmac.py
   test_peepholer.py
   test_range.py
