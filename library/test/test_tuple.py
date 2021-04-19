@@ -6,9 +6,7 @@
 import gc
 import pickle
 import unittest
-from test import support
-
-import seq_tests
+from test import seq_tests, support
 
 class TupleTest(seq_tests.CommonTest):
     type2test = tuple
