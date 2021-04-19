@@ -5375,7 +5375,7 @@ class method(bootstrap=True):
 
     def __hash__(self):
         _bound_method_guard(self)
-        return hash(self.__self__) ^ hash(self.__func__)
+        return object.__hash__(self.__self__) ^ hash(self.__func__)
 
     def __getattr__(self, name):
         return getattr(self.__func__, name)

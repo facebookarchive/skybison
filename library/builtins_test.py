@@ -2388,7 +2388,8 @@ class BoundMethodTests(unittest.TestCase):
         m1 = C().meth
         self.assertFalse(m0.__eq__(m1))
 
-    def test_dunder_hash_calls_self_and_function_hash(self):
+    @supports_38_feature
+    def test_dunder_hash_calls_function_hash_but_not_self_hash(self):
         class C:
             __hash__ = Mock(name="__hash__", return_value=42)
 
@@ -2404,7 +2405,7 @@ class BoundMethodTests(unittest.TestCase):
         callable = D()
         m = MethodType(callable, self_obj)
         self.assertIs(type(hash(m)), int)
-        C.__hash__.assert_called_once()
+        C.__hash__.assert_not_called()
         D.__hash__.assert_called_once()
 
     def test_dunder_hash_with_equal_objects_returns_equal_values(self):
