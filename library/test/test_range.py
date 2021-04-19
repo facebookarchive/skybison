@@ -365,8 +365,6 @@ class RangeTest(unittest.TestCase):
         self.assertEqual(repr(range(1, 2)), 'range(1, 2)')
         self.assertEqual(repr(range(1, 2, 3)), 'range(1, 2, 3)')
 
-    # TODO(T38246066): Implement _bytearray_setslice with memoryview
-    @unittest.skip("This tries running _bytearray_setslice with a memoryview")
     def test_pickling(self):
         testcases = [(13,), (0, 11), (-22, 10), (20, 3, -1),
                      (13, 21, 3), (-2, 2, 2), (2**65, 2**65+2)]
@@ -518,11 +516,7 @@ class RangeTest(unittest.TestCase):
             test_id = "reversed(range({}, {}, {}))".format(start, end, step)
             self.assert_iterators_equal(iter1, iter2, test_id, limit=100)
 
-    # TODO(T54087819): Import _testcapi
-    @unittest.skip("_testcapi needed")
-    @test.support.cpython_only
-    def test_range_iterator_invocation(self):
-        import _testcapi
+    def test_range_iterators_invocation(self):
         # verify range iterators instances cannot be created by
         # calling their type
         rangeiter_type = type(iter(range(0)))
