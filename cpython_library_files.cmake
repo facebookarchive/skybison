@@ -1835,6 +1835,7 @@ test/test_yield_from.py
 test/test_zipapp.py
 test/test_zipfile.py
 test/test_zipfile64.py
+test/test_zipimport.py
 test/test_zipimport_support.py
 test/test_zlib.py
 test/testcodec.py

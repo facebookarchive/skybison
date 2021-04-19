@@ -102,7 +102,6 @@ PYRO_PATCHED_CPYTHON_TESTS=(
   test_hmac.py
   test_peepholer.py
   test_range.py
-  test_zipimport.py
 )
 
 if [[ -n $1 ]]; then

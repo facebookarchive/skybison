@@ -173,7 +173,6 @@ test/test_normalization.py
 test/test_peepholer.py
 test/test_range.py
 test/test_tuple.py
-test/test_zipimport.py
 test_support.py
 tests/test_unittest.py
 threading.py
