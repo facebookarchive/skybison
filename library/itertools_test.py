@@ -269,6 +269,13 @@ class IsliceTests(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(islice)
 
+    def test_slice_with_step_arg_and_unspecified_stop_ends_at_end_of_iterator(self):
+        islice = itertools.islice([0, 1, 2, 3, 4], 1, None, 2)
+        self.assertEqual(next(islice), 1)
+        self.assertEqual(next(islice), 3)
+        with self.assertRaises(StopIteration):
+            next(islice)
+
     def test_slice_calls_next_until_stop_is_reached(self):
         class RaisesAtFive:
             i = 0

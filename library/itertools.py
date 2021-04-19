@@ -465,7 +465,7 @@ class islice:
             raise exc
         self._count = count + 1
         new_next += self._step
-        if new_next > stop:
+        if new_next > stop and stop != -1:
             new_next = stop
         self._next = new_next
         return item
