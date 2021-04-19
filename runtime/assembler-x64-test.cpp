@@ -265,6 +265,22 @@ TEST(AssemblerTest, TestqWithSignedLongImm) {
   EXPECT_TRUE(assemblerContainsBytes(&as, expected));
 }
 
+TEST(AssemblerTest, RIPRelativeLea) {
+  // 48 8d 05 03 00 00 00    leaq $0x3(%rip),%rax
+  // 48 33 d2                xorq %rdx, %rdx
+  // 48 33 d2                xorq %rdx, %rdx
+  const byte expected[] = {0x48, 0x8d, 0x05, 0x03, 0x00, 0x00, 0x00,
+                           0x48, 0x33, 0xd2, 0x48, 0x33, 0xd2};
+
+  Assembler as;
+  Label label;
+  as.leaq(RAX, &label);
+  as.xorq(RDX, RDX);
+  as.bind(&label);
+  as.xorq(RDX, RDX);
+  EXPECT_TRUE(assemblerContainsBytes(&as, expected));
+}
+
 }  // namespace testing
 }  // namespace x64
 }  // namespace py

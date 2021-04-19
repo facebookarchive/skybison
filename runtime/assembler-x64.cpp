@@ -161,6 +161,20 @@ void Assembler::movw(Address dst, Immediate imm) {
   emitUint8((imm.value() >> 8) & 0xff);
 }
 
+void Assembler::leaq(Register dst, Label* label) {
+  AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+  // Emit RIP-relative lea
+  Operand operand(dst);
+  emitOperandREX(0, operand, REX_W);
+  emitUint8(0x8d);
+  static const int size = 7;
+  Address address(Address::addressRIPRelative(0xdeadbeef));
+  emitOperand(0, address);
+  // Overwrite the fake displacement with a label or label link
+  buffer_.remit<uint32_t>();
+  emitLabel(label, size);
+}
+
 void Assembler::movq(Register dst, Immediate imm) {
   AssemblerBuffer::EnsureCapacity ensured(&buffer_);
   if (imm.isUint32()) {

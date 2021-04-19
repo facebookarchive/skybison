@@ -593,6 +593,8 @@ class Assembler {
   void movw(Register dst, Address src);
   void movw(Address dst, Immediate imm);
 
+  // RIP-relative lea
+  void leaq(Register dst, Label* label);
   void movq(Register dst, Immediate imm);
   void movq(Address dst, Immediate imm);
 
