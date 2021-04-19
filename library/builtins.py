@@ -7103,7 +7103,7 @@ def vars(obj=_Unbound):
         return _caller_locals()
     try:
         return obj.__dict__
-    except Exception:
+    except AttributeError:
         raise TypeError("vars() argument must have __dict__ attribute")
 
 

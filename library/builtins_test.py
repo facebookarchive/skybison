@@ -13687,10 +13687,11 @@ class VarsTests(unittest.TestCase):
             str(context.exception), "vars() argument must have __dict__ attribute"
         )
 
-    def test_arg_with_dunder_dict_raising_exception_raises_type_error(self):
+    @supports_38_feature
+    def test_arg_with_dunder_dict_raising_attribute_error_raises_type_error(self):
         class Desc:
             def __get__(self, obj, type):
-                raise UserWarning("called descriptor")
+                raise AttributeError("called descriptor")
 
         class C:
             __dict__ = Desc()
@@ -13701,6 +13702,19 @@ class VarsTests(unittest.TestCase):
         self.assertEqual(
             str(context.exception), "vars() argument must have __dict__ attribute"
         )
+
+    @supports_38_feature
+    def test_arg_with_dunder_dict_propagates_exception(self):
+        class Desc:
+            def __get__(self, obj, type):
+                raise UserWarning("called descriptor")
+
+        class C:
+            __dict__ = Desc()
+
+        c = C()
+        with self.assertRaises(UserWarning):
+            vars(c)
 
     def test_arg_with_dunder_dict_returns_dunder_dict(self):
         class C:
