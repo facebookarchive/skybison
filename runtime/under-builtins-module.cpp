@@ -5878,6 +5878,11 @@ RawObject FUNC(_builtins, _type_module_get)(Thread* thread, Arguments args) {
     return thread->raiseRequiresType(self_obj, ID(type));
   }
   Type type(&scope, *self_obj);
+  // If this is called on Type itself, typeAtById won't find __module__, and
+  // the type isn't a CPython heap type, but it should still return builtins
+  if (type.isBuiltin() && type.builtinBase() == LayoutId::kType) {
+    return runtime->symbols()->at(ID(builtins));
+  }
   Object result(&scope, typeAtById(thread, type, ID(__module__)));
   if (result.isErrorNotFound()) {
     if (!type.isCPythonHeaptype()) {

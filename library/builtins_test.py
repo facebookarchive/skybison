@@ -13122,6 +13122,7 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(int.__module__, "builtins")
         self.assertEqual(dict.__module__, "builtins")
         self.assertEqual(OSError.__module__, "builtins")
+        self.assertEqual(type.__module__, "builtins")
 
     def test_dunder_name_returns_name(self):
         class FooBar:
@@ -13291,6 +13292,7 @@ class TypeTests(unittest.TestCase):
 
     def test_dunder_repr_for_builtins_returns_string_with_only_name(self):
         self.assertEqual(type.__repr__(list), "<class 'list'>")
+        self.assertEqual(type.__repr__(type), "<class 'type'>")
         self.assertEqual(type.__repr__(TypeError), "<class 'TypeError'>")
 
     def test_dunder_repr_for_imported_class_returns_string_with_module_and_name(self):
