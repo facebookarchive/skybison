@@ -318,8 +318,8 @@ std::ostream& operator<<(std::ostream& os, RawBool value) {
 }
 
 std::ostream& operator<<(std::ostream& os, RawBoundMethod value) {
-  return os << "<bound_method " << Function::cast(value.function()).qualname()
-            << ", " << value.self() << '>';
+  return os << "<bound_method " << value.function() << ", " << value.self()
+            << '>';
 }
 
 static void dumpBytes(std::ostream& os, RawBytes bytes, word length) {

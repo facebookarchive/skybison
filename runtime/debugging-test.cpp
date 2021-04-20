@@ -431,7 +431,24 @@ bound_method = C().foo
   ASSERT_TRUE(bound_method.isBoundMethod());
   std::stringstream ss;
   ss << bound_method;
-  EXPECT_EQ(ss.str(), "<bound_method \"C.foo\", <\"C\" object>>");
+  EXPECT_EQ(ss.str(), "<bound_method <function \"C.foo\">, <\"C\" object>>");
+}
+
+TEST_F(DebuggingTests, FormatBoundMethodWithCallable) {
+  HandleScope scope(thread_);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __call__(self):
+    pass
+from types import MethodType
+bound_method = MethodType(C(), 42)
+)")
+                   .isError());
+  Object bound_method(&scope, mainModuleAt(runtime_, "bound_method"));
+  ASSERT_TRUE(bound_method.isBoundMethod());
+  std::stringstream ss;
+  ss << bound_method;
+  EXPECT_EQ(ss.str(), "<bound_method <\"C\" object>, 42>");
 }
 
 TEST_F(DebuggingTests, FormatBytes) {
