@@ -151,8 +151,8 @@ PY_EXPORT PyObject* PyImport_ExecCodeModule(const char* name, PyObject* code) {
     return nullptr;
   }
   PyObject* module = PyImport_AddModuleObject(name_str);
-  Py_DECREF(name_str);
   if (module == nullptr) {
+    Py_DECREF(name_str);
     return nullptr;
   }
   // PyImport_ExecCodeModule is supposed to return a new reference to the
@@ -160,11 +160,13 @@ PY_EXPORT PyObject* PyImport_ExecCodeModule(const char* name, PyObject* code) {
   Py_INCREF(module);
   PyObject* module_dict = PyModule_GetDict(module);
   if (module_dict == nullptr) {
+    Py_DECREF(name_str);
     Py_DECREF(module);
     return nullptr;
   }
 
   PyObject* result = fixUpModule(module_dict, name_str);
+  Py_DECREF(name_str);
   if (result == nullptr) {
     Py_DECREF(module);
     PyErr_Clear();

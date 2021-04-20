@@ -257,8 +257,9 @@ PY_EXPORT PyObject* PyModule_GetFilenameObject(PyObject* pymodule) {
 PY_EXPORT const char* PyModule_GetName(PyObject* pymodule) {
   PyObject* name = PyModule_GetNameObject(pymodule);
   if (name == nullptr) return nullptr;
+  const char* result = PyUnicode_AsUTF8(name);
   Py_DECREF(name);
-  return PyUnicode_AsUTF8(name);
+  return result;
 }
 
 PY_EXPORT PyObject* PyModule_New(const char* c_name) {
