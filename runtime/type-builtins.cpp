@@ -523,6 +523,22 @@ void typeAddDocstring(Thread* thread, const Type& type) {
   }
 }
 
+void typeAddInstanceDict(Thread* thread, const Type& type) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object instance_proxy(&scope, runtime->typeAt(LayoutId::kInstanceProxy));
+  CHECK(instance_proxy.isType(), "instance_proxy not found");
+  Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
+  Function under_instance_dunder_dict_set(
+      &scope,
+      moduleAtById(thread, under_builtins, ID(_instance_dunder_dict_set)));
+  Object none(&scope, NoneType::object());
+  Object property(&scope,
+                  runtime->newProperty(instance_proxy,
+                                       under_instance_dunder_dict_set, none));
+  typeAtPutById(thread, type, ID(__dict__), property);
+}
+
 static RawObject fixedAttributeBaseOfType(Thread* thread, const Type& type);
 
 // This searches recursively through `bases` for classes with the
@@ -966,17 +982,7 @@ RawObject typeNew(Thread* thread, const Type& metaclass, const Str& name,
   // Add a `__dict__` descriptor when we added an instance dict.
   if (add_instance_dict &&
       typeAtById(thread, type, ID(__dict__)).isErrorNotFound()) {
-    Object instance_proxy(&scope, runtime->typeAt(LayoutId::kInstanceProxy));
-    CHECK(instance_proxy.isType(), "instance_proxy not found");
-    Module under_builtins(&scope, runtime->findModuleById(ID(_builtins)));
-    Function under_instance_dunder_dict_set(
-        &scope,
-        moduleAtById(thread, under_builtins, ID(_instance_dunder_dict_set)));
-    Object none(&scope, NoneType::object());
-    Object property(&scope,
-                    runtime->newProperty(instance_proxy,
-                                         under_instance_dunder_dict_set, none));
-    typeAtPutById(thread, type, ID(__dict__), property);
+    typeAddInstanceDict(thread, type);
   }
 
   Function type_dunder_call(&scope,

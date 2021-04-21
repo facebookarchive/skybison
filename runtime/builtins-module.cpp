@@ -562,6 +562,11 @@ RawObject FUNC(builtins, __build_class__)(Thread* thread, Arguments args) {
     type.setQualname(*qualname);
     typeAddDocstring(thread, type);
 
+    if (Layout::cast(type.instanceLayout()).hasTupleOverflow() &&
+        typeAtById(thread, type, ID(__dict__)).isErrorNotFound()) {
+      typeAddInstanceDict(thread, type);
+    }
+
     if (DCHECK_IS_ON()) {
       Object dunder_new(&scope, typeAtById(thread, type, ID(__new__)));
       if (!dunder_new.isStaticMethod()) {

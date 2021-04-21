@@ -5456,6 +5456,20 @@ class EvalTests(unittest.TestCase):
         eval(code, d)  # noqa: P204
         self.assertEqual(d["a"], 2)
 
+    def test_instance_has_dunder_dict(self):
+        instance = Exception()
+        self.assertTrue(hasattr(instance, "__dict__"))
+        instance.foo = "bar"
+        self.assertEqual(instance.__dict__["foo"], "bar")
+
+    def test_subclass_instance_has_dunder_dict(self):
+        class ExceptionSub(Exception):
+            def __init__(self):
+                self.foo = "bar"
+
+        instance = ExceptionSub()
+        self.assertEqual(instance.__dict__["foo"], "bar")
+
 
 class ExecTests(unittest.TestCase):
     def test_globals_none_accesses_function_globals(self):

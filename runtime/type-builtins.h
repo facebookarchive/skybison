@@ -40,6 +40,7 @@ RawObject raiseTypeErrorCannotSetImmutable(Thread* thread, const Type& type);
 bool typeIsSubclass(RawObject subclass, RawObject superclass);
 
 void typeAddDocstring(Thread* thread, const Type& type);
+void typeAddInstanceDict(Thread* thread, const Type& type);
 
 // Assign all key/values from the dict to the type. This interns the keys as
 // necessary or may raise an exception for invalid keys (see attributeName()).
