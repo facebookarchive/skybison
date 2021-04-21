@@ -132,26 +132,60 @@ void* ApiHandleDict::at(RawObject key) {
   return nullptr;
 }
 
+inline void* ApiHandleDict::atIndex(int32_t item_index) {
+  return itemValueAt(values(), item_index);
+}
+
 void ApiHandleDict::atPut(RawObject key, void* value) {
-  RawObject* keys = this->keys();
-  void** values = this->values();
-
-  word index;
   int32_t item_index;
-  if (lookupForInsertion(key, &index, &item_index)) {
-    itemAtPut(keys, values, item_index, key, value);
-    return;
-  }
+  atPutLookup(key, &item_index);
+  atPutValue(item_index, value);
+}
 
-  item_index = nextIndex();
-  indexAtPut(indices(), index, item_index);
-  itemAtPut(keys, values, item_index, key, value);
-  incrementNumItems();
-  setNextIndex(item_index + 1);
+ALWAYS_INLINE bool ApiHandleDict::atPutLookup(RawObject key,
+                                              int32_t* item_index) {
+  DCHECK(!key.isNoneType(), "NoneType key not allowed (used for tombstone)");
+  uword hash = handleHash(key);
+  int32_t* indices = this->indices();
+  RawObject* keys = this->keys();
+  word num_indices = this->numIndices();
+
+  word next_free_index = -1;
+  for (IndexProbe probe = probeBegin(num_indices, hash);; probeNext(&probe)) {
+    int32_t current_item_index = indexAt(indices, probe.index);
+    if (current_item_index >= 0) {
+      if (itemKeyAt(keys, current_item_index) == key) {
+        *item_index = current_item_index;
+        return false;
+      }
+      continue;
+    }
+    if (next_free_index == -1) {
+      next_free_index = probe.index;
+    }
+    if (current_item_index == kEmptyIndex) {
+      word new_item_index = nextIndex();
+      indexAtPut(indices, next_free_index, new_item_index);
+      keys[new_item_index] = key;
+      setNextIndex(new_item_index + 1);
+      incrementNumItems();
+      *item_index = new_item_index;
+      return true;
+    }
+  }
+}
+
+ALWAYS_INLINE void ApiHandleDict::atPutValue(int32_t item_index, void* value) {
+  DCHECK(value != nullptr, "key cannot be associated with nullptr");
+  values()[item_index] = value;
 
   // Maintain the invariant that we have space for at least one more item.
-  if (hasUsableItem()) return;
+  if (!hasUsableItem()) {
+    grow();
+  }
+}
 
+NEVER_INLINE void ApiHandleDict::grow() {
   // If at least half of the items in the dense array are tombstones, removing
   // them will free up plenty of space. Otherwise, the dict must be grown.
   word growth_factor = (numItems() < capacity() / 2) ? 1 : kGrowthFactor;
@@ -187,34 +221,6 @@ bool ApiHandleDict::lookup(RawObject key, word* sparse, int32_t* dense) {
       continue;
     }
     if (item_index == kEmptyIndex) {
-      return false;
-    }
-  }
-}
-
-bool ApiHandleDict::lookupForInsertion(RawObject key, word* sparse,
-                                       int32_t* dense) {
-  uword hash = handleHash(key);
-  int32_t* indices = this->indices();
-  RawObject* keys = this->keys();
-  word num_indices = this->numIndices();
-
-  word next_free_index = -1;
-  for (IndexProbe probe = probeBegin(num_indices, hash);; probeNext(&probe)) {
-    int32_t item_index = indexAt(indices, probe.index);
-    if (item_index >= 0) {
-      if (itemKeyAt(keys, item_index) == key) {
-        *sparse = probe.index;
-        *dense = item_index;
-        return true;
-      }
-      continue;
-    }
-    if (next_free_index == -1) {
-      next_free_index = probe.index;
-    }
-    if (item_index == kEmptyIndex) {
-      *sparse = next_free_index;
       return false;
     }
   }
@@ -341,9 +347,9 @@ ApiHandle* ApiHandle::newReferenceWithManaged(Runtime* runtime, RawObject obj) {
 
   // Get the handle of a builtin instance
   ApiHandleDict* handles = capiHandles(runtime);
-  void* value = handles->at(obj);
-  if (value != nullptr) {
-    ApiHandle* result = reinterpret_cast<ApiHandle*>(value);
+  int32_t index;
+  if (!handles->atPutLookup(obj, &index)) {
+    ApiHandle* result = reinterpret_cast<ApiHandle*>(handles->atIndex(index));
     result->increfNoImmediate();
     return result;
   }
@@ -354,7 +360,7 @@ ApiHandle* ApiHandle::newReferenceWithManaged(Runtime* runtime, RawObject obj) {
   handle->reference_ = NoneType::object().raw();
   handle->ob_refcnt = 1 | kManagedBit;
 
-  handles->atPut(obj, handle);
+  handles->atPutValue(index, handle);
   handle->reference_ = obj.raw();
   return handle;
 }

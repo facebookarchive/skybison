@@ -26,7 +26,21 @@ class ApiHandleDict {
   // Looks up the value associated with key, or nullptr if not found.
   void* at(RawObject key);
 
+  // Lookup value of entry at `item_index` as returned by `atPutLookup`.
+  void* atIndex(int32_t item_index);
+
   void atPut(RawObject key, void* value);
+
+  // Looks for `key` in the dictionary. Returns `true` when a new entry for
+  // `key` was inserted, `false` if one already existed. Sets `*item_index` to
+  // the index of the entry. `atPutValue` must be used to set the value of a new
+  // entry before the next lookup.
+  bool atPutLookup(RawObject key, int32_t* item_index);
+
+  // Inserts `value` at entry at `item_index` as returned by `atPutLookup`.
+  void atPutValue(int32_t item_index, void* value);
+
+  void grow();
 
   void initialize(word num_indices);
 
@@ -79,10 +93,6 @@ class ApiHandleDict {
 
   // Returns true and sets the indices if the key was found.
   bool lookup(RawObject key, word* sparse, int32_t* dense);
-
-  // Returns true and sets the indices if the key was found,
-  // or returns false and sets the sparse index for insertion.
-  bool lookupForInsertion(RawObject key, word* sparse, int32_t* dense);
 
   DISALLOW_HEAP_ALLOCATION();
   DISALLOW_COPY_AND_ASSIGN(ApiHandleDict);
