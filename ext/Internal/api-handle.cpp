@@ -460,7 +460,7 @@ void capiHandlesClearNotReferenced(Runtime* runtime) {
   void* value;
   for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
     ApiHandle* handle = static_cast<ApiHandle*>(value);
-    if (!handle->hasExtensionReference()) {
+    if (handle->refcntNoImmediate() == 0) {
       // TODO(T56760343): Remove the cache lookup. This should become simpler
       // when it is easier to associate a cache with a handle or when the need
       // for caches is eliminated.
@@ -501,7 +501,7 @@ void capiHandlesVisit(Runtime* runtime, PointerVisitor* visitor) {
   void* value;
   for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
     ApiHandle* handle = reinterpret_cast<ApiHandle*>(value);
-    if (handle->hasExtensionReference()) {
+    if (handle->refcntNoImmediate() > 0) {
       visitor->visitPointer(reinterpret_cast<RawObject*>(&handle->reference_),
                             PointerKind::kApiHandle);
     }

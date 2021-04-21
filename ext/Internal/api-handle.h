@@ -71,11 +71,6 @@ class ApiHandle : public PyObject {
 
   bool isImmediate();
 
-  // Returns true if the object had its reference count increased by C-API
-  // code. Internally this reads the refcount and ignores the borrowed/managed
-  // bits.
-  bool hasExtensionReference();
-
   // Increments the reference count of the handle to signal the addition of a
   // reference from extension code.
   void incref();
@@ -160,12 +155,6 @@ inline ApiHandle* ApiHandle::fromPyTypeObject(PyTypeObject* type) {
 inline ApiHandle* ApiHandle::handleFromImmediate(RawObject obj) {
   DCHECK(isEncodeableAsImmediate(obj), "expected immediate");
   return reinterpret_cast<ApiHandle*>(obj.raw() ^ kImmediateTag);
-}
-
-inline bool ApiHandle::hasExtensionReference() {
-  DCHECK(!isImmediate(),
-         "Cannot get hasExtensionReference of immediate handle");
-  return (ob_refcnt & ~kManagedBit) > 0;
 }
 
 inline void ApiHandle::incref() {
