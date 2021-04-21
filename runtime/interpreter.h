@@ -123,39 +123,58 @@ class Interpreter {
                                         const Object& descriptor,
                                         const Object& receiver);
 
+  // Lookup method in type of `receiver`. Only performs a lookup in the type,
+  // not in `receiver` itself. As a shortcut this function does not create
+  // `BoundMethod` objects hence the result must only be used with `callMethodX`
+  // or `tailcallMethodX`.
   static RawObject lookupMethod(Thread* thread, const Object& receiver,
                                 SymbolId selector);
 
+  // Call callable object without parameters.
   static RawObject call0(Thread* thread, const Object& callable);
+  // Call callable object with 1 parameter.
   static RawObject call1(Thread* thread, const Object& callable,
                          const Object& arg1);
+  // Call callable object with 2 parameters.
   static RawObject call2(Thread* thread, const Object& callable,
                          const Object& arg1, const Object& arg2);
+  // Call callable object with 3 parameters.
   static RawObject call3(Thread* thread, const Object& callable,
                          const Object& arg1, const Object& arg2,
                          const Object& arg3);
+  // Call callable object with 4 parameters.
   static RawObject call4(Thread* thread, const Object& callable,
                          const Object& arg1, const Object& arg2,
                          const Object& arg3, const Object& arg4);
+  // Call callable object with 5 parameters.
   static RawObject call5(Thread* thread, const Object& callable,
                          const Object& arg1, const Object& arg2,
                          const Object& arg3, const Object& arg4,
                          const Object& arg5);
+  // Call callable object with 6 parameters.
   static RawObject call6(Thread* thread, const Object& callable,
                          const Object& arg1, const Object& arg2,
                          const Object& arg3, const Object& arg4,
                          const Object& arg5, const Object& arg6);
 
+  // Call method with 1 argument; must only be used with objects looked up via
+  // `lookupMethod`.
   static RawObject callMethod1(Thread* thread, const Object& method,
                                const Object& self);
 
+  // Call method with 2 arguments; must only be used with objects looked up via
+  // `lookupMethod`.
   static RawObject callMethod2(Thread* thread, const Object& method,
                                const Object& self, const Object& other);
 
+  // Call method with 3 arguments; must only be used with objects looked up via
+  // `lookupMethod`.
   static RawObject callMethod3(Thread* thread, const Object& method,
                                const Object& self, const Object& arg1,
                                const Object& arg2);
 
+  // Call method with 4 arguments; must only be used with objects looked up via
+  // `lookupMethod`.
   static RawObject callMethod4(Thread* thread, const Object& method,
                                const Object& self, const Object& arg1,
                                const Object& arg2, const Object& arg3);
@@ -552,7 +571,8 @@ class Interpreter {
 
   // Perform a method call at the end of an opcode handler. The benefit over
   // using `callMethod1()` is that we avoid recursively starting a new
-  // interpreter loop when the target is a python function.
+  // interpreter loop when the target is a python function. Must only be used
+  // on objects looked up via `lookupMethod`.
   static Continue tailcallMethod1(Thread* thread, RawObject method,
                                   RawObject self);
 
