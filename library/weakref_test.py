@@ -193,6 +193,12 @@ class WeakRefTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             weakref.ref.__new__(list)
 
+    def test_dunder_new_with_int_raises_type_error(self):
+        with self.assertRaisesRegex(
+            TypeError, "cannot create weak reference to 'int' object"
+        ):
+            weakref.ref.__new__(weakref.ref, 42)
+
     def test_hash_on_proxy_not_callable_object_raises_type_error(self):
         with self.assertRaises(TypeError) as context:
 

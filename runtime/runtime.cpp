@@ -2882,6 +2882,8 @@ RawObject Runtime::newValueCell() {
 RawObject Runtime::newWeakLink(Thread* thread, const Object& referent,
                                const Object& prev, const Object& next) {
   HandleScope scope(thread);
+  DCHECK(referent.isNoneType() || referent.isHeapObject(),
+         "expected heap object or None");
   WeakLink link(&scope,
                 newInstanceWithSize(LayoutId::kWeakLink, WeakLink::kSize));
   link.setReferent(*referent);
@@ -2892,6 +2894,8 @@ RawObject Runtime::newWeakLink(Thread* thread, const Object& referent,
 }
 
 RawObject Runtime::newWeakRef(Thread* thread, const Object& referent) {
+  DCHECK(referent.isNoneType() || referent.isHeapObject(),
+         "expected heap object or None");
   HandleScope scope(thread);
   WeakRef ref(&scope, newInstanceWithSize(LayoutId::kWeakRef, WeakRef::kSize));
   ref.setReferent(*referent);

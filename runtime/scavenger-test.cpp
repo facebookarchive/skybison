@@ -19,14 +19,6 @@ TEST_F(ScavengerTest, PreserveWeakReferenceHeapReferent) {
   EXPECT_EQ(ref.referent(), *array);
 }
 
-TEST_F(ScavengerTest, PreserveWeakReferenceImmediateReferent) {
-  HandleScope scope(thread_);
-  Int obj(&scope, SmallInt::fromWord(1234));
-  WeakRef ref(&scope, runtime_->newWeakRef(thread_, obj));
-  runtime_->collectGarbage();
-  EXPECT_EQ(ref.referent(), SmallInt::fromWord(1234));
-}
-
 TEST_F(ScavengerTest, ClearWeakReference) {
   HandleScope scope(Thread::current());
   Object none(&scope, NoneType::object());

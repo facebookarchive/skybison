@@ -1101,9 +1101,9 @@ TEST_F(IcTest, IcDependentIncludedWithNoneLinkReturnsFalse) {
 TEST_F(IcTest, IcDependentIncludedWithDependentInChainReturnsTrue) {
   HandleScope scope(thread_);
   Object none(&scope, NoneType::object());
-  Object one(&scope, SmallInt::fromWord(1));
-  Object two(&scope, SmallInt::fromWord(2));
-  Object three(&scope, SmallInt::fromWord(3));
+  Object one(&scope, runtime_->newSet());
+  Object two(&scope, runtime_->newSet());
+  Object three(&scope, runtime_->newSet());
   // Set up None <- link0 <-> link1 <-> link2 -> None
   WeakLink link0(&scope, runtime_->newWeakLink(thread_, one, none, none));
   WeakLink link1(&scope, runtime_->newWeakLink(thread_, two, link0, none));

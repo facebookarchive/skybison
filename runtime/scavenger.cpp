@@ -129,10 +129,9 @@ void Scavenger::processRoots() { runtime_->visitRoots(this); }
 
 bool Scavenger::hasWhiteReferent(RawObject reference) {
   RawWeakRef weak = WeakRef::cast(reference);
-  if (!weak.referent().isHeapObject()) {
-    return false;
-  }
-  return !HeapObject::cast(weak.referent()).isForwarding();
+  RawObject referent = weak.referent();
+  if (referent.isNoneType()) return false;
+  return !HeapObject::cast(referent).isForwarding();
 }
 
 void Scavenger::processGrayObjects() {

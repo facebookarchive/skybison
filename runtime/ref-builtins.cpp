@@ -77,7 +77,15 @@ RawObject METH(weakref, __new__)(Thread* thread, Arguments args) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "not a subtype of weakref");
   }
+  // Note that CPython only allows reference to types with `tp_weaklistoffset`
+  // set. Since we don't simulate `tp_weaklistoffset` yet we allow any heap
+  // object.
   Object referent(&scope, args.get(1));
+  if (!referent.isHeapObject()) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "cannot create weak reference to '%T' object",
+                                &referent);
+  }
   Object callback(&scope, args.get(2));
   WeakRef result(&scope, runtime->newWeakRef(thread, referent));
   if (type.isBuiltin()) {

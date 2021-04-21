@@ -97,7 +97,7 @@ callback = weak.__callback__
 
 TEST_F(RefBuiltinsTest, DunderCallReturnsObject) {
   HandleScope scope(thread_);
-  Object obj(&scope, Str::empty());
+  Object obj(&scope, runtime_->newSet());
   WeakRef ref(&scope, runtime_->newWeakRef(thread_, obj));
   Object result(&scope, runBuiltin(METH(weakref, __call__), ref));
   EXPECT_EQ(result, obj);

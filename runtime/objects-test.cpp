@@ -1637,19 +1637,22 @@ TEST_F(ValueCellTest, SetPlaceholderRendersIsPlaceholderToReturnTrue) {
 TEST_F(WeakRefTest, EnqueueAndDequeue) {
   HandleScope scope(thread_);
   RawObject list = NoneType::object();
-  for (int i = 0; i < 3; i++) {
-    Object obj(&scope, SmallInt::fromWord(i));
-    WeakRef weak(&scope, runtime_->newWeakRef(thread_, obj));
-    WeakRef::enqueue(*weak, &list);
-  }
+  Object o0(&scope, runtime_->newList());
+  Object o1(&scope, runtime_->newList());
+  Object o2(&scope, runtime_->newList());
+
+  WeakRef::enqueue(runtime_->newWeakRef(thread_, o0), &list);
+  WeakRef::enqueue(runtime_->newWeakRef(thread_, o1), &list);
+  WeakRef::enqueue(runtime_->newWeakRef(thread_, o2), &list);
+
   WeakRef weak(&scope, WeakRef::dequeue(&list));
-  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 0));
+  EXPECT_EQ(weak.referent(), o0);
 
   weak = WeakRef::dequeue(&list);
-  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 1));
+  EXPECT_EQ(weak.referent(), o1);
 
   weak = WeakRef::dequeue(&list);
-  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 2));
+  EXPECT_EQ(weak.referent(), o2);
 
   EXPECT_EQ(list, NoneType::object());
 }
@@ -1666,28 +1669,28 @@ TEST_F(WeakRefTest, SpliceQueue) {
   EXPECT_EQ(WeakRef::spliceQueue(list1, list3), list3);
   EXPECT_EQ(WeakRef::spliceQueue(list3, list2), list3);
 
-  for (int i = 0; i < 2; i++) {
-    Object obj1(&scope, SmallInt::fromWord(i));
-    WeakRef weak1(&scope, runtime_->newWeakRef(thread_, obj1));
-    weak1.setReferent(SmallInt::fromWord(i));
-    WeakRef::enqueue(*weak1, &list1);
+  Object o0(&scope, runtime_->newDict());
+  Object o1(&scope, runtime_->newDict());
+  Object o2(&scope, runtime_->newDict());
+  Object o3(&scope, runtime_->newDict());
 
-    Object obj2(&scope, SmallInt::fromWord(i + 2));
-    WeakRef weak2(&scope, runtime_->newWeakRef(thread_, obj2));
-    WeakRef::enqueue(*weak2, &list2);
-  }
+  WeakRef::enqueue(runtime_->newWeakRef(thread_, o0), &list1);
+  WeakRef::enqueue(runtime_->newWeakRef(thread_, o2), &list2);
+  WeakRef::enqueue(runtime_->newWeakRef(thread_, o1), &list1);
+  WeakRef::enqueue(runtime_->newWeakRef(thread_, o3), &list2);
+
   RawObject list = WeakRef::spliceQueue(list1, list2);
   WeakRef weak(&scope, WeakRef::dequeue(&list));
-  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 0));
+  EXPECT_EQ(weak.referent(), o0);
 
   weak = WeakRef::dequeue(&list);
-  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 1));
+  EXPECT_EQ(weak.referent(), o1);
 
   weak = WeakRef::dequeue(&list);
-  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 2));
+  EXPECT_EQ(weak.referent(), o2);
 
   weak = WeakRef::dequeue(&list);
-  EXPECT_TRUE(isIntEqualsWord(weak.referent(), 3));
+  EXPECT_EQ(weak.referent(), o3);
 
   EXPECT_EQ(list, NoneType::object());
 }
