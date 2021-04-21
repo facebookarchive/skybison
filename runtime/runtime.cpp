@@ -1452,53 +1452,6 @@ uword Runtime::random() {
   return result;
 }
 
-bool Runtime::listEntryInsert(ListEntry* entry, ListEntry** root) {
-  // If already tracked, do nothing.
-  if (entry->prev != nullptr || entry->next != nullptr || entry == *root) {
-    return false;
-  }
-  entry->prev = nullptr;
-  entry->next = *root;
-  if (*root != nullptr) {
-    (*root)->prev = entry;
-  }
-  *root = entry;
-  return true;
-}
-
-bool Runtime::listEntryRemove(ListEntry* entry, ListEntry** root) {
-  // The node is the first node of the list.
-  if (*root == entry) {
-    *root = entry->next;
-  } else if (entry->prev == nullptr && entry->next == nullptr) {
-    // This is an already untracked object.
-    return false;
-  }
-  if (entry->prev != nullptr) {
-    entry->prev->next = entry->next;
-  }
-  if (entry->next != nullptr) {
-    entry->next->prev = entry->prev;
-  }
-  entry->prev = nullptr;
-  entry->next = nullptr;
-  return true;
-}
-
-bool Runtime::trackNativeObject(ListEntry* entry) {
-  bool did_insert = listEntryInsert(entry, &tracked_native_objects_);
-  if (did_insert) num_tracked_native_objects_++;
-  return did_insert;
-}
-
-bool Runtime::untrackNativeObject(ListEntry* entry) {
-  bool did_remove = listEntryRemove(entry, &tracked_native_objects_);
-  if (did_remove) num_tracked_native_objects_--;
-  return did_remove;
-}
-
-ListEntry* Runtime::trackedNativeObjects() { return tracked_native_objects_; }
-
 RawObject* Runtime::finalizableReferences() { return &finalizable_references_; }
 
 word Runtime::identityHash(RawObject object) {
@@ -3613,9 +3566,9 @@ void Runtime::freeApiHandles() {
 
   // Process any native instance that is only referenced through the NativeProxy
   for (;;) {
-    word before = numTrackedNativeObjects() + numTrackedApiHandles(this);
+    word before = numExtensionObjects(this) + numTrackedApiHandles(this);
     collectGarbage();
-    word after = numTrackedNativeObjects() + numTrackedApiHandles(this);
+    word after = numExtensionObjects(this) + numTrackedApiHandles(this);
     word num_handles_collected = before - after;
     if (num_handles_collected == 0) {
       // Fixpoint: no change in tracking
@@ -3627,11 +3580,7 @@ void Runtime::freeApiHandles() {
   // Finally, skip trying to cleanly deallocate the object. Just free the
   // memory without calling the deallocation functions.
   capiHandlesDispose(this);
-  while (tracked_native_objects_ != nullptr) {
-    auto entry = static_cast<ListEntry*>(tracked_native_objects_);
-    untrackNativeObject(entry);
-    std::free(entry);
-  }
+  disposeExtensionObjects(this);
 }
 
 RawObject Runtime::bytesToInt(Thread* thread, const Bytes& bytes,

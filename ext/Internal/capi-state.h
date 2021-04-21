@@ -10,6 +10,8 @@
 
 namespace py {
 
+struct ListEntry;
+
 struct CAPIState {
   // Some API functions promise to cache their return value and return the same
   // value for repeated invocations on a specific PyObject. Those value are
@@ -28,6 +30,9 @@ struct CAPIState {
   ApiHandleDict handles;
 
   Vector<PyObject*> modules;
+
+  ListEntry* extension_objects;
+  word num_extension_objects;
 };
 
 static_assert(sizeof(CAPIState) < kCAPIStateSize, "kCAPIStateSize too small");

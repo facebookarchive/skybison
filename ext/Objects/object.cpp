@@ -10,6 +10,7 @@
 #include "capi-typeslots.h"
 #include "capi.h"
 #include "dict-builtins.h"
+#include "extension-object.h"
 #include "frame.h"
 #include "list-builtins.h"
 #include "module-builtins.h"
@@ -399,22 +400,6 @@ PY_EXPORT Py_hash_t PyObject_HashNotImplemented(PyObject* /* v */) {
   return -1;
 }
 
-PyObject* initializeNativeProxy(Thread* thread, PyObject* obj,
-                                PyTypeObject* typeobj, const Object& instance) {
-  Runtime* runtime = thread->runtime();
-  HandleScope scope(thread);
-
-  NativeProxy proxy(&scope, *instance);
-  proxy.setNative(runtime->newIntFromCPtr(obj));
-  runtime->trackNativeObject(reinterpret_cast<ListEntry*>(obj) - 1);
-
-  // Initialize the native object
-  obj->reference_ = proxy.raw();
-  Py_INCREF(typeobj);
-  obj->ob_refcnt = 2;
-  return obj;
-}
-
 PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
   if (obj == nullptr) return PyErr_NoMemory();
 
@@ -425,7 +410,7 @@ PY_EXPORT PyObject* PyObject_Init(PyObject* obj, PyTypeObject* typeobj) {
   Type type_obj(&scope, ApiHandle::fromPyTypeObject(typeobj)->asObject());
   Layout layout(&scope, type_obj.instanceLayout());
   Object instance(&scope, runtime->newInstance(layout));
-  return initializeNativeProxy(thread, obj, typeobj, instance);
+  return initializeExtensionObject(thread, obj, typeobj, instance);
 }
 
 PY_EXPORT PyVarObject* PyObject_InitVar(PyVarObject* obj, PyTypeObject* type,
@@ -698,34 +683,6 @@ PY_EXPORT void _PyTrash_thread_deposit_object(PyObject* /* p */) {
 
 PY_EXPORT void _PyTrash_thread_destroy_chain() {
   UNIMPLEMENTED("_PyTrash_thread_destroy_chain");
-}
-
-void finalizeExtensionObject(Thread* thread, RawObject object) {
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  NativeProxy proxy(&scope, object);
-  Type type(&scope, runtime->typeOf(*proxy));
-  DCHECK(type.hasNativeData(),
-         "A native instance must come from an extension type");
-  destructor tp_dealloc =
-      reinterpret_cast<destructor>(typeSlotAt(type, Py_tp_dealloc));
-  DCHECK(tp_dealloc != nullptr, "Extension types must have a dealloc slot");
-  PyObject* obj =
-      reinterpret_cast<PyObject*>(Int::cast(proxy.native()).asCPtr());
-  CHECK(obj->ob_refcnt == 1,
-        "The runtime must hold the last reference to the PyObject* (%p). "
-        "Expecting a refcount of 1, but found %ld\n",
-        reinterpret_cast<void*>(obj), obj->ob_refcnt);
-  obj->ob_refcnt--;
-  (*tp_dealloc)(obj);
-  if (!proxy.native().isNoneType() && obj->ob_refcnt == 0) {
-    // `proxy.native()` being `None` indicates the extension object memory was
-    // not freed. `ob_refcnt == 0` means the object was not resurrected.
-    // This typically indicates that the user maintains a free-list and wants to
-    // call `PyObject_Init` on the memory again, we have to untrack it!
-    ListEntry* entry = reinterpret_cast<ListEntry*>(obj) - 1;
-    runtime->untrackNativeObject(entry);
-  }
 }
 
 }  // namespace py

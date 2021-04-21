@@ -27,23 +27,13 @@ extern "C" char* PyOS_Readline(FILE*, FILE*, const char*);
 namespace py {
 
 class PointerVisitor;
-
-class Thread;
-
 class Runtime;
+class Scavenger;
+class Thread;
 
 static const word kCAPIStateSize = 256;
 
 extern struct _inittab* PyImport_Inittab;
-
-// Return the object referenced by the handle.
-// WARNING: This function should be called by the garbage collector.
-RawObject capiHandleAsObject(void* handle);
-
-// Return true if the extension object at the given handle is being kept alive
-// by a reference from another extension object or by a managed reference.
-// WARNING: This function should be called by the garbage collector.
-bool capiHandleFinalizableReference(void* handle, RawObject** out);
 
 // WARNING: This function should be called by the garbage collector.
 void capiHandlesClearNotReferenced(Runtime* runtime);
@@ -56,8 +46,12 @@ void capiHandlesShrink(Runtime* runtime);
 
 void capiHandlesVisit(Runtime* runtime, PointerVisitor* visitor);
 
+void disposeExtensionObjects(Runtime* runtime);
+
 void finalizeCAPIModules();
 void finalizeCAPIState(Runtime* runtime);
+
+void finalizeExtensionObject(Thread* thread, RawObject object);
 
 void freeExtensionModules(Thread* thread);
 
@@ -77,6 +71,8 @@ RawObject moduleInitBuiltinExtension(Thread* thread, const Str& name);
 // Load extension module `name` from dynamic library in file `path`.
 RawObject moduleLoadDynamicExtension(Thread* thread, const Str& name,
                                      const Str& path);
+
+word numExtensionObjects(Runtime* runtime);
 
 word numTrackedApiHandles(Runtime* runtime);
 
@@ -118,5 +114,8 @@ RawObject typeInheritSlots(Thread* thread, const Type& type, const Type& base);
 // Assumes the object is not builtin.
 // Raises TypeError if slots are not defined.
 RawObject newBytesFromBuffer(Thread* thread, const Object& obj);
+
+void visitExtensionObjects(Runtime* runtime, Scavenger* scavenger,
+                           PointerVisitor* visitor);
 
 }  // namespace py

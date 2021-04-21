@@ -69,6 +69,9 @@ void initializeCAPIState(Runtime* runtime) {
   state->handle_buffer =
       OS::allocateMemory(kHandleBlockSize, &state->handle_buffer_size);
   state->free_handles = reinterpret_cast<FreeListNode*>(state->handle_buffer);
+
+  state->extension_objects = nullptr;
+  state->num_extension_objects = 0;
 }
 
 word numTrackedApiHandles(Runtime* runtime) {

@@ -505,6 +505,7 @@ add_library(
   runtime/layout-builtins.cpp
   runtime/layout-builtins.h
   runtime/layout.h
+  runtime/linked-list.h
   runtime/list-builtins.cpp
   runtime/list-builtins.h
   runtime/mappingproxy-builtins.cpp
@@ -879,6 +880,7 @@ add_library(
   ext/Internal/capi-trampolines.h
   ext/Internal/capi-typeslots.cpp
   ext/Internal/capi-typeslots.h
+  ext/Internal/extension-object.cpp
   ext/Internal/function-utils.cpp
   ext/Internal/function-utils.h
   ext/Internal/type-utils.cpp
@@ -1091,6 +1093,7 @@ add_library(
   runtime-tests
   OBJECT
   ext/Internal/api-handle-test.cpp
+  ext/Internal/extension-object-test.cpp
   ext/Internal/trampolines-test.cpp
   runtime/array-module-test.cpp
   runtime/assembler-x64-test.cpp

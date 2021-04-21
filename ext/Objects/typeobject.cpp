@@ -13,6 +13,7 @@
 #include "capi-typeslots.h"
 #include "capi.h"
 #include "dict-builtins.h"
+#include "extension-object.h"
 #include "function-builtins.h"
 #include "function-utils.h"
 #include "handles.h"
@@ -901,7 +902,7 @@ PyObject* superclassTpNew(PyTypeObject* typeobj, PyObject* args,
     thread->raiseMemoryError();
     return nullptr;
   }
-  return initializeNativeProxy(thread, result, typeobj, instance);
+  return initializeExtensionObject(thread, result, typeobj, instance);
 }
 
 // tp_new slot implementation that delegates to a Type's __new__ attribute.

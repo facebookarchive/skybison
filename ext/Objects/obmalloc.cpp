@@ -1,6 +1,8 @@
 #include "cpython-func.h"
 
 #include "api-handle.h"
+#include "extension-object.h"
+#include "linked-list.h"
 #include "runtime.h"
 
 namespace py {
@@ -33,13 +35,14 @@ PY_EXPORT void* PyObject_Calloc(size_t nelem, size_t size) {
 PY_EXPORT void* PyObject_Realloc(void* ptr, size_t size) {
   if (ptr == nullptr) return PyObject_Malloc(size);
   ListEntry* entry = static_cast<ListEntry*>(ptr) - 1;
-  bool removed = Thread::current()->runtime()->untrackNativeObject(entry);
+  Runtime* runtime = Thread::current()->runtime();
+  bool removed = untrackExtensionObject(runtime, entry);
   entry = static_cast<ListEntry*>(
       PyMem_RawRealloc(entry, sizeof(ListEntry) + size));
   entry->prev = nullptr;
   entry->next = nullptr;
   if (removed) {
-    Thread::current()->runtime()->trackNativeObject(entry);
+    trackExtensionObject(runtime, entry);
   }
   return reinterpret_cast<void*>(entry + 1);
 }
@@ -47,7 +50,8 @@ PY_EXPORT void* PyObject_Realloc(void* ptr, size_t size) {
 PY_EXPORT void PyObject_Free(void* ptr) {
   if (ptr == nullptr) return;
   ListEntry* entry = static_cast<ListEntry*>(ptr) - 1;
-  bool removed = Thread::current()->runtime()->untrackNativeObject(entry);
+  Runtime* runtime = Thread::current()->runtime();
+  bool removed = untrackExtensionObject(runtime, entry);
   if (removed) {
     // Set native pointer to `None` to signal the `finalizeExtensionObject` code
     // that the object memory was freed.

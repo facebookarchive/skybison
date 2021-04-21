@@ -442,17 +442,6 @@ void ApiHandle::setRefcnt(Py_ssize_t count) {
   ob_refcnt = count | flags;
 }
 
-RawObject capiHandleAsObject(void* handle) {
-  return reinterpret_cast<ApiHandle*>(handle)->asObject();
-}
-
-bool capiHandleFinalizableReference(void* handle, RawObject** out) {
-  ApiHandle* api_handle = reinterpret_cast<ApiHandle*>(handle);
-  *out = reinterpret_cast<RawObject*>(&api_handle->reference_);
-  return api_handle->refcnt() > 1 ||
-         HeapObject::cast(api_handle->asObject()).isForwarding();
-}
-
 void capiHandlesClearNotReferenced(Runtime* runtime) {
   ApiHandleDict* handles = capiHandles(runtime);
   ApiHandleDict* caches = capiCaches(runtime);

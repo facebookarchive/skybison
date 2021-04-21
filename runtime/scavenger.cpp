@@ -12,6 +12,8 @@ class Scavenger : public PointerVisitor {
  public:
   explicit Scavenger(Runtime* runtime);
 
+  bool isWhiteObject(RawHeapObject object);
+
   RawObject scavenge();
 
   void visitPointer(RawObject* pointer, PointerKind kind) override;
@@ -21,13 +23,9 @@ class Scavenger : public PointerVisitor {
 
   RawObject transport(RawObject old_object);
 
-  bool hasWhiteReferent(RawObject reference);
-
   void processImmortalRoots(Space*);
 
   void processDelayedReferences();
-
-  void processFinalizableReferences();
 
   void processGrayObjects();
 
@@ -71,7 +69,7 @@ RawObject Scavenger::scavenge() {
   processRoots();
   processGrayObjects();
   capiHandlesClearNotReferenced(runtime_);
-  processFinalizableReferences();
+  visitExtensionObjects(runtime_, this, this);
   processGrayObjects();
   processDelayedReferences();
   processLayouts();
@@ -127,11 +125,10 @@ void Scavenger::processImmortalRoots(Space* immortal) {
 
 void Scavenger::processRoots() { runtime_->visitRoots(this); }
 
-bool Scavenger::hasWhiteReferent(RawObject reference) {
-  RawWeakRef weak = WeakRef::cast(reference);
-  RawObject referent = weak.referent();
-  if (referent.isNoneType()) return false;
-  return !HeapObject::cast(referent).isForwarding();
+bool Scavenger::isWhiteObject(RawHeapObject object) {
+  DCHECK(!to_->contains(object.address()),
+         "must not test objects that have already been visited");
+  return !object.isForwarding();
 }
 
 void Scavenger::processGrayObjects() {
@@ -149,11 +146,16 @@ void Scavenger::processGrayObjects() {
         continue;
       }
       scan += RawHeader::kSize;
-      if (object.isWeakRef() && hasWhiteReferent(object)) {
-        // Delay the reference object for later processing.
-        WeakRef::enqueue(object, &delayed_references_);
-        // Skip over the referent field and continue scavenging.
-        scan += kPointerSize;
+      if (object.isWeakRef()) {
+        RawWeakRef weakref = WeakRef::cast(object);
+        RawObject referent = weakref.referent();
+        if (!referent.isNoneType() &&
+            isWhiteObject(HeapObject::cast(referent))) {
+          // Delay the reference object for later processing.
+          WeakRef::enqueue(object, &delayed_references_);
+          // Skip over the referent field and continue scavenging.
+          scan += kPointerSize;
+        }
       }
       for (; scan < end; scan += kPointerSize) {
         scavengePointer(reinterpret_cast<RawObject*>(scan));
@@ -305,24 +307,6 @@ void Scavenger::processDelayedReferences() {
   }
 }
 
-void Scavenger::processFinalizableReferences() {
-  ListEntry* entry = runtime_->trackedNativeObjects();
-  for (ListEntry* next; entry != nullptr; entry = next) {
-    next = entry->next;
-    void* native_instance = entry + 1;
-    RawObject* ptr;
-    bool alive = capiHandleFinalizableReference(native_instance, &ptr);
-    scavengePointer(ptr);
-
-    // TODO(T58548736): Run safe dealloc slots here when possible rather than
-    // putting everything on the queue.
-    if (!alive) {
-      NativeProxy::enqueue(capiHandleAsObject(native_instance),
-                           runtime_->finalizableReferences());
-    }
-  }
-}
-
 RawObject Scavenger::transport(RawObject old_object) {
   RawHeapObject from_object = HeapObject::cast(old_object);
   if (heap_->isImmortal(from_object.address())) {
@@ -348,6 +332,10 @@ RawObject Scavenger::transport(RawObject old_object) {
   scavengePointer(layout_ptr);
 
   return to_object;
+}
+
+bool isWhiteObject(Scavenger* scavenger, RawHeapObject object) {
+  return scavenger->isWhiteObject(object);
 }
 
 RawObject scavenge(Runtime* runtime) { return Scavenger(runtime).scavenge(); }

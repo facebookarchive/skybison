@@ -5,8 +5,6 @@
 
 namespace py {
 
-void finalizeExtensionObject(Thread* thread, RawObject object);
-
 RawObject instanceDelAttr(Thread* thread, const Instance& instance,
                           const Object& name);
 

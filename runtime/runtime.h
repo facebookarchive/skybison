@@ -21,11 +21,6 @@ class RawTuple;
 class PointerVisitor;
 class Thread;
 
-struct ListEntry {
-  ListEntry* prev;
-  ListEntry* next;
-};
-
 enum LayoutTypeTransition {
   kFrom = 0,
   kTo = 1,
@@ -353,16 +348,6 @@ class Runtime {
 
   Interpreter* interpreter() { return interpreter_.get(); }
 
-  // Tracks extension native objects.
-  // Returns true if an untracked entry becomes tracked, false, otherwise.
-  bool trackNativeObject(ListEntry* entry);
-
-  // Untracks extension native objects.
-  // Returns true if a tracked entry becomes untracked, false, otherwise.
-  bool untrackNativeObject(ListEntry* entry);
-
-  // Return the head of the tracked native objects list.
-  ListEntry* trackedNativeObjects();
   RawObject* finalizableReferences();
 
   void visitRoots(PointerVisitor* visitor);
@@ -908,15 +893,7 @@ class Runtime {
   // Joins the type's name and attribute's name to produce a qualname
   RawObject newQualname(Thread* thread, const Type& type, SymbolId name);
 
-  // Inserts an entry into the linked list as the new root
-  static bool listEntryInsert(ListEntry* entry, ListEntry** root);
-
-  // Removes an entry from the linked list
-  static bool listEntryRemove(ListEntry* entry, ListEntry** root);
-
   static word immediateHash(RawObject object);
-
-  word numTrackedNativeObjects() { return num_tracked_native_objects_; }
 
   RawObject expandBytecode(Thread* thread, const Bytes& bytecode);
 
@@ -937,13 +914,6 @@ class Runtime {
   Heap heap_;
 
   std::unique_ptr<Interpreter> interpreter_;
-
-  // TODO(T46009495): This is a temporary list tracking native objects to
-  // correctly free their memory at runtime destruction. However, this should
-  // be moved to a lower level abstraction in the C-API such as PyObject_Malloc
-  // Linked list of tracked extension objects.
-  ListEntry* tracked_native_objects_ = nullptr;
-  word num_tracked_native_objects_ = 0;
 
   // List of native instances which can be finalizable through tp_dealloc
   RawObject finalizable_references_ = NoneType::object();

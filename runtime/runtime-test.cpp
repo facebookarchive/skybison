@@ -1200,30 +1200,6 @@ TEST(RuntimeTestNoFixture,
   EXPECT_EQ(r0_b, r1_b);
 }
 
-TEST_F(RuntimeTest, TrackNativeObjectAndUntrackNativeObject) {
-  ListEntry entry0{nullptr, nullptr};
-  ListEntry entry1{nullptr, nullptr};
-
-  EXPECT_TRUE(runtime_->trackNativeObject(&entry0));
-  EXPECT_TRUE(runtime_->trackNativeObject(&entry1));
-  // Trying to track an already tracked object returns false.
-  EXPECT_FALSE(runtime_->trackNativeObject(&entry0));
-  EXPECT_FALSE(runtime_->trackNativeObject(&entry1));
-
-  EXPECT_TRUE(runtime_->untrackNativeObject(&entry0));
-  EXPECT_TRUE(runtime_->untrackNativeObject(&entry1));
-
-  // Trying to untrack an already untracked object returns false.
-  EXPECT_FALSE(runtime_->untrackNativeObject(&entry0));
-  EXPECT_FALSE(runtime_->untrackNativeObject(&entry1));
-
-  // Verify untracked entires are reset to nullptr.
-  EXPECT_EQ(entry0.prev, nullptr);
-  EXPECT_EQ(entry0.next, nullptr);
-  EXPECT_EQ(entry1.prev, nullptr);
-  EXPECT_EQ(entry1.next, nullptr);
-}
-
 TEST_F(RuntimeTest, TypeDictOnlyLayoutReturnsLayoutWithDictOverflow) {
   ASSERT_FALSE(runFromCStr(runtime_, R"(
 class C: pass
