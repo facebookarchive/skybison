@@ -10,6 +10,7 @@
 #include "api-handle.h"
 #include "attributedict.h"
 #include "builtins-module.h"
+#include "capi-typeslots.h"
 #include "capi.h"
 #include "dict-builtins.h"
 #include "function-builtins.h"
@@ -24,7 +25,6 @@
 #include "trampolines.h"
 #include "type-builtins.h"
 #include "type-utils.h"
-#include "typeslots.h"
 #include "utils.h"
 
 namespace py {

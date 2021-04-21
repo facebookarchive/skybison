@@ -7,6 +7,7 @@
 #include "attributedict.h"
 #include "builtins-module.h"
 #include "bytes-builtins.h"
+#include "capi-typeslots.h"
 #include "capi.h"
 #include "dict-builtins.h"
 #include "frame.h"
@@ -17,7 +18,6 @@
 #include "runtime.h"
 #include "str-builtins.h"
 #include "type-builtins.h"
-#include "typeslots.h"
 
 namespace py {
 

@@ -9,6 +9,7 @@
 #include "attributedict.h"
 #include "bytearrayobject-utils.h"
 #include "bytesobject-utils.h"
+#include "capi-typeslots.h"
 #include "capi.h"
 #include "exception-builtins.h"
 #include "formatter.h"
@@ -18,7 +19,6 @@
 #include "object-builtins.h"
 #include "runtime.h"
 #include "type-builtins.h"
-#include "typeslots.h"
 
 namespace py {
 

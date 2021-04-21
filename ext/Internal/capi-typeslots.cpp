@@ -1,4 +1,4 @@
-#include "typeslots.h"
+#include "capi-typeslots.h"
 
 #include "cpython-data.h"
 

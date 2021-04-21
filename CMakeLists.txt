@@ -877,6 +877,8 @@ add_library(
   ext/Internal/capi-state.h
   ext/Internal/capi-trampolines.cpp
   ext/Internal/capi-trampolines.h
+  ext/Internal/capi-typeslots.cpp
+  ext/Internal/capi-typeslots.h
   ext/Internal/function-utils.cpp
   ext/Internal/function-utils.h
   ext/Internal/type-utils.cpp
@@ -919,8 +921,6 @@ add_library(
   ext/Objects/structseq.cpp
   ext/Objects/tupleobject.cpp
   ext/Objects/typeobject.cpp
-  ext/Objects/typeslots.cpp
-  ext/Objects/typeslots.h
   ext/Objects/unicodeobject.cpp
   ext/Objects/weakrefobject.cpp
   ext/Python/_warnings.cpp
