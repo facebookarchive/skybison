@@ -337,6 +337,13 @@ stdin = __stdin__
 stdout = __stdout__
 
 
+def unraisablehook(unraisable):
+    _unimplemented()
+
+
+__unraisablehook__ = unraisablehook
+
+
 version_info = _version
 
 
