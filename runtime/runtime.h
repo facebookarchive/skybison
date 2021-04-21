@@ -187,6 +187,8 @@ class Runtime {
 
   RawObject newMutableBytesUninitialized(word size);
 
+  RawObject newMutableBytesZeroed(word size);
+
   // Returns an Int that stores the numerical address of the pointer.
   RawObject newIntFromCPtr(void* ptr);
 
@@ -1055,6 +1057,10 @@ inline RawObject Runtime::internStr(Thread* thread, const Object& str) {
     return *str;
   }
   return internLargeStr(thread, str);
+}
+
+inline RawObject Runtime::newMutableBytesUninitialized(word size) {
+  return newMutableBytesZeroed(size);
 }
 
 }  // namespace py

@@ -89,8 +89,8 @@ static RawObject* newKeys(int32_t capacity) {
 }
 
 static void** newValues(int32_t capacity) {
-  void* result = std::calloc(capacity, kPointerSize);
-  DCHECK(result != nullptr, "calloc failed");
+  void* result = std::malloc(static_cast<size_t>(capacity) * kPointerSize);
+  DCHECK(result != nullptr, "malloc failed");
   return reinterpret_cast<void**>(result);
 }
 

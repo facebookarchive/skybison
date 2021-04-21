@@ -897,7 +897,7 @@ RawObject Runtime::newMmap() {
   return *result;
 }
 
-RawObject Runtime::newMutableBytesUninitialized(word size) {
+RawObject Runtime::newMutableBytesZeroed(word size) {
   if (size == 0) {
     return empty_mutable_bytes_;
   }
@@ -2327,11 +2327,10 @@ void Runtime::bytearrayEnsureCapacity(Thread* thread, const Bytearray& array,
   word new_capacity = newCapacity(curr_capacity, min_capacity);
   HandleScope scope(thread);
   MutableBytes old_bytes(&scope, array.items());
-  MutableBytes new_bytes(&scope, newMutableBytesUninitialized(new_capacity));
+  MutableBytes new_bytes(&scope, newMutableBytesZeroed(new_capacity));
   byte* dst = reinterpret_cast<byte*>(new_bytes.address());
   word old_length = array.numItems();
   old_bytes.copyTo(dst, old_length);
-  std::memset(dst + old_length, 0, new_capacity - old_length);
   array.setItems(*new_bytes);
 }
 
@@ -3275,11 +3274,9 @@ void Runtime::strArrayEnsureCapacity(Thread* thread, const StrArray& array,
   if (min_capacity <= curr_capacity) return;
   word new_capacity = newCapacity(curr_capacity, min_capacity);
   HandleScope scope(thread);
-  MutableBytes new_bytes(&scope, createMutableBytes(new_capacity));
-  byte* dst = reinterpret_cast<byte*>(new_bytes.address());
-  word old_length = array.numItems();
-  array.copyTo(dst, old_length);
-  std::memset(dst + old_length, 0, new_capacity - old_length);
+  MutableBytes new_bytes(&scope, newMutableBytesZeroed(new_capacity));
+  new_bytes.replaceFromWith(0, MutableBytes::cast(array.items()),
+                            array.numItems());
   array.setItems(*new_bytes);
 }
 
