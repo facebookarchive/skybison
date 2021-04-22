@@ -333,12 +333,56 @@ def latin_1_encode(data: str, errors: str = "strict"):
     return bytes(result), i
 
 
+def _raw_unicode_escape_decode(data: bytes, errors: str, index: int, out: _str_array):
+    """Tries to decode `data`, starting from `index`, into the `out` _str_array.
+    Only decodes raw unicode uXXXX or UXXXXXXXX.
+    If it runs into any errors, it returns a tuple of
+    (error_start, error_end, error_message),
+    If it finishes decoding, it returns a tuple of
+    (decoded, length)
+    """
+    _builtin()
+
+
 def raw_unicode_escape_decode(data, errors: str = "strict"):
-    _unimplemented()
+    if not _str_check(data):
+        _byteslike_guard(data)
+    if not _str_check(errors):
+        raise TypeError(
+            "raw_unicode_escape_decode() argument 2 must be str, not "
+            f"{type(errors).__name__}"
+        )
+    result = _str_array()
+    i = 0
+    decoded = ""
+    length = len(data)
+    while i < length:
+        decoded, i, error_msg = _raw_unicode_escape_decode(data, errors, i, result)
+        if error_msg:
+            data, i = _call_decode_errorhandler(
+                errors, data, result, error_msg, "rawunicodeescape", decoded, i
+            )
+    if _str_check(decoded):
+        return decoded, i
+    # The error handler was the last to write to the result
+    return str(result), i
+
+
+def _raw_unicode_escape_encode(data):
+    _builtin()
 
 
 def raw_unicode_escape_encode(data, errors: str = "strict"):
-    _unimplemented()
+    if not _str_check(data):
+        raise TypeError(
+            f"raw_unicode_escape_encode() argument 1 must be str, not {_type(data).__name__}"
+        )
+    if not _str_check(errors):
+        raise TypeError(
+            "raw_unicode_escape_encode() argument 2 must be str, not "
+            f"{type(errors).__name__}"
+        )
+    return _raw_unicode_escape_encode(data)
 
 
 def _unicode_escape_decode(data: bytes, errors: str, index: int, out: _str_array):

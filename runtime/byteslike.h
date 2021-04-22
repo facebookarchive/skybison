@@ -22,6 +22,8 @@ class Byteslike {
 
   void copyTo(byte* dst, word length) const;
 
+  void copyToStartAt(byte* dst, word length, word index) const;
+
   bool isValid() const;
 
   word length() const;
@@ -64,6 +66,11 @@ inline byte Byteslike::byteAt(word index) const {
 inline void Byteslike::copyTo(byte* dst, word length) const {
   DCHECK_BOUND(length, this->length());
   std::memcpy(dst, reinterpret_cast<void*>(address()), length);
+}
+
+inline void Byteslike::copyToStartAt(byte* dst, word length, word index) const {
+  DCHECK_BOUND(index + length, this->length());
+  std::memcpy(dst, reinterpret_cast<void*>(address() + index), length);
 }
 
 inline bool Byteslike::isValid() const {

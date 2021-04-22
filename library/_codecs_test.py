@@ -510,6 +510,11 @@ class DecodeUnicodeEscapeTests(unittest.TestCase):
         self.assertEqual(decoded, "hello\x95")
         self.assertEqual(consumed, 6)
 
+    def test_decode_unicode_escape_with_escaped_back_slash_returns_string(self):
+        decoded, consumed = _codecs.unicode_escape_decode(b"hello\\x95")
+        self.assertEqual(decoded, "hello\x95")
+        self.assertEqual(consumed, 9)
+
     def test_decode_unicode_escape_with_valid_hangul_returns_string(self):
         decoded, consumed = _codecs.unicode_escape_decode(
             b"\\N{HANGUL SYLLABLE BBYAENG}"
@@ -583,6 +588,133 @@ class DecodeUnicodeEscapeTests(unittest.TestCase):
         self.assertEqual(decoded, "ab\\yc")
         self.assertEqual(consumed, 5)
         self.assertEqual(first_invalid, 3)
+
+
+class DecodeRawUnicodeEscapeTests(unittest.TestCase):
+    def test_decode_raw_unicode_escape_with_non_bytes_first_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.raw_unicode_escape_decode([])
+
+    def test_decode_raw_unicode_escape_with_non_string_second_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            _codecs.raw_unicode_escape_decode(b"", [])
+
+    def test_decode_raw_unicode_escape_with_zero_length_returns_empty_string(self):
+        decoded, consumed = _codecs.raw_unicode_escape_decode(b"")
+        self.assertEqual(decoded, "")
+        self.assertEqual(consumed, 0)
+
+    def test_decode_raw_unicode_escape_with_well_formed_latin_1_returns_string(self):
+        decoded, consumed = _codecs.raw_unicode_escape_decode(b"hello\x95")
+        self.assertEqual(decoded, "hello\x95")
+        self.assertEqual(consumed, 6)
+
+    def test_decode_raw_unicode_escape_with_escaped_back_slash_returns_string(self):
+        decoded, consumed = _codecs.raw_unicode_escape_decode(b"hello\\x95")
+        self.assertEqual(decoded, "hello\\x95")
+        self.assertEqual(consumed, 9)
+
+    def test_decode_raw_unicode_escape_with_well_formed_latin_1_bytearray_returns_string(
+        self,
+    ):
+        decoded, consumed = _codecs.raw_unicode_escape_decode(bytearray(b"hello\x95"))
+        self.assertEqual(decoded, "hello\x95")
+        self.assertEqual(consumed, 6)
+
+    def test_decode_raw_unicode_escape_with_latin_1_bytearray_subclass_returns_string(
+        self,
+    ):
+        class B(bytearray):
+            pass
+
+        decoded, consumed = _codecs.raw_unicode_escape_decode(B(b"hello\x95"))
+        self.assertEqual(decoded, "hello\x95")
+        self.assertEqual(consumed, 6)
+
+    def test_decode_raw_unicode_escape_with_out_of_range_32_bit_unicode_raises_error(
+        self,
+    ):
+        with self.assertRaises(UnicodeDecodeError) as context:
+            _codecs.raw_unicode_escape_decode(b"\\U00FFFFFF")
+        exc = context.exception
+        self.assertEqual(exc.encoding, "rawunicodeescape")
+        self.assertEqual(exc.reason, "\\Uxxxxxxxx out of range")
+        self.assertEqual(exc.object, b"\\U00FFFFFF")
+        self.assertEqual(exc.start, 0)
+        self.assertEqual(exc.end, 10)
+
+    def test_decode_raw_unicode_escape_with_truncated_16_bit_unicode_raises_error(
+        self,
+    ):
+        with self.assertRaises(UnicodeDecodeError) as context:
+            _codecs.raw_unicode_escape_decode(b"\\u123")
+        exc = context.exception
+        self.assertEqual(exc.encoding, "rawunicodeescape")
+        self.assertEqual(exc.reason, "truncated \\uXXXX escape")
+        self.assertEqual(exc.object, b"\\u123")
+        self.assertEqual(exc.start, 0)
+        self.assertEqual(exc.end, 5)
+
+    def test_decode_raw_unicode_escape_with_truncated_32_bit_unicode_raises_error(
+        self,
+    ):
+        with self.assertRaises(UnicodeDecodeError) as context:
+            _codecs.raw_unicode_escape_decode(b"\\U001234")
+        exc = context.exception
+        self.assertEqual(exc.encoding, "rawunicodeescape")
+        self.assertEqual(exc.reason, "truncated \\UXXXXXXXX escape")
+        self.assertEqual(exc.object, b"\\U001234")
+        self.assertEqual(exc.start, 0)
+        self.assertEqual(exc.end, 8)
+
+    def test_decode_raw_unicode_escape_with_valid_unicode_returns_string(self):
+        decoded, consumed = _codecs.raw_unicode_escape_decode(b"\u26f7")
+        self.assertEqual(decoded, "\u26F7")
+        self.assertEqual(consumed, 6)
+
+    def test_decode_raw_unicode_escape_with_valid_cjk_ideograph_returns_string(self):
+        decoded, consumed = _codecs.unicode_escape_decode(b"\\u4DB0")
+        self.assertEqual(decoded, "\u4DB0")
+        self.assertEqual(consumed, 6)
+
+        decoded, consumed = _codecs.raw_unicode_escape_decode(b"\\U0002B75A")
+        self.assertEqual(decoded, "\U0002B75A")
+        self.assertEqual(consumed, 10)
+
+    def test_decode_raw_unicode_escape_with_valid_name_escape_returns_string(self):
+        decoded, consumed = _codecs.raw_unicode_escape_decode(
+            b"\\N{HANGUL SYLLABLE BBYAENG}"
+        )
+        self.assertEqual(decoded, "\\N{HANGUL SYLLABLE BBYAENG}")
+        self.assertEqual(consumed, 27)
+
+    def test_decode_raw_unicode_escape_with_invalid_word_returns_string(self):
+        decoded, consumed = _codecs.raw_unicode_escape_decode(b"\\N{INVALID}")
+        self.assertEqual(decoded, "\\N{INVALID}")
+        self.assertEqual(consumed, 11)
+
+    def test_decode_raw_unicode_escape_with_ignore_error_handler_returns_string(self):
+        decoded, consumed = _codecs.raw_unicode_escape_decode(b"ab\\U90gc", "ignore")
+        self.assertEqual(decoded, "abgc")
+        self.assertEqual(consumed, 8)
+
+    def test_decode_raw_unicode_escape_with_custom_error_handler_returns_string(self):
+        _codecs.register_error("test", lambda x: ("-testing-", x.end))
+        decoded, consumed = _codecs.raw_unicode_escape_decode(b"ab\\U90gc", "test")
+        self.assertEqual(decoded, "ab-testing-gc")
+        self.assertEqual(consumed, 8)
+
+    def test_decode_raw_unicode_escape_with_replace_error_handler_returns_string(self):
+        decoded, consumed = _codecs.raw_unicode_escape_decode(b"ab\\U90gc", "replace")
+        self.assertEqual(decoded, "ab\uFFFDgc")
+        self.assertEqual(consumed, 8)
+
+    def test_decode_raw_unicode_escape_with_trailing_back_slash_returns_string(
+        self,
+    ):
+        decoded, consumed = _codecs.raw_unicode_escape_decode(b"porcupine\\")
+        self.assertEqual(decoded, "porcupine\\")
+        self.assertEqual(consumed, 10)
 
 
 class DecodeUTF8Tests(unittest.TestCase):
@@ -957,6 +1089,45 @@ class EncodeUTF8Tests(unittest.TestCase):
         self.assertEqual(exc.object, "ab\udc80")
         self.assertEqual(exc.start, 2)
         self.assertEqual(exc.end, 3)
+
+
+class EncodeRawUnicodeEscapeTests(unittest.TestCase):
+    def test_encode_raw_unicode_escape_with_non_str_first_argument_raises_type_error(
+        self,
+    ):
+        with self.assertRaises(TypeError):
+            _codecs.raw_unicode_escape_encode([])
+
+    def test_encode_raw_unicode_escape_with_non_str_second_argument_raises_type_error(
+        self,
+    ):
+        with self.assertRaises(TypeError):
+            _codecs.raw_unicode_escape_encode("", [])
+
+    def test_encode_raw_unicode_escape_with_zero_length_returns_bytes(self):
+        encoded, consumed = _codecs.raw_unicode_escape_encode("")
+        self.assertEqual(encoded, b"")
+        self.assertEqual(consumed, 0)
+
+    def test_encode_raw_unicode_escape_with_ascii_returns_bytes(self):
+        encoded, consumed = _codecs.raw_unicode_escape_encode("hi")
+        self.assertEqual(encoded, b"hi")
+        self.assertEqual(consumed, 2)
+
+    def test_encode_raw_unicode_escape_with_latin_1_returns_bytes(self):
+        encoded, consumed = _codecs.raw_unicode_escape_encode("h\xe5")
+        self.assertEqual(encoded, b"h\xe5")
+        self.assertEqual(consumed, 2)
+
+    def test_encode_raw_unicode_escape_with_bmp_returns_bytes(self):
+        encoded, consumed = _codecs.raw_unicode_escape_encode("h\u1005")
+        self.assertEqual(encoded, b"h\\u1005")
+        self.assertEqual(consumed, 2)
+
+    def test_encode_raw_unicode_escape_with_supplementary_plane_returns_bytes(self):
+        encoded, consumed = _codecs.raw_unicode_escape_encode("h\U0001d1f0i")
+        self.assertEqual(encoded, b"h\\U0001d1f0i")
+        self.assertEqual(consumed, 3)
 
 
 @pyro_only

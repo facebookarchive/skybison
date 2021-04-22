@@ -1,6 +1,7 @@
 #include "builtins.h"
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
+#include "byteslike.h"
 #include "capi.h"
 #include "frame.h"
 #include "int-builtins.h"
@@ -9,6 +10,7 @@
 #include "str-builtins.h"
 #include "unicode-db.h"
 #include "unicode.h"
+#include "utils.h"
 
 namespace py {
 
@@ -414,7 +416,8 @@ RawObject FUNC(_codecs, _latin_1_encode)(Thread* thread, Arguments args) {
 // Decodes a sequence of hexadecimal encoded bytes into a codepoint or returns
 // a negative value if the value could not be decoded. Sets the start variable
 // to where decoding should continue.
-static int32_t decodeHexEscaped(const Bytes& bytes, word* start, word count) {
+static int32_t decodeHexEscaped(const Byteslike& bytes, word* start,
+                                word count) {
   DCHECK_BOUND(count, 8);
   word result = 0;
   word i = *start;
@@ -446,7 +449,7 @@ static int32_t decodeHexEscaped(const Bytes& bytes, word* start, word count) {
 // a negative value if no value should be written. Sets the iterating variable
 // to where decoding should continue, sets invalid_escape_index if it doesn't
 // recognize the escape sequence, and sets error_message if an error occurred.
-static int32_t decodeUnicodeEscaped(const Bytes& bytes, word* i,
+static int32_t decodeUnicodeEscaped(const Byteslike& bytes, word* i,
                                     word* invalid_escape_index,
                                     const char** error_message) {
   switch (byte ch = bytes.byteAt((*i)++)) {
@@ -577,16 +580,8 @@ RawObject FUNC(_codecs, _unicode_escape_decode)(Thread* thread,
   word index = intUnderlying(args.get(2)).asWord();
   StrArray dst(&scope, args.get(3));
 
-  word length;
-  Bytes bytes(&scope, Bytes::empty());
-  if (runtime->isInstanceOfBytearray(*data)) {
-    Bytearray array(&scope, *data);
-    bytes = array.items();
-    length = array.numItems();
-  } else {
-    bytes = bytesUnderlying(*data);
-    length = bytes.length();
-  }
+  Byteslike bytes(&scope, thread, *data);
+  word length = bytes.length();
   runtime->strArrayEnsureCapacity(thread, dst, length);
   word first_invalid_escape_index = -1;
   for (word i = index; i < length;) {
@@ -1112,4 +1107,160 @@ RawObject FUNC(_codecs, _bytearray_string_append)(Thread* thread,
   return NoneType::object();
 }
 
+RawObject FUNC(_codecs, _raw_unicode_escape_encode)(Thread* thread,
+                                                    Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Str data(&scope, strUnderlying(args.get(0)));
+  word size = data.codePointLength();
+  Bytearray dst(&scope, runtime->newBytearray());
+  word length = data.length();
+
+  // 2 byte codepoints can be expanded to 4 bytes + 2 escape characters
+  // 4 byte codepoints well be expanded to 8 bytes + 2 escape characters
+  // To be safe we double the bytecount and add space for 2 escape characters
+  // per codepoint.
+  word expanded_size = length * 2 + size * 2;
+  runtime->bytearrayEnsureCapacity(thread, dst, expanded_size);
+  word num_bytes;
+  for (word index = 0, byte_offset = thread->strOffset(data, index);
+       byte_offset < data.length(); index++) {
+    int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
+    byte_offset += num_bytes;
+    // U+0000-U+00ff range: Copy 8-bit characters as-is
+    if (codepoint < 0x100) {
+      bytearrayAdd(thread, runtime, dst, codepoint);
+    }
+    // U+0100-U+ffff range: Map 16-bit characters to '\uHHHH'
+    else if (codepoint < 0x10000) {
+      bytearrayAdd(thread, runtime, dst, '\\');
+      bytearrayAdd(thread, runtime, dst, 'u');
+      bytearrayAdd(thread, runtime, dst,
+                   Utils::kHexDigits[(codepoint >> 12) & 0xf]);
+      bytearrayAdd(thread, runtime, dst,
+                   Utils::kHexDigits[(codepoint >> 8) & 0xf]);
+      bytearrayAdd(thread, runtime, dst,
+                   Utils::kHexDigits[(codepoint >> 4) & 0xf]);
+      bytearrayAdd(thread, runtime, dst, Utils::kHexDigits[codepoint & 15]);
+    }
+    // U+010000-U+10ffff range: Map 32-bit characters to '\U00HHHHHH'
+    else {
+      CHECK(codepoint <= kMaxUnicode, "expected a valid unicode code point");
+      bytearrayAdd(thread, runtime, dst, '\\');
+      bytearrayAdd(thread, runtime, dst, 'U');
+      bytearrayAdd(thread, runtime, dst, '0');
+      bytearrayAdd(thread, runtime, dst, '0');
+      bytearrayAdd(thread, runtime, dst,
+                   Utils::kHexDigits[(codepoint >> 20) & 0xf]);
+      bytearrayAdd(thread, runtime, dst,
+                   Utils::kHexDigits[(codepoint >> 16) & 0xf]);
+      bytearrayAdd(thread, runtime, dst,
+                   Utils::kHexDigits[(codepoint >> 12) & 0xf]);
+      bytearrayAdd(thread, runtime, dst,
+                   Utils::kHexDigits[(codepoint >> 8) & 0xf]);
+      bytearrayAdd(thread, runtime, dst,
+                   Utils::kHexDigits[(codepoint >> 4) & 0xf]);
+      bytearrayAdd(thread, runtime, dst, Utils::kHexDigits[codepoint & 15]);
+    }
+  }
+  Object output_bytes(&scope, bytearrayAsBytes(thread, dst));
+  Object size_obj(&scope, runtime->newInt(size));
+  return runtime->newTupleWith2(output_bytes, size_obj);
+}
+
+RawObject FUNC(_codecs, _raw_unicode_escape_decode)(Thread* thread,
+                                                    Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object data(&scope, args.get(0));
+  Str errors(&scope, strUnderlying(args.get(1)));
+  word index = intUnderlying(args.get(2)).asWord();
+  StrArray dst(&scope, args.get(3));
+
+  Byteslike bytes(&scope, thread, *data);
+  word length = bytes.length();
+  runtime->strArrayEnsureCapacity(thread, dst, length);
+  for (word i = index; i < length;) {
+    const char* message = nullptr;
+    word start_pos = i;
+    byte ch = bytes.byteAt(i);
+    i++;
+    if (ch != '\\') {
+      if (ch <= kMaxASCII) {
+        runtime->strArrayAddASCII(thread, dst, ch);
+        continue;
+      }
+      Str temp(&scope, SmallStr::fromCodePoint(ch));
+      runtime->strArrayAddStr(thread, dst, temp);
+      continue;
+    }
+    if (i >= length) {
+      // \\ at end of string
+      runtime->strArrayAddASCII(thread, dst, '\\');
+    } else {
+      int32_t decoded;
+      ch = bytes.byteAt(i);
+      i++;
+      // Only care about \uXXXX and \UXXXXXXXX when decoding raw unicode.
+      switch (ch) {
+        // \uXXXX
+        case 'u': {
+          if ((decoded = decodeHexEscaped(bytes, &i, 4)) < 0) {
+            message = (decoded == -1 ? "truncated \\uXXXX escape"
+                                     : "illegal Unicode character");
+          }
+          break;
+        }
+        // \UXXXXXXXX
+        case 'U': {
+          if ((decoded = decodeHexEscaped(bytes, &i, 8)) < 0) {
+            if (decoded == -1) {
+              message = "truncated \\UXXXXXXXX escape";
+            } else if (decoded == -2) {
+              message = "\\Uxxxxxxxx out of range";
+            } else {
+              message = "illegal Unicode character";
+            }
+          }
+          break;
+        }
+        default: {
+          runtime->strArrayAddASCII(thread, dst, '\\');
+          decoded = ch;
+        }
+      }
+      if (decoded >= 0) {
+        if (decoded <= kMaxASCII) {
+          runtime->strArrayAddASCII(thread, dst, decoded);
+          continue;
+        }
+        Str temp(&scope, SmallStr::fromCodePoint(decoded));
+        runtime->strArrayAddStr(thread, dst, temp);
+        continue;
+      }
+    }
+    if (message != nullptr) {
+      SymbolId error_id = lookupSymbolForErrorHandler(errors);
+      switch (error_id) {
+        case ID(replace): {
+          Str temp(&scope, SmallStr::fromCodePoint(0xFFFD));
+          runtime->strArrayAddStr(thread, dst, temp);
+          break;
+        }
+        case ID(ignore):
+          break;
+        default: {
+          Object start_pos_obj(&scope, runtime->newInt(start_pos));
+          Object outpos_obj(&scope, runtime->newInt(i));
+          Object message_obj(&scope, runtime->newStrFromCStr(message));
+          return runtime->newTupleWith3(start_pos_obj, outpos_obj, message_obj);
+        }
+      }
+    }
+  }
+  Object dst_obj(&scope, runtime->strFromStrArray(dst));
+  Object length_obj(&scope, runtime->newInt(length));
+  Object message_obj(&scope, runtime->newStrFromCStr(""));
+  return runtime->newTupleWith3(dst_obj, length_obj, message_obj);
+}
 }  // namespace py
