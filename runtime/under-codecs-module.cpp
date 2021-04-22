@@ -35,8 +35,8 @@ static SymbolId lookupSymbolForErrorHandler(const Str& error) {
   return SymbolId::kInvalid;
 }
 
-static int asciiDecode(Thread* thread, const StrArray& dst, const Bytes& src,
-                       word start, word end) {
+static int asciiDecode(Thread* thread, const StrArray& dst,
+                       const Byteslike& src, word start, word end) {
   // TODO(T41032331): Implement a fastpass to read longs instead of chars
   Runtime* runtime = thread->runtime();
   for (word i = start; i < end; i++) {
@@ -57,16 +57,8 @@ RawObject FUNC(_codecs, _ascii_decode)(Thread* thread, Arguments args) {
   word index = intUnderlying(args.get(2)).asWord();
   StrArray dst(&scope, args.get(3));
 
-  word length;
-  Bytes bytes(&scope, Bytes::empty());
-  if (runtime->isInstanceOfBytearray(*data)) {
-    Bytearray array(&scope, *data);
-    bytes = array.items();
-    length = array.numItems();
-  } else {
-    bytes = bytesUnderlying(*data);
-    length = bytes.length();
-  }
+  Byteslike bytes(&scope, thread, *data);
+  word length = bytes.length();
   runtime->strArrayEnsureCapacity(thread, dst, length);
   word outpos = asciiDecode(thread, dst, bytes, index, length);
   if (outpos == length) {
@@ -176,7 +168,7 @@ RawObject FUNC(_codecs, _ascii_encode)(Thread* thread, Arguments args) {
 // -1 if no value should be written, and -2 if an error occurred. Sets the
 // iterating variable to where decoding should continue, and sets
 // invalid_escape_index if it doesn't recognize the escape sequence.
-static int32_t decodeEscaped(const Bytes& bytes, word* i,
+static int32_t decodeEscaped(const Byteslike& bytes, word* i,
                              word* invalid_escape_index) {
   word length = bytes.length();
   switch (byte ch = bytes.byteAt((*i)++)) {
@@ -264,7 +256,7 @@ RawObject FUNC(_codecs, _escape_decode)(Thread* thread, Arguments args) {
   }
   DCHECK(runtime->isInstanceOfStr(args.get(2)),
          "Third arg to _escape_decode must be str");
-  Bytes bytes(&scope, bytesUnderlying(*bytes_obj));
+  Byteslike bytes(&scope, thread, *bytes_obj);
   Str errors(&scope, strUnderlying(args.get(1)));
 
   Bytearray dst(&scope, runtime->newBytearray());
@@ -333,15 +325,8 @@ RawObject FUNC(_codecs, _latin_1_decode)(Thread* thread, Arguments args) {
   Object data(&scope, args.get(0));
   StrArray array(&scope, runtime->newStrArray());
   word length;
-  Bytes bytes(&scope, Bytes::empty());
-  if (runtime->isInstanceOfBytearray(*data)) {
-    Bytearray byte_array(&scope, *data);
-    bytes = byte_array.items();
-    length = byte_array.numItems();
-  } else {
-    bytes = bytesUnderlying(*data);
-    length = bytes.length();
-  }
+  Byteslike bytes(&scope, thread, *data);
+  length = bytes.length();
   runtime->strArrayEnsureCapacity(thread, array, length);
   // First, try a quick ASCII decoding
   word num_bytes = asciiDecode(thread, array, bytes, 0, length);
@@ -669,7 +654,8 @@ enum Utf8DecoderResult {
 // function returns specific values for errors to determine whether they could
 // be caused by incremental decoding, or if they would be an error no matter
 // what other bytes might be streamed in later.
-static Utf8DecoderResult isValidUtf8Codepoint(const Bytes& bytes, word index) {
+static Utf8DecoderResult isValidUtf8Codepoint(const Byteslike& bytes,
+                                              word index) {
   word length = bytes.length();
   byte ch = bytes.byteAt(index);
   if (ch <= kMaxASCII) {
@@ -781,16 +767,8 @@ RawObject FUNC(_codecs, _utf_8_decode)(Thread* thread, Arguments args) {
   StrArray dst(&scope, args.get(3));
 
   word length;
-  Bytes bytes(&scope, Bytes::empty());
-  // TODO(T45849551): Handle any bytes-like object
-  if (runtime->isInstanceOfBytearray(*data)) {
-    Bytearray array(&scope, *data);
-    bytes = array.items();
-    length = array.numItems();
-  } else {
-    bytes = bytesUnderlying(*data);
-    length = bytes.length();
-  }
+  Byteslike bytes(&scope, thread, *data);
+  length = bytes.length();
   runtime->strArrayEnsureCapacity(thread, dst, length);
   word i = asciiDecode(thread, dst, bytes, index, length);
   if (i == length) {
