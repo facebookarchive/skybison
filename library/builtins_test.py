@@ -5257,6 +5257,12 @@ class ExceptionTests(unittest.TestCase):
         self.assertIs(exc2.__context__, exc1)
         self.assertIs(exc1.__context__, None)
 
+    def test_dunder_dict_doesnt_expose_dunder_attrs(self):
+        instance_dict = Exception().__dict__
+        self.assertFalse(hasattr(instance_dict, "__cause__"))
+        self.assertFalse(hasattr(instance_dict, "__context__"))
+        self.assertFalse(hasattr(instance_dict, "__traceback__"))
+
     def test_reraise_exception_appends_traceback(self):
         def raise_exc():
             raise ValueError("Hello")

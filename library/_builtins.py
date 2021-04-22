@@ -41,6 +41,30 @@ def _async_generator_op_iter_get_state(obj):
     _builtin()
 
 
+def _base_exception_cause(self):
+    _builtin()
+
+
+def _base_exception_context(self):
+    _builtin()
+
+
+def _base_exception_set_cause(self, value):
+    _builtin()
+
+
+def _base_exception_set_context(self, value):
+    _builtin()
+
+
+def _base_exception_set_traceback(self, value):
+    _builtin()
+
+
+def _base_exception_traceback(self):
+    _builtin()
+
+
 def _bool_check(self):
     "$intrinsic$"
     _builtin()

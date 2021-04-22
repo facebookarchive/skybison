@@ -14,6 +14,12 @@ from _builtins import (
     _anyset_check,
     _async_generator_finalizer,
     _async_generator_guard,
+    _base_exception_cause,
+    _base_exception_context,
+    _base_exception_set_cause,
+    _base_exception_set_context,
+    _base_exception_set_traceback,
+    _base_exception_traceback,
     _bool_check,
     _bool_guard,
     _bound_method,
@@ -800,33 +806,9 @@ class object(bootstrap=True):  # noqa: E999
 
 
 class BaseException(bootstrap=True):
-    # Some properties of BaseException can be Unbound to indicate that they're
-    # nullptr from the C-API's point of view. We want to hide that distinction
-    # from managed code, which is done with descriptors created here.
-    #
-    # This function is only needed during class creation, so it's deleted at
-    # the end of the class body to avoid exposing it to user code.
-    def _maybe_unbound_property(name, dunder_name, target_type):  # noqa: B902
-        def get(instance):
-            value = _instance_getattr(instance, dunder_name)
-            return None if value is _Unbound else value
+    __cause__ = _property(_base_exception_cause, _base_exception_set_cause)
 
-        def set(instance, value):
-            if value is not None and not isinstance(value, target_type):
-                raise TypeError(
-                    f"exception {name} must be None or a {target_type.__name__}"
-                )
-            _instance_setattr(instance, dunder_name, value)
-
-        return property(get, set)
-
-    __cause__ = _maybe_unbound_property(
-        "cause", "__cause__", _builtin_type("BaseException")
-    )
-
-    __context__ = _maybe_unbound_property(
-        "context", "__context__", _builtin_type("BaseException")
-    )
+    __context__ = _property(_base_exception_context, _base_exception_set_context)
 
     def __init__(self, *args):
         _builtin()
@@ -848,13 +830,11 @@ class BaseException(bootstrap=True):
             return str(self.args[0])
         return str(self.args)
 
+    __traceback__ = _property(_base_exception_traceback, _base_exception_set_traceback)
+
     def with_traceback(self, tb):
         self.__traceback__ = tb
         return self
-
-    __traceback__ = _maybe_unbound_property("traceback", "__traceback__", traceback)
-
-    del _maybe_unbound_property
 
 
 class Exception(BaseException, bootstrap=True):

@@ -658,6 +658,93 @@ RawObject FUNC(_builtins, _async_generator_guard)(Thread* thread,
   return raiseRequiresFromCaller(thread, args, ID(async_generator));
 }
 
+RawObject FUNC(_builtins, _base_exception_cause)(Thread* thread,
+                                                 Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfBaseException(*self)) {
+    return thread->raiseRequiresType(self, ID(BaseException));
+  }
+  BaseException exc(&scope, *self);
+  return exc.cause();
+}
+
+RawObject FUNC(_builtins, _base_exception_context)(Thread* thread,
+                                                   Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfBaseException(*self)) {
+    return thread->raiseRequiresType(self, ID(BaseException));
+  }
+  BaseException exc(&scope, *self);
+  return exc.context();
+}
+
+RawObject FUNC(_builtins, _base_exception_set_cause)(Thread* thread,
+                                                     Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfBaseException(*self)) {
+    return thread->raiseRequiresType(self, ID(BaseException));
+  }
+  BaseException exc(&scope, *self);
+  Object value(&scope, args.get(1));
+  if (!value.isNoneType() && !runtime->isInstanceOfBaseException(*value)) {
+    return thread->raiseRequiresType(value, ID(BaseException));
+  }
+  exc.setCause(*value);
+  return NoneType::object();
+}
+
+RawObject FUNC(_builtins, _base_exception_set_context)(Thread* thread,
+                                                       Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfBaseException(*self)) {
+    return thread->raiseRequiresType(self, ID(BaseException));
+  }
+  BaseException exc(&scope, *self);
+  Object value(&scope, args.get(1));
+  if (!value.isNoneType() && !runtime->isInstanceOfBaseException(*value)) {
+    return thread->raiseRequiresType(value, ID(BaseException));
+  }
+  exc.setContext(*value);
+  return NoneType::object();
+}
+
+RawObject FUNC(_builtins, _base_exception_set_traceback)(Thread* thread,
+                                                         Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfBaseException(*self)) {
+    return thread->raiseRequiresType(self, ID(BaseException));
+  }
+  BaseException exc(&scope, *self);
+  Object value(&scope, args.get(1));
+  if (!value.isNoneType() && !value.isTraceback()) {
+    return thread->raiseRequiresType(value, ID(traceback));
+  }
+  exc.setTraceback(*value);
+  return NoneType::object();
+}
+
+RawObject FUNC(_builtins, _base_exception_traceback)(Thread* thread,
+                                                     Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self(&scope, args.get(0));
+  if (!runtime->isInstanceOfBaseException(*self)) {
+    return thread->raiseRequiresType(self, ID(BaseException));
+  }
+  BaseException exc(&scope, *self);
+  return exc.traceback();
+}
+
 RawObject FUNC(_builtins, _bool_check)(Thread*, Arguments args) {
   return Bool::fromBool(args.get(0).isBool());
 }

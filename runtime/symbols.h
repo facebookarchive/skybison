@@ -141,14 +141,12 @@ class Runtime;
   V(__bytes__)                                                                 \
   V(__cached__)                                                                \
   V(__call__)                                                                  \
-  V(__cause__)                                                                 \
   V(__class__)                                                                 \
   V(__class_getitem__)                                                         \
   V(__classcell__)                                                             \
   V(__code__)                                                                  \
   V(__complex__)                                                               \
   V(__contains__)                                                              \
-  V(__context__)                                                               \
   V(__debug__)                                                                 \
   V(__del__)                                                                   \
   V(__delattr__)                                                               \
@@ -250,7 +248,6 @@ class Runtime;
   V(__sub__)                                                                   \
   V(__suppress_context__)                                                      \
   V(__thisclass__)                                                             \
-  V(__traceback__)                                                             \
   V(__truediv__)                                                               \
   V(__weaklink__callback)                                                      \
   V(__weaklink__hash)                                                          \
@@ -278,6 +275,9 @@ class Runtime;
   V(_async_generator_athrow__generator)                                        \
   V(_async_generator_athrow__state)                                            \
   V(_async_generator_wrapped_value__value)                                     \
+  V(_base_exception__cause)                                                    \
+  V(_base_exception__context)                                                  \
+  V(_base_exception__traceback)                                                \
   V(_b2cratio)                                                                 \
   V(_buffer)                                                                   \
   V(_buffer_num_bytes)                                                         \
