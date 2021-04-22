@@ -548,11 +548,6 @@ RawObject METH(async_generator_aclose, throw)(Thread* thread, Arguments args) {
         LayoutId::kRuntimeError,
         "cannot reuse already awaited aclose()/athrow()");
   }
-  if (state == AsyncGeneratorOpIterBase::State::Init) {
-    return thread->raiseWithFmt(
-        LayoutId::kRuntimeError,
-        "cannot throw into async generator via aclose iterator before send");
-  }
 
   // Throw into generator
   AsyncGenerator generator(&scope, self.generator());
@@ -816,12 +811,6 @@ RawObject METH(async_generator_athrow, throw)(Thread* thread, Arguments args) {
     return thread->raiseWithFmt(
         LayoutId::kRuntimeError,
         "cannot reuse already awaited aclose()/athrow()");
-  }
-
-  if (state == AsyncGeneratorOpIterBase::State::Init) {
-    return thread->raiseWithFmt(
-        LayoutId::kRuntimeError,
-        "cannot throw into async generator via athrow iterator before send");
   }
 
   // Throw into generator

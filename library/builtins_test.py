@@ -901,17 +901,16 @@ class AsyncGeneratorAcloseTests(unittest.TestCase):
 
         self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
-    def test_throw_state_init_raises_runtime_error_state_init(self):
+    @supports_38_feature
+    def test_throw_state_init_with_non_exception_raises_type_error(self):
         async def f():
             yield 1
 
         # Make aclose op_iter
         op_iter = f().aclose()
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(TypeError):
             op_iter.throw(None, None, None)
-
-        self._assertOpIterState(op_iter, "_STATE_INIT")
 
     def test_throw_state_iter_generator_raise_propagates_state_iter(self):
         async def f():
@@ -1850,17 +1849,16 @@ class AsyncGeneratorAthrowTests(unittest.TestCase):
 
         self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
-    def test_throw_state_init_raises_runtime_error_state_init(self):
+    @supports_38_feature
+    def test_throw_state_init_with_non_exception_raises_type_error(self):
         async def f():
             yield 1
 
         # Make athrow op_iter
         op_iter = f().athrow(ValueError, 1)
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(TypeError):
             op_iter.throw(None, None, None)
-
-        self._assertOpIterState(op_iter, "_STATE_INIT")
 
     def test_throw_state_iter_generator_raise_propagates_state_iter(self):
         async def f():
