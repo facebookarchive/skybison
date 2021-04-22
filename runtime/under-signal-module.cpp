@@ -1,5 +1,7 @@
 #include "under-signal-module.h"
 
+#include <unistd.h>
+
 #include <cerrno>
 #include <csignal>
 
@@ -111,6 +113,22 @@ RawObject FUNC(_signal, signal)(Thread* thread, Arguments args) {
     return thread->raise(LayoutId::kOSError, NoneType::object());
   }
   return runtime->setSignalCallback(signum, callback);
+}
+
+RawObject FUNC(_signal, alarm)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfInt(*obj)) {
+    return thread->raiseRequiresType(obj, ID(int));
+  }
+  obj = intUnderlying(*obj);
+  if (obj.isLargeInt()) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "Python int too large to convert to C long");
+  }
+  word seconds_remaining = ::alarm(Int::cast(*obj).asWord());
+  return SmallInt::fromWord(seconds_remaining);
 }
 
 }  // namespace py

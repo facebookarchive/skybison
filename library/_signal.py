@@ -5,7 +5,7 @@ from _builtins import _builtin, _unimplemented
 
 
 def alarm(seconds):
-    _unimplemented()
+    _builtin()
 
 
 def default_int_handler(*args, **kwargs):
