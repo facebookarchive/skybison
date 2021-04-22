@@ -564,6 +564,13 @@ RawObject METH(async_generator_aclose, throw)(Thread* thread, Arguments args) {
                                 "async generator ignored GeneratorExit");
   }
 
+  if (res.isErrorException() &&
+      (thread->pendingExceptionMatches(LayoutId::kStopAsyncIteration) ||
+       thread->pendingExceptionMatches(LayoutId::kGeneratorExit))) {
+    thread->clearPendingException();
+    return thread->raiseStopIteration();
+  }
+
   // Propagate async-like yield.
   return *res;
 }
