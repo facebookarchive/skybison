@@ -1615,7 +1615,8 @@ class AsyncGeneratorAthrowTests(unittest.TestCase):
 
         self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
-    def test_send_state_init_arg_is_none_generator_raises_generator_exit_raises_stop_iteration_state_closed(  # noqa: B950
+    @supports_38_feature
+    def test_send_state_init_arg_is_none_generator_propagates_generator_exit(
         self,
     ):
         async def f():
@@ -1624,11 +1625,8 @@ class AsyncGeneratorAthrowTests(unittest.TestCase):
         # Make athrow op_iter
         op_iter = f().athrow(GeneratorExit)
 
-        with self.assertRaises(StopIteration) as exc:
+        with self.assertRaises(GeneratorExit):
             op_iter.send(None)
-        self.assertIsNone(exc.exception.value)
-
-        self._assertOpIterState(op_iter, "_STATE_CLOSED")
 
     def test_send_state_init_arg_is_none_generator_yields_raises_stop_iteration_with_value_state_iter(  # noqa: B950
         self,

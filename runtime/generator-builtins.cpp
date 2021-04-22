@@ -434,6 +434,7 @@ static RawObject asyncGenAcloseSend(Thread* thread, RawObject raw_self_obj,
                                     RawObject send_value_raw) {
   HandleScope scope(thread);
   Object self_obj(&scope, raw_self_obj);
+  Object send_value(&scope, send_value_raw);
   if (!self_obj.isAsyncGeneratorAclose()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "Must be called with an async_generator_aclose "
@@ -454,7 +455,6 @@ static RawObject asyncGenAcloseSend(Thread* thread, RawObject raw_self_obj,
   // to make progress through async-like yields.
   Object res(&scope, NoneType::object());
   AsyncGenerator generator(&scope, self.generator());
-  Object send_value(&scope, send_value_raw);
   if (state == AsyncGeneratorOpIterBase::State::Init) {
     if (!send_value.isNoneType()) {
       return thread->raiseWithFmt(
@@ -586,6 +586,7 @@ static RawObject asyncGenAsendSend(Thread* thread, RawObject raw_self_obj,
                                    RawObject send_value_raw) {
   HandleScope scope(thread);
   Object self_obj(&scope, raw_self_obj);
+  Object send_value(&scope, send_value_raw);
   if (!self_obj.isAsyncGeneratorAsend()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "Must be called with an async_generator_asend "
@@ -601,7 +602,6 @@ static RawObject asyncGenAsendSend(Thread* thread, RawObject raw_self_obj,
   }
   // Only use primed value for initial send, and only if no other specific value
   // is provided.
-  Object send_value(&scope, send_value_raw);
   if (state == AsyncGeneratorOpIterBase::State::Init) {
     if (send_value.isNoneType()) {
       send_value = self.value();
@@ -710,6 +710,7 @@ static RawObject asyncGenAthrowSend(Thread* thread, RawObject raw_self_obj,
                                     RawObject send_value_raw) {
   HandleScope scope(thread);
   Object self_obj(&scope, raw_self_obj);
+  Object send_value(&scope, send_value_raw);
   if (!self_obj.isAsyncGeneratorAthrow()) {
     return thread->raiseWithFmt(LayoutId::kTypeError,
                                 "Must be called with an async_generator_athrow "
@@ -730,7 +731,6 @@ static RawObject asyncGenAthrowSend(Thread* thread, RawObject raw_self_obj,
   // through async-like yields.
   Object res(&scope, NoneType::object());
   AsyncGenerator generator(&scope, self.generator());
-  Object send_value(&scope, send_value_raw);
   if (state == AsyncGeneratorOpIterBase::State::Init) {
     if (!send_value.isNoneType()) {
       return thread->raiseWithFmt(
@@ -747,14 +747,10 @@ static RawObject asyncGenAthrowSend(Thread* thread, RawObject raw_self_obj,
     // Handle StopAsyncIteration and GeneratorExit exceptions raised here.
     // Other exceptions are handled further down.
     if (res.isErrorException()) {
-      if (thread->pendingExceptionMatches(LayoutId::kStopAsyncIteration)) {
+      if (thread->pendingExceptionMatches(LayoutId::kStopAsyncIteration) ||
+          thread->pendingExceptionMatches(LayoutId::kGeneratorExit)) {
         self.setState(AsyncGeneratorOpIterBase::State::Closed);
         return *res;
-      }
-      if (thread->pendingExceptionMatches(LayoutId::kGeneratorExit)) {
-        self.setState(AsyncGeneratorOpIterBase::State::Closed);
-        thread->clearPendingException();
-        return thread->raiseStopIteration();
       }
     }
   } else {
