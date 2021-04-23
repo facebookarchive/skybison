@@ -6034,6 +6034,41 @@ class FunctionTests(unittest.TestCase):
         c.__dict__ = {"baf": 200}
         self.assertIs(c.baf, 200)
 
+    def test_dunder_get_with_single_none_argument_raises_type_error(self):
+        def foo():
+            pass
+
+        with self.assertRaises(TypeError) as context:
+            foo.__get__(None)
+        self.assertIn("__get__(None, None) is invalid", str(context.exception))
+
+    def test_dunder_get_with_none_instance_and_none_owner_raises_type_error(self):
+        def foo():
+            pass
+
+        with self.assertRaises(TypeError) as context:
+            foo.__get__(None, None)
+        self.assertIn("__get__(None, None) is invalid", str(context.exception))
+
+    def test_dunder_get_with_none_instance_and_any_owner_returns_self(self):
+        def foo():
+            pass
+
+        self.assertEqual(foo.__get__(None, foo), foo)
+        self.assertEqual(foo.__get__(None, type(foo)), foo)
+        self.assertEqual(foo.__get__(None, "anything"), foo)
+
+    def test_dunder_get_with_instance_binds_instance_to_method(self):
+        def foo():
+            pass
+
+        self.assertEqual(foo.__get__(foo).__self__, foo)
+        self.assertEqual(foo.__get__(foo, foo).__self__, foo)
+        self.assertEqual(foo.__get__(foo, "anything").__self__, foo)
+        self.assertEqual(foo.__get__("anything").__self__, "anything")
+        self.assertEqual(foo.__get__("anything", foo).__self__, "anything")
+        self.assertEqual(foo.__get__("anything", "anything").__self__, "anything")
+
     def test_dunder_globals_returns_identical_object(self):
         def foo():
             pass

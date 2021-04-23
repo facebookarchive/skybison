@@ -375,7 +375,7 @@ class function(bootstrap=True):
 
     __dict__ = _property(_function_dict, _function_set_dict)
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance, owner=None):
         _builtin()
 
     __globals__ = _property(_function_globals)

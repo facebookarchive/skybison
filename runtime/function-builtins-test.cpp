@@ -62,19 +62,6 @@ TEST_F(FunctionBuiltinsTest, DunderGetWithNonNoneInstanceReturnsBoundMethod) {
   EXPECT_EQ(BoundMethod::cast(*result).function(), *func);
 }
 
-TEST_F(FunctionBuiltinsTest,
-       DunderGetWithNoneInstanceAndNoneTypeReturnsBoundMethod) {
-  HandleScope scope(thread_);
-  Object func(&scope, newEmptyFunction());
-  Object none(&scope, NoneType::object());
-  Type none_type(&scope, runtime_->typeOf(*none));
-  Object result(&scope,
-                runBuiltin(METH(function, __get__), func, none, none_type));
-  ASSERT_TRUE(result.isBoundMethod());
-  EXPECT_EQ(BoundMethod::cast(*result).self(), *none);
-  EXPECT_EQ(BoundMethod::cast(*result).function(), *func);
-}
-
 TEST_F(FunctionBuiltinsTest, DunderGetWithNoneInstanceReturnsSelf) {
   HandleScope scope(thread_);
   Object func(&scope, newEmptyFunction());

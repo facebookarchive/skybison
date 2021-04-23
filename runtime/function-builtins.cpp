@@ -110,14 +110,11 @@ RawObject METH(function, __get__)(Thread* thread, Arguments args) {
   // When `instance is None` return the plain function because we are doing a
   // lookup on a class.
   if (instance.isNoneType()) {
-    // The unfortunate exception to the rule is looking up a descriptor on the
-    // `None` object itself. We make it work by always returning a bound method
-    // when `type is type(None)` and special casing the lookup of attributes of
-    // `type(None)` to skip `__get__` in `Runtime::classGetAttr()`.
-    Type type(&scope, args.get(2));
-    if (type.builtinBase() != LayoutId::kNoneType) {
-      return *self;
+    if (args.get(2).isNoneType()) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "__get__(None, None) is invalid");
     }
+    return *self;
   }
   return thread->runtime()->newBoundMethod(self, instance);
 }
