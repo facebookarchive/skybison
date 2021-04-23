@@ -6036,17 +6036,15 @@ static RawObject resumeGeneratorImpl(Thread* thread,
   // Return now if generator ended with exception.
   if (result.isErrorException()) {
     if (thread->pendingExceptionMatches(LayoutId::kStopIteration)) {
-      thread->clearPendingException();
-      return thread->raiseWithFmt(LayoutId::kRuntimeError,
-                                  generator.isAsyncGenerator()
-                                      ? "async generator raised StopIteration"
-                                      : "coroutine raised StopIteration");
+      return thread->raiseWithFmtChainingPendingAsCause(
+          LayoutId::kRuntimeError, generator.isAsyncGenerator()
+                                       ? "async generator raised StopIteration"
+                                       : "coroutine raised StopIteration");
     }
     if (generator.isAsyncGenerator() &&
         thread->pendingExceptionMatches(LayoutId::kStopAsyncIteration)) {
-      thread->clearPendingException();
-      return thread->raiseWithFmt(LayoutId::kRuntimeError,
-                                  "async generator raised StopAsyncIteration");
+      return thread->raiseWithFmtChainingPendingAsCause(
+          LayoutId::kRuntimeError, "async generator raised StopAsyncIteration");
     }
     return *result;
   }
