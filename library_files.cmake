@@ -174,7 +174,6 @@ test/test_peepholer.py
 test/test_range.py
 test/test_tuple.py
 test_support.py
-tests/test_unittest.py
 threading.py
 threading_test.py
 time_test.py

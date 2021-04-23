@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 
 class BasicTests(unittest.TestCase):
-    def test_assert_negative_true(self):
+    def test_assert_true(self):
         self.assertTrue(1 == 1)
 
     def test_assert_false(self):
