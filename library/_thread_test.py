@@ -5,6 +5,8 @@ import contextlib
 import time
 import unittest
 
+from test_support import supports_38_feature
+
 
 _thread._enable_threads = True
 
@@ -21,6 +23,7 @@ class UnderThreadTest(unittest.TestCase):
         self.assertIsInstance(new_id, int)
         self.assertNotEqual(new_id, current_id)
 
+    @supports_38_feature
     def test_start_new_thread_with_exception_prints_error(self):
         def bootstrap():
             raise RuntimeError
@@ -32,12 +35,11 @@ class UnderThreadTest(unittest.TestCase):
             self.maxDiff = 10000
             self.assertRegex(
                 stderr.getvalue(),
-                r"""Unhandled exception in thread started by <function .*bootstrap at 0x[0-9a-f]+>
+                r"""Exception ignored in thread started by: <function .*bootstrap at 0x[0-9a-f]+>
 Traceback \(most recent call last\):
   File ".*/_thread_test.py", line \d+, in bootstrap
     raise RuntimeError
-RuntimeError
-""",
+RuntimeError""",
             )
 
 

@@ -27,6 +27,7 @@ static void* threadBegin(void* arg) {
       if (thread->pendingExceptionMatches(LayoutId::kSystemExit)) {
         thread->clearPendingException();
       } else {
+        // TODO(T89490118): call sys.unraisablehook instead
         Object exc(&scope, thread->pendingExceptionType());
         Object val(&scope, thread->pendingExceptionValue());
         Object tb(&scope, thread->pendingExceptionTraceback());
@@ -35,7 +36,7 @@ static void* threadBegin(void* arg) {
         Object func_str(&scope,
                         thread->invokeFunction1(ID(builtins), ID(str), func));
         if (func_str.isErrorException()) {
-          writeStderr(thread, "Unhandled exception in thread started by \n");
+          writeStderr(thread, "Exception ignored in thread started by: \n");
         } else {
           Str str(&scope, strUnderlying(*func_str));
           word length = str.length();
@@ -43,7 +44,7 @@ static void* threadBegin(void* arg) {
               reinterpret_cast<byte*>(std::malloc(length + 1)));
           str.copyTo(buf.get(), length);
           buf[length] = '\0';
-          writeStderr(thread, "Unhandled exception in thread started by %s\n",
+          writeStderr(thread, "Exception ignored in thread started by: %s\n",
                       buf.get());
         }
 
