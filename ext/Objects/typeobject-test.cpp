@@ -521,6 +521,59 @@ TEST_F(TypeExtensionApiTest,
   EXPECT_TRUE(isLongEqualsLong(basicsize, sizeof(PyObject)));
 }
 
+TEST_F(TypeExtensionApiTest,
+       MembersWithoutDunderDictoffsetReturnsTypeWithoutDunderDict) {
+  PyType_Slot slots[] = {
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {"foo.Bar", 0, 0, Py_TPFLAGS_DEFAULT, slots};
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+
+  // Cannot set arbitrary attributes on instances.
+  PyObjectPtr instance(PyObject_CallObject(type, nullptr));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr value(PyUnicode_FromString("world"));
+  EXPECT_EQ(PyObject_SetAttrString(instance, "hello", value), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_AttributeError));
+  PyErr_Clear();
+
+  // Has no `__dict__`.
+  EXPECT_EQ(PyObject_GetAttrString(instance, "__dict__"), nullptr);
+  PyErr_Clear();
+}
+
+TEST_F(TypeExtensionApiTest,
+       MembersWithDunderDictoffsetReturnsTypeWithDunderDict) {
+  struct BarObject {
+    PyObject_HEAD
+    PyObject* dict;
+  };
+  static PyMemberDef members[2];
+  members[0] = {"__dictoffset__", T_PYSSIZET, offsetof(BarObject, dict),
+                READONLY};
+  members[1] = {nullptr};
+
+  PyType_Slot slots[] = {
+      {Py_tp_members, members},
+      {0, nullptr},
+  };
+  static PyType_Spec spec;
+  spec = {"foo.Bar", 0, sizeof(BarObject), Py_TPFLAGS_DEFAULT, slots};
+  PyObjectPtr type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+
+  // Can set arbitrary attributes on instances.
+  PyObjectPtr instance(PyObject_CallObject(type, nullptr));
+  ASSERT_NE(instance, nullptr);
+  PyObjectPtr value(PyUnicode_FromString("world"));
+  EXPECT_EQ(PyObject_SetAttrString(instance, "hello", value), 0);
+  PyObjectPtr item(PyObject_GetAttrString(instance, "hello"));
+  EXPECT_TRUE(isUnicodeEqualsCStr(item, "world"));
+}
+
 TEST_F(TypeExtensionApiTest, MemberDescriptorTypeMatchesPyTpMembers) {
   struct BarObject {
     PyObject_HEAD

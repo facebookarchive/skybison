@@ -1337,12 +1337,17 @@ static RawObject addMembers(Thread* thread, const Type& type,
   Object property(&scope, NoneType::object());
   Object name_obj(&scope, NoneType::object());
   for (PyMemberDef* member = members; member->name != nullptr; member++) {
+    const char* name = member->name;
+    if (std::strcmp(name, "__dictoffset__") == 0 ||
+        std::strcmp(name, "__weaklistoffset__") == 0) {
+      continue;
+    }
     getter = memberGetter(thread, member);
     if (getter.isErrorException()) return *getter;
     setter = memberSetter(thread, member);
     if (setter.isErrorException()) return *setter;
     property = runtime->newProperty(getter, setter, none);
-    name_obj = Runtime::internStrFromCStr(thread, member->name);
+    name_obj = Runtime::internStrFromCStr(thread, name);
     typeAtPut(thread, type, name_obj, property);
   }
   return NoneType::object();
@@ -1773,7 +1778,6 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
 
   // Create a new type for the PyTypeObject with an instance layout
   // matching the layout of RawNativeProxy
-  // TODO(T53922464): Set the layout to the dict overflow state
   // TODO(T54277314): Fill the dictionary before creating the type
   Tuple bases_obj(&scope, runtime->implicitBases());
   if (bases != nullptr) bases_obj = ApiHandle::fromPyObject(bases)->asObject();
@@ -1827,8 +1831,26 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
     flags |= Type::Flag::kIsFixedAttributeBase;
   }
 
-  // TODO(T53922464) Check for `__dictoffset__` tp_members and set accordingly.
-  bool add_instance_dict = true;
+  PyMemberDef* members = nullptr;
+  word dictoffset = 0;
+  for (PyType_Slot* slot = spec->slots; slot->slot != 0; slot++) {
+    if (slot->slot != Py_tp_members) continue;
+    members = static_cast<PyMemberDef*>(slot->pfunc);
+    for (PyMemberDef* member = members; member->name != nullptr; member++) {
+      const char* name = member->name;
+      if (std::strcmp(name, "__weaklistoffset__") == 0) {
+        DCHECK(member->type == T_PYSSIZET, "must be T_PYSSIZET");
+        DCHECK(member->flags == READONLY, "must be readonly");
+        // weaklistoffset not used yet.
+      } else if (std::strcmp(name, "__dictoffset__") == 0) {
+        DCHECK(member->type == T_PYSSIZET, "must be T_PYSSIZET");
+        DCHECK(member->flags == READONLY, "must be readonly");
+        dictoffset = member->offset;
+      }
+    }
+  }
+
+  bool add_instance_dict = (dictoffset != 0);
   Type metaclass(&scope, runtime->typeAt(LayoutId::kType));
   Object type_obj(&scope, typeNew(thread, metaclass, type_name, bases_obj, dict,
                                   static_cast<Type::Flag>(flags),
@@ -1867,8 +1889,6 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
 
   if (addMethods(thread, type).isError()) return nullptr;
 
-  PyMemberDef* members =
-      static_cast<PyMemberDef*>(typeSlotAt(type, Py_tp_members));
   if (addMembers(thread, type, members).isErrorException()) return nullptr;
 
   if (addGetSet(thread, type).isError()) return nullptr;
