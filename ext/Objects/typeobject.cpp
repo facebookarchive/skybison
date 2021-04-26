@@ -61,8 +61,6 @@ PY_EXPORT unsigned long PyType_GetFlags(PyTypeObject* type_obj) {
   return typeSlotUWordAt(type, kSlotFlags);
 }
 
-namespace {
-
 // PyType_FromSpec() operator support
 //
 // The functions and data in this namespace, culminating in addOperators(), are
@@ -79,7 +77,7 @@ namespace {
 // can easily template the trampolines and/or the wrapper functions, but this
 // keeps the code compact for now.
 
-ALIGN_16 RawObject wrapUnaryfunc(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapUnaryfunc(Thread* thread, Arguments args) {
   unaryfunc func = reinterpret_cast<unaryfunc>(getNativeFunc(thread));
   PyObject* o = ApiHandle::newReference(thread->runtime(), args.get(0));
   PyObject* result = (*func)(o);
@@ -89,8 +87,8 @@ ALIGN_16 RawObject wrapUnaryfunc(Thread* thread, Arguments args) {
 
 // Common work for hashfunc, lenfunc, and inquiry, all of which take a single
 // PyObject* and return an integral value.
-template <class cfunc, class RetFunc>
-RawObject wrapIntegralfunc(Thread* thread, Arguments args, RetFunc ret) {
+template <typename cfunc, typename RetFunc>
+static RawObject wrapIntegralfunc(Thread* thread, Arguments args, RetFunc ret) {
   cfunc func = reinterpret_cast<cfunc>(getNativeFunc(thread));
   PyObject* o = ApiHandle::newReference(thread->runtime(), args.get(0));
   auto result = func(o);
@@ -99,24 +97,24 @@ RawObject wrapIntegralfunc(Thread* thread, Arguments args, RetFunc ret) {
   return ret(result);
 }
 
-ALIGN_16 RawObject wrapHashfunc(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapHashfunc(Thread* thread, Arguments args) {
   return wrapIntegralfunc<hashfunc>(thread, args, [thread](Py_hash_t hash) {
     return thread->runtime()->newInt(hash);
   });
 }
 
-ALIGN_16 RawObject wrapLenfunc(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapLenfunc(Thread* thread, Arguments args) {
   return wrapIntegralfunc<lenfunc>(thread, args, [thread](Py_ssize_t len) {
     return thread->runtime()->newInt(len);
   });
 }
 
-ALIGN_16 RawObject wrapInquirypred(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapInquirypred(Thread* thread, Arguments args) {
   return wrapIntegralfunc<inquiry>(
       thread, args, [](int result) { return Bool::fromBool(result); });
 }
 
-ALIGN_16 RawObject wrapBinaryfunc(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapBinaryfunc(Thread* thread, Arguments args) {
   binaryfunc func = reinterpret_cast<binaryfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* o1 = ApiHandle::newReference(runtime, args.get(0));
@@ -127,7 +125,8 @@ ALIGN_16 RawObject wrapBinaryfunc(Thread* thread, Arguments args) {
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
-ALIGN_16 RawObject wrapBinaryfuncSwapped(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapBinaryfuncSwapped(Thread* thread,
+                                                Arguments args) {
   binaryfunc func = reinterpret_cast<binaryfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* o1 = ApiHandle::newReference(runtime, args.get(0));
@@ -138,7 +137,8 @@ ALIGN_16 RawObject wrapBinaryfuncSwapped(Thread* thread, Arguments args) {
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
-RawObject wrapTernaryfuncImpl(Thread* thread, Arguments args, bool swap) {
+static RawObject wrapTernaryfuncImpl(Thread* thread, Arguments args,
+                                     bool swap) {
   ternaryfunc func = reinterpret_cast<ternaryfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::newReference(runtime, args.get(swap ? 1 : 0));
@@ -156,15 +156,16 @@ RawObject wrapTernaryfuncImpl(Thread* thread, Arguments args, bool swap) {
 //   normal arguments, with the 3rd argument defaulting to None.
 // - wrapVarkwTernaryfunc(): Wraps a C function expecting a self argument, a
 //   tuple of positional arguments and an optional dict of keyword arguments.
-ALIGN_16 RawObject wrapTernaryfunc(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapTernaryfunc(Thread* thread, Arguments args) {
   return wrapTernaryfuncImpl(thread, args, false);
 }
 
-ALIGN_16 RawObject wrapTernaryfuncSwapped(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapTernaryfuncSwapped(Thread* thread,
+                                                 Arguments args) {
   return wrapTernaryfuncImpl(thread, args, true);
 }
 
-ALIGN_16 RawObject wrapTpNew(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapTpNew(Thread* thread, Arguments args) {
   ternaryfunc func = reinterpret_cast<ternaryfunc>(getNativeFunc(thread));
 
   HandleScope scope(thread);
@@ -195,7 +196,7 @@ ALIGN_16 RawObject wrapTpNew(Thread* thread, Arguments args) {
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
-bool checkSelfWithSlotType(Thread* thread, const Object& self) {
+static bool checkSelfWithSlotType(Thread* thread, const Object& self) {
   HandleScope scope(thread);
   Function function(&scope, thread->currentFrame()->function());
   Type expected_type(&scope, slotWrapperFunctionType(function));
@@ -210,7 +211,7 @@ bool checkSelfWithSlotType(Thread* thread, const Object& self) {
   return true;
 }
 
-ALIGN_16 RawObject wrapVarkwTernaryfunc(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapVarkwTernaryfunc(Thread* thread, Arguments args) {
   ternaryfunc func = reinterpret_cast<ternaryfunc>(getNativeFunc(thread));
 
   HandleScope scope(thread);
@@ -231,7 +232,7 @@ ALIGN_16 RawObject wrapVarkwTernaryfunc(Thread* thread, Arguments args) {
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
-ALIGN_16 RawObject wrapSetattr(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapSetattr(Thread* thread, Arguments args) {
   setattrofunc func = reinterpret_cast<setattrofunc>(getNativeFunc(thread));
 
   Runtime* runtime = thread->runtime();
@@ -246,7 +247,7 @@ ALIGN_16 RawObject wrapSetattr(Thread* thread, Arguments args) {
   return NoneType::object();
 }
 
-ALIGN_16 RawObject wrapDelattr(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapDelattr(Thread* thread, Arguments args) {
   setattrofunc func = reinterpret_cast<setattrofunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::newReference(runtime, args.get(0));
@@ -259,7 +260,7 @@ ALIGN_16 RawObject wrapDelattr(Thread* thread, Arguments args) {
 }
 
 template <CompareOp op>
-ALIGN_16 RawObject wrapRichcompare(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapRichcompare(Thread* thread, Arguments args) {
   richcmpfunc func = reinterpret_cast<richcmpfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::newReference(runtime, args.get(0));
@@ -270,7 +271,7 @@ ALIGN_16 RawObject wrapRichcompare(Thread* thread, Arguments args) {
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
-ALIGN_16 RawObject wrapNext(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapNext(Thread* thread, Arguments args) {
   unaryfunc func = reinterpret_cast<unaryfunc>(getNativeFunc(thread));
   PyObject* self = ApiHandle::newReference(thread->runtime(), args.get(0));
   PyObject* result = (*func)(self);
@@ -281,7 +282,7 @@ ALIGN_16 RawObject wrapNext(Thread* thread, Arguments args) {
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
-ALIGN_16 RawObject wrapDescrGet(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapDescrGet(Thread* thread, Arguments args) {
   descrgetfunc func = reinterpret_cast<descrgetfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::newReference(runtime, args.get(0));
@@ -304,7 +305,7 @@ ALIGN_16 RawObject wrapDescrGet(Thread* thread, Arguments args) {
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
-ALIGN_16 RawObject wrapDescrSet(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapDescrSet(Thread* thread, Arguments args) {
   descrsetfunc func = reinterpret_cast<descrsetfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::newReference(runtime, args.get(0));
@@ -318,7 +319,7 @@ ALIGN_16 RawObject wrapDescrSet(Thread* thread, Arguments args) {
   return NoneType::object();
 }
 
-ALIGN_16 RawObject wrapDescrDelete(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapDescrDelete(Thread* thread, Arguments args) {
   descrsetfunc func = reinterpret_cast<descrsetfunc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::newReference(runtime, args.get(0));
@@ -330,7 +331,7 @@ ALIGN_16 RawObject wrapDescrDelete(Thread* thread, Arguments args) {
   return NoneType::object();
 }
 
-ALIGN_16 RawObject wrapInit(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapInit(Thread* thread, Arguments args) {
   initproc func = reinterpret_cast<initproc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::newReference(runtime, args.get(0));
@@ -346,7 +347,7 @@ ALIGN_16 RawObject wrapInit(Thread* thread, Arguments args) {
   return NoneType::object();
 }
 
-ALIGN_16 RawObject wrapDel(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapDel(Thread* thread, Arguments args) {
   destructor func = reinterpret_cast<destructor>(getNativeFunc(thread));
   PyObject* self = ApiHandle::newReference(thread->runtime(), args.get(0));
   func(self);
@@ -354,7 +355,7 @@ ALIGN_16 RawObject wrapDel(Thread* thread, Arguments args) {
   return NoneType::object();
 }
 
-ALIGN_16 RawObject wrapObjobjargproc(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapObjobjargproc(Thread* thread, Arguments args) {
   objobjargproc func = reinterpret_cast<objobjargproc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::newReference(runtime, args.get(0));
@@ -368,7 +369,7 @@ ALIGN_16 RawObject wrapObjobjargproc(Thread* thread, Arguments args) {
   return NoneType::object();
 }
 
-ALIGN_16 RawObject wrapObjobjproc(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapObjobjproc(Thread* thread, Arguments args) {
   objobjproc func = reinterpret_cast<objobjproc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::newReference(runtime, args.get(0));
@@ -380,7 +381,7 @@ ALIGN_16 RawObject wrapObjobjproc(Thread* thread, Arguments args) {
   return Bool::fromBool(res);
 }
 
-ALIGN_16 RawObject wrapDelitem(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapDelitem(Thread* thread, Arguments args) {
   objobjargproc func = reinterpret_cast<objobjargproc>(getNativeFunc(thread));
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::newReference(runtime, args.get(0));
@@ -407,7 +408,7 @@ static RawObject makeIndex(Thread* thread, const Object& obj) {
   return *i;
 }
 
-ALIGN_16 RawObject wrapIndexargfunc(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapIndexargfunc(Thread* thread, Arguments args) {
   ssizeargfunc func = reinterpret_cast<ssizeargfunc>(getNativeFunc(thread));
 
   HandleScope scope(thread);
@@ -442,7 +443,7 @@ static RawObject normalizeIndex(Thread* thread, const Object& self,
   return thread->runtime()->newInt(i);
 }
 
-ALIGN_16 RawObject wrapSqItem(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapSqItem(Thread* thread, Arguments args) {
   ssizeargfunc func = reinterpret_cast<ssizeargfunc>(getNativeFunc(thread));
 
   HandleScope scope(thread);
@@ -456,7 +457,7 @@ ALIGN_16 RawObject wrapSqItem(Thread* thread, Arguments args) {
   return ApiHandle::checkFunctionResult(thread, result);
 }
 
-ALIGN_16 RawObject wrapSqSetitem(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapSqSetitem(Thread* thread, Arguments args) {
   ssizeobjargproc func =
       reinterpret_cast<ssizeobjargproc>(getNativeFunc(thread));
 
@@ -475,7 +476,7 @@ ALIGN_16 RawObject wrapSqSetitem(Thread* thread, Arguments args) {
   return NoneType::object();
 }
 
-ALIGN_16 RawObject wrapSqDelitem(Thread* thread, Arguments args) {
+static ALIGN_16 RawObject wrapSqDelitem(Thread* thread, Arguments args) {
   ssizeobjargproc func =
       reinterpret_cast<ssizeobjargproc>(getNativeFunc(thread));
 
@@ -770,7 +771,7 @@ static const SlotDef kSlotdefs[] = {
 // a wrapper function to call the slot from Python.
 //
 // Returns Error if an exception was raised at any point, None otherwise.
-RawObject addOperators(Thread* thread, const Type& type) {
+static RawObject addOperators(Thread* thread, const Type& type) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Str type_name(&scope, type.name());
@@ -834,7 +835,7 @@ RawObject addOperators(Thread* thread, const Type& type) {
   return NoneType::object();
 }
 
-PyObject* allocatePyObject(const Type& type, Py_ssize_t nitems) {
+static PyObject* allocatePyObject(const Type& type, Py_ssize_t nitems) {
   uword basic_size = typeSlotUWordAt(type, kSlotBasicSize);
   uword item_size = typeSlotUWordAt(type, kSlotItemSize);
   Py_ssize_t size = Utils::roundUp(nitems * item_size + basic_size, kWordSize);
@@ -852,8 +853,8 @@ PyObject* allocatePyObject(const Type& type, Py_ssize_t nitems) {
   return result;
 }
 
-PyObject* superclassTpNew(PyTypeObject* typeobj, PyObject* args,
-                          PyObject* kwargs) {
+static PyObject* superclassTpNew(PyTypeObject* typeobj, PyObject* args,
+                                 PyObject* kwargs) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
@@ -906,7 +907,7 @@ PyObject* superclassTpNew(PyTypeObject* typeobj, PyObject* args,
 }
 
 // tp_new slot implementation that delegates to a Type's __new__ attribute.
-PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
+static PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
   Thread* thread = Thread::current();
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -949,7 +950,7 @@ PyObject* slotTpNew(PyObject* type, PyObject* args, PyObject* kwargs) {
 // This performs similar duties to update_one_slot() in CPython, but it's
 // drastically simpler. This is intentional, and will only change if a real C
 // extension exercises slots in a way that exposes the differences.
-void* defaultSlot(int slot_id) {
+static void* defaultSlot(int slot_id) {
   switch (slot_id) {
     case Py_tp_new:
       return reinterpret_cast<void*>(&slotTpNew);
@@ -958,11 +959,9 @@ void* defaultSlot(int slot_id) {
   }
 }
 
-}  // namespace
+static int emptyClear(PyObject*) { return 0; }
 
-int emptyClear(PyObject*) { return 0; }
-
-int emptyTraverse(PyObject*, visitproc, void*) { return 0; }
+static int emptyTraverse(PyObject*, visitproc, void*) { return 0; }
 
 static void builtinDealloc(PyObject* self) {
   // This function is called for instances of non-heaptypes (most builtin types)
@@ -1296,7 +1295,7 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
   }
 }
 
-RawObject addMethods(Thread* thread, const Type& type) {
+static RawObject addMethods(Thread* thread, const Type& type) {
   HandleScope scope(thread);
   PyMethodDef* methods =
       static_cast<PyMethodDef*>(typeSlotAt(type, Py_tp_methods));
@@ -1327,7 +1326,7 @@ RawObject addMethods(Thread* thread, const Type& type) {
   return NoneType::object();
 }
 
-RawObject addMembers(Thread* thread, const Type& type) {
+static RawObject addMembers(Thread* thread, const Type& type) {
   HandleScope scope(thread);
   PyMemberDef* members =
       static_cast<PyMemberDef*>(typeSlotAt(type, Py_tp_members));
@@ -1346,7 +1345,7 @@ RawObject addMembers(Thread* thread, const Type& type) {
   return NoneType::object();
 }
 
-RawObject addGetSet(Thread* thread, const Type& type) {
+static RawObject addGetSet(Thread* thread, const Type& type) {
   HandleScope scope(thread);
   PyGetSetDef* getsets =
       static_cast<PyGetSetDef*>(typeSlotAt(type, Py_tp_getset));
