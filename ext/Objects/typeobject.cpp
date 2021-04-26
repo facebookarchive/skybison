@@ -1036,12 +1036,12 @@ PY_EXPORT PyObject* PyType_FromSpec(PyType_Spec* spec) {
   return PyType_FromSpecWithBases(spec, nullptr);
 }
 
-static RawObject memberGetter(Thread* thread, PyMemberDef& member) {
+static RawObject memberGetter(Thread* thread, PyMemberDef* member) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Object name(&scope, runtime->newStrFromCStr(member.name));
-  Int offset(&scope, runtime->newInt(member.offset));
-  switch (member.type) {
+  Object name(&scope, runtime->newStrFromCStr(member->name));
+  Int offset(&scope, runtime->newInt(member->offset));
+  switch (member->type) {
     case T_BOOL:
       return thread->invokeFunction1(ID(builtins), ID(_new_member_get_bool),
                                      offset);
@@ -1108,19 +1108,19 @@ static RawObject memberGetter(Thread* thread, PyMemberDef& member) {
   }
 }
 
-static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
+static RawObject memberSetter(Thread* thread, PyMemberDef* member) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  if (member.flags & READONLY) {
-    Object name(&scope, runtime->newStrFromCStr(member.name));
+  if (member->flags & READONLY) {
+    Object name(&scope, runtime->newStrFromCStr(member->name));
     Function setter(
         &scope, thread->invokeFunction1(ID(builtins),
                                         ID(_new_member_set_readonly), name));
     return *setter;
   }
 
-  Int offset(&scope, runtime->newInt(member.offset));
-  switch (member.type) {
+  Int offset(&scope, runtime->newInt(member->offset));
+  switch (member->type) {
     case T_BOOL:
       return thread->invokeFunction1(ID(builtins), ID(_new_member_set_bool),
                                      offset);
@@ -1233,14 +1233,14 @@ static RawObject memberSetter(Thread* thread, PyMemberDef& member) {
                                      offset);
     }
     case T_STRING: {
-      Object name(&scope, runtime->newStrFromCStr(member.name));
+      Object name(&scope, runtime->newStrFromCStr(member->name));
       Function setter(&scope, thread->invokeFunction1(
                                   ID(builtins),
                                   ID(_new_member_set_readonly_strings), name));
       return *setter;
     }
     case T_STRING_INPLACE: {
-      Object name(&scope, runtime->newStrFromCStr(member.name));
+      Object name(&scope, runtime->newStrFromCStr(member->name));
       Function setter(&scope, thread->invokeFunction1(
                                   ID(builtins),
                                   ID(_new_member_set_readonly_strings), name));
@@ -1326,21 +1326,24 @@ static RawObject addMethods(Thread* thread, const Type& type) {
   return NoneType::object();
 }
 
-static RawObject addMembers(Thread* thread, const Type& type) {
-  HandleScope scope(thread);
-  PyMemberDef* members =
-      static_cast<PyMemberDef*>(typeSlotAt(type, Py_tp_members));
+static RawObject addMembers(Thread* thread, const Type& type,
+                            PyMemberDef* members) {
   if (members == nullptr) return NoneType::object();
+  HandleScope scope(thread);
   Object none(&scope, NoneType::object());
   Runtime* runtime = thread->runtime();
-  for (word i = 0; members[i].name != nullptr; i++) {
-    Object name(&scope, Runtime::internStrFromCStr(thread, members[i].name));
-    Object getter(&scope, memberGetter(thread, members[i]));
-    if (getter.isError()) return *getter;
-    Object setter(&scope, memberSetter(thread, members[i]));
-    if (setter.isError()) return *setter;
-    Object property(&scope, runtime->newProperty(getter, setter, none));
-    typeAtPut(thread, type, name, property);
+  Object getter(&scope, NoneType::object());
+  Object setter(&scope, NoneType::object());
+  Object property(&scope, NoneType::object());
+  Object name_obj(&scope, NoneType::object());
+  for (PyMemberDef* member = members; member->name != nullptr; member++) {
+    getter = memberGetter(thread, member);
+    if (getter.isErrorException()) return *getter;
+    setter = memberSetter(thread, member);
+    if (setter.isErrorException()) return *setter;
+    property = runtime->newProperty(getter, setter, none);
+    name_obj = Runtime::internStrFromCStr(thread, member->name);
+    typeAtPut(thread, type, name_obj, property);
   }
   return NoneType::object();
 }
@@ -1861,7 +1864,9 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
 
   if (addMethods(thread, type).isError()) return nullptr;
 
-  if (addMembers(thread, type).isError()) return nullptr;
+  PyMemberDef* members =
+      static_cast<PyMemberDef*>(typeSlotAt(type, Py_tp_members));
+  if (addMembers(thread, type, members).isErrorException()) return nullptr;
 
   if (addGetSet(thread, type).isError()) return nullptr;
 
