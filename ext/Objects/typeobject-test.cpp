@@ -3461,23 +3461,6 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsGetAttrIfNotDefined) {
   EXPECT_EQ(PyType_GetSlot(tp, Py_tp_getattr), nullptr);
 }
 
-TEST_F(TypeExtensionApiTest, FromSpecWithBasesDoesNotInheritSetAttrIfDefined) {
-  setattrfunc empty_setattr_func = [](PyObject*, char*, PyObject*) {
-    return 0;
-  };
-  ASSERT_NO_FATAL_FAILURE(
-      createTypeWithSlot("BaseType", Py_tp_setattr, empty_setattr_func));
-  PyObjectPtr base_type(mainModuleGet("BaseType"));
-  ASSERT_NO_FATAL_FAILURE(createTypeWithSlotAndBase(
-      "SubclassedType", Py_tp_setattro, &emptySetattroFunc, base_type));
-  PyObjectPtr subclassed_type(mainModuleGet("SubclassedType"));
-
-  PyTypeObject* tp = reinterpret_cast<PyTypeObject*>(subclassed_type.get());
-  EXPECT_EQ(reinterpret_cast<setattrofunc>(PyType_GetSlot(tp, Py_tp_setattro)),
-            &emptySetattroFunc);
-  EXPECT_EQ(PyType_GetSlot(tp, Py_tp_setattr), nullptr);
-}
-
 TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsSetAttrIfNotDefined) {
   ASSERT_NO_FATAL_FAILURE(
       createTypeWithSlot("BaseType", Py_tp_setattro, &emptySetattroFunc));
@@ -5429,7 +5412,7 @@ TEST_F(TypeExtensionApiTest, TernaryVarKwSlotOwnsReference) {
   EXPECT_EQ(result, Py_None);
 }
 
-TEST_F(TypeExtensionApiTest, SetattrSlotOwnsReference) {
+TEST_F(TypeExtensionApiTest, SetattrWrapperOwnsReference) {
   setattrofunc func = [](PyObject* self, PyObject*, PyObject* third) -> int {
     // We expect a refcount of 1 greater than the inital refcount since the
     // method is called with a new reference.
@@ -5446,7 +5429,7 @@ TEST_F(TypeExtensionApiTest, SetattrSlotOwnsReference) {
     return 0;
   };
   static const PyType_Slot slots[] = {
-      {Py_tp_setattr, reinterpret_cast<void*>(func)},
+      {Py_tp_setattro, reinterpret_cast<void*>(func)},
       {0, nullptr},
   };
   PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));
@@ -5482,7 +5465,7 @@ TEST_F(TypeExtensionApiTest, DelattrWrapperOwnsReference) {
     return 0;
   };
   static const PyType_Slot slots[] = {
-      {Py_tp_setattr, reinterpret_cast<void*>(func)},
+      {Py_tp_setattro, reinterpret_cast<void*>(func)},
       {0, nullptr},
   };
   PyObjectPtr instance(makeTestRefcntInstanceWithSlots(slots));

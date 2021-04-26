@@ -1795,6 +1795,9 @@ PY_EXPORT PyObject* PyType_FromSpecWithBases(PyType_Spec* spec,
       case Py_tp_del:
       case Py_tp_finalize:
         has_default_dealloc = false;
+        break;
+      case Py_tp_setattr:
+        UNIMPLEMENTED("Py_tp_setattr not supported");
     }
   }
 
