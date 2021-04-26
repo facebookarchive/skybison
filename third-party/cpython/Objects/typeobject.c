@@ -2855,9 +2855,15 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
             for (memb = slot->pfunc; memb->name != NULL; memb++) {
                 nmembers++;
                 if (strcmp(memb->name, "__weaklistoffset__") == 0) {
+                    // The PyMemberDef must be a Py_ssize_t and readonly
+                    assert(memb->type == T_PYSSIZET);
+                    assert(memb->flags == READONLY);
                     weaklistoffset = memb->offset;
                 }
                 if (strcmp(memb->name, "__dictoffset__") == 0) {
+                    // The PyMemberDef must be a Py_ssize_t and readonly
+                    assert(memb->type == T_PYSSIZET);
+                    assert(memb->flags == READONLY);
                     dictoffset = memb->offset;
                 }
             }

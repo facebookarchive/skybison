@@ -718,7 +718,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
 }
 
 static PyMemberDef ast_type_members[] = {
-    {"__dictoffset__", T_NONE, offsetof(AST_object, dict), READONLY},
+    {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), READONLY},
     {NULL}  /* Sentinel */
 };
 

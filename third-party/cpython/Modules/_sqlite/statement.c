@@ -463,7 +463,8 @@ static int pysqlite_check_remaining_sql(const char* tail)
 }
 
 static PyMemberDef pysqlite_StatementType_members[] = {
-    {"__weaklistoffset__", T_INT, offsetof(pysqlite_Statement, in_weakreflist)},
+    {"__weaklistoffset__", T_PYSSIZET,
+      offsetof(pysqlite_Statement, in_weakreflist), READONLY},
     {NULL, 0, 0},
 };
 

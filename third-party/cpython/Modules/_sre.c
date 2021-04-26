@@ -2614,7 +2614,7 @@ static PyMemberDef pattern_members[] = {
      "The regex matching flags."},
     {"groups",     T_PYSSIZET,  PAT_OFF(groups),        READONLY,
      "The number of capturing groups in the pattern."},
-    {"__weaklistoffset__", T_NONE, PAT_OFF(weakreflist), READONLY},
+    {"__weaklistoffset__", T_PYSSIZET, PAT_OFF(weakreflist), READONLY},
     {NULL}  /* Sentinel */
 };
 

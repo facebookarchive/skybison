@@ -966,7 +966,8 @@ static PyMethodDef cursor_methods[] = {
 
 static struct PyMemberDef cursor_members[] =
 {
-    {"__weaklistoffset__", T_INT, offsetof(pysqlite_Cursor, in_weakreflist)},
+    {"__weaklistoffset__", T_PYSSIZET,
+     offsetof(pysqlite_Cursor, in_weakreflist), READONLY},
     {"connection", T_OBJECT, offsetof(pysqlite_Cursor, connection), READONLY},
     {"description", T_OBJECT, offsetof(pysqlite_Cursor, description), READONLY},
     {"arraysize", T_INT, offsetof(pysqlite_Cursor, arraysize), 0},
