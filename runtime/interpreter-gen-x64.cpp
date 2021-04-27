@@ -2405,6 +2405,22 @@ void jitEmitHandler<LOAD_IMMEDIATE>(JitEnv* env) {
 }
 
 template <>
+void jitEmitHandler<LOAD_FAST_REVERSE>(JitEnv* env) {
+  Label slow_path;
+  ScratchReg r_scratch(env);
+
+  __ movq(r_scratch, Address(env->frame, env->oparg, TIMES_8, Frame::kSize));
+  __ cmpl(r_scratch, Immediate(Error::notFound().raw()));
+  env->register_state.check(env->handler_assignment);
+  __ jcc(EQUAL, &slow_path, Assembler::kNearJump);
+  __ pushq(r_scratch);
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  emitJumpToGenericHandler(env);
+}
+
+template <>
 void jitEmitHandler<RETURN_VALUE>(JitEnv* env) {
   ScratchReg r_return_value(env);
 
@@ -2454,6 +2470,7 @@ bool isSupportedInJIT(Bytecode bc) {
     case DUP_TOP:
     case LOAD_BOOL:
     case LOAD_CONST:
+    case LOAD_FAST_REVERSE:
     case LOAD_FAST_REVERSE_UNCHECKED:
     case LOAD_GLOBAL_CACHED:
     case LOAD_IMMEDIATE:
