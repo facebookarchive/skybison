@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import array
-from types import FunctionType
+import random
+from types import FunctionType, Union as typesUnion
 from typing import (
     _GenericAlias,
     Dict,
+    Iterable,
     Mapping,
     Type,
     TypeVar,
@@ -39,6 +41,8 @@ try:
         TYPED_SINGLE,
         TYPED_BOOL,
         TYPED_CHAR,
+        RAND_MAX,
+        rand,
     )
 except ImportError:
     TYPED_INT8 = 0
@@ -50,9 +54,13 @@ except ImportError:
     TYPED_UINT32 = 0
     TYPED_UINT64 = 0
     TYPED_DOUBLE = 0
+    TYPED_SINGLE = 0
     TYPED_BOOL = 0
     TYPED_CHAR = 0
-    TYPED_SINGLE = 0
+    RAND_MAX = (1 << 31) - 1
+
+    def rand():
+        return random.randint(0, RAND_MAX)
 
 try:
     import cinder
@@ -69,12 +77,8 @@ def type_code(code: int):
     return inner
 
 
-# can be imported to disable strongly typed dictionaries
-nonchecked_dicts = True
-
 pydict = dict
 PyDict = Dict
-PyMapping = Mapping
 
 clen = len
 
@@ -85,7 +89,7 @@ class size_t(int):
 
 
 @type_code(TYPED_INT64)
-class ssizet(int):
+class ssize_t(int):
     pass
 
 
@@ -357,30 +361,45 @@ class StaticGeneric:
 
 
 class Array(array.array, StaticGeneric[ArrayElement]):
-    def __new__(cls, initializer=None):
+    def __new__(cls, initializer: int | Iterable[ArrayElement]):
         if hasattr(cls, "__parameters__"):
             raise TypeError("Cannot create plain Array")
 
         typecode = _TYPE_CODES[cls.__args__[0]]
-        if initializer is not None:
-            return array.array.__new__(cls, typecode, initializer)
-
+        if isinstance(initializer, int):
+            res = array.array.__new__(cls, typecode, [0])
+            res *= initializer
+            return res
         else:
-            return array.array.__new__(cls, typecode)
+            return array.array.__new__(cls, typecode, initializer)
 
     def __init_subclass__(cls):
         raise TypeError("Cannot subclass Array")
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return type(self)(array.array.__getitem__(self, index))
+
+        return array.array.__getitem__(self, index)
+
+    def __deepcopy__(self, memo):
+        return type(self)(self)
 
 
 class Vector(array.array, StaticGeneric[ArrayElement]):
     """Vector is a resizable array of primitive elements"""
 
-    def __new__(cls, initializer=None):
+    def __new__(cls, initializer: int | Iterable[ArrayElement] | None = None):
         if hasattr(cls, "__parameters__"):
             raise TypeError("Cannot create plain Vector")
 
         typecode = _TYPE_CODES[cls.__args__[0]]
-        if initializer is not None:
+        if isinstance(initializer, int):
+            # specifing size
+            res = array.array.__new__(cls, typecode, [0])
+            res *= initializer
+            return res
+        elif initializer is not None:
             return array.array.__new__(cls, typecode, initializer)
         else:
             return array.array.__new__(cls, typecode)
@@ -394,6 +413,15 @@ class Vector(array.array, StaticGeneric[ArrayElement]):
     def __init_subclass__(cls):
         raise TypeError("Cannot subclass Vector")
 
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return type(self)(array.array.__getitem__(self, index))
+
+        return array.array.__getitem__(self, index)
+
+    def __deepcopy__(self, memo):
+        return type(self)(self)
+
 
 def box(o):
     return o
@@ -403,14 +431,41 @@ def unbox(o):
     return o
 
 
+def allow_weakrefs(klass):
+    return klass
+
+
+def dynamic_return(func):
+    return func
+
+
+def inline(func):
+    return func
+
+
+def _donotcompile(func):
+    return func
+
+
 def cast(typ, val):
+    union_args = None
     if type(typ) is _GenericAlias:
-        union = typ.__args__
-        if len(union) != 2 or union[1] != type(None):  # noqa: E721
+        typ, args = typ.__origin__, typ.__args__
+        if typ is Union:
+            union_args = args
+    elif type(typ) is typesUnion:
+        union_args = typ.__args__
+    if union_args:
+        typ = None
+        if len(union_args) == 2:
+            if union_args[0] is type(None):
+                typ = union_args[1]
+            elif union_args[1] is type(None):
+                typ = union_args[0]
+        if typ is None:
             raise ValueError("cast expects type or Optional[T]")
-        elif val is None:
+        if val is None:
             return None
-        typ = union[0]
 
     inst_type = type(val)
     if typ not in inst_type.__mro__:

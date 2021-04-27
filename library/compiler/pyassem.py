@@ -7,11 +7,11 @@ from contextlib import contextmanager
 from types import CodeType
 from typing import Generator, List, Optional
 
-from . import opcode36, opcode37, opcode38
+from . import opcode36, opcode37, opcode38, opcode38cinder
 from .consts import CO_NEWLOCALS, CO_OPTIMIZED
+from .consts38 import CO_SUPPRESS_JIT
 from .peephole import Optimizer
 from .py38.peephole import Optimizer38
-
 
 try:
     import cinder  # pyre-ignore # noqa: F401
@@ -295,6 +295,7 @@ class Block:
         block.prev = self
 
     _uncond_transfer = (
+        "RETURN_INT",
         "RETURN_VALUE",
         "RAISE_VARARGS",
         "JUMP_ABSOLUTE",
@@ -515,7 +516,7 @@ class PyFlowGraph(FlowGraph):
                     )
                 else:
                     print("\t", f"{pc:3} {opname} {instr.target.bid}")
-                pc += 2
+                pc += self.opcode.CODEUNIT_SIZE
         if io:
             sys.stdout = save
 
@@ -677,6 +678,10 @@ class PyFlowGraph(FlowGraph):
     def _convert_NAME(self, arg: object) -> int:
         return self._lookupName(arg, self.names)
 
+    def _convert_LOAD_SUPER(self, arg: object) -> int:
+        assert isinstance(arg, tuple), "invalid oparg {arg!r}"
+        return self._convert_LOAD_CONST((self._convert_NAME(arg[0]), arg[1]))
+
     def _convert_DEREF(self, arg: object) -> int:
         # Sometimes, both cellvars and freevars may contain the same var
         # (e.g., for class' __class__). In this case, prefer freevars.
@@ -694,6 +699,7 @@ class PyFlowGraph(FlowGraph):
         "CAST": _convert_LOAD_CONST,
         "CHECK_ARGS": _convert_LOAD_CONST,
         "BUILD_CHECKED_MAP": _convert_LOAD_CONST,
+        "PRIMITIVE_LOAD_CONST": _convert_LOAD_CONST,
         "LOAD_FAST": _convert_LOAD_FAST,
         "STORE_FAST": _convert_LOAD_FAST,
         "DELETE_FAST": _convert_LOAD_FAST,
@@ -719,6 +725,9 @@ class PyFlowGraph(FlowGraph):
         "STORE_DEREF": _convert_DEREF,
         "DELETE_DEREF": _convert_DEREF,
         "LOAD_CLASSDEREF": _convert_DEREF,
+        "REFINE_TYPE": _convert_LOAD_CONST,
+        "LOAD_METHOD_SUPER": _convert_LOAD_SUPER,
+        "LOAD_ATTR_SUPER": _convert_LOAD_SUPER,
     }
 
     # Opcodes which do not add names to co_consts/co_names/co_varnames in dead code (self.do_not_emit_bytecode)
@@ -735,7 +744,7 @@ class PyFlowGraph(FlowGraph):
 
     def makeByteCode(self):
         assert self.stage == FLAT, self.stage
-        self.lnotab = lnotab = LineAddrTable()
+        self.lnotab = lnotab = LineAddrTable(self.opcode)
         lnotab.setFirstLine(self.firstline or self.first_inst_lineno or 1)
 
         for t in self.insts:
@@ -950,6 +959,31 @@ class PyFlowGraph38(PyFlowGraph37):
         )
 
 
+class PyFlowGraphCinder(PyFlowGraph38):
+    opcode = opcode38cinder.opcode
+
+    def make_code(self, nlocals, code, consts, firstline, lnotab) -> CodeType:
+        flags = self.flags | CO_SUPPRESS_JIT if self.scope.suppress_jit else self.flags
+        return CodeType(
+            len(self.args),
+            self.posonlyargs,
+            len(self.kwonlyargs),
+            nlocals,
+            self.stacksize,
+            flags,
+            code,
+            consts,
+            tuple(self.names),
+            tuple(self.varnames),
+            self.filename,
+            self.name,
+            firstline,
+            lnotab,
+            tuple(self.freevars),
+            tuple(self.cellvars),
+        )
+
+
 class LineAddrTable:
     """lnotab
 
@@ -965,13 +999,14 @@ class LineAddrTable:
     compile.c for the delicate details.
     """
 
-    def __init__(self):
+    def __init__(self, opcode):
         self.code = []
         self.codeOffset = 0
         self.firstline = 0
         self.lastline = 0
         self.lastoff = 0
         self.lnotab = []
+        self.opcode = opcode
 
     def setFirstLine(self, lineno):
         self.firstline = lineno
@@ -980,7 +1015,7 @@ class LineAddrTable:
     def addCode(self, opcode, oparg):
         self.code.append(opcode)
         self.code.append(oparg)
-        self.codeOffset += 2
+        self.codeOffset += self.opcode.CODEUNIT_SIZE
 
     def nextLine(self, lineno):
         if self.firstline == 0:

@@ -1,11 +1,15 @@
 import ast
+import dis
+import glob
+import re
+import sys
 from compiler.pycodegen import compile as py_compile
-from io import StringIO
+from io import StringIO, TextIOWrapper
 from os import path
 from tokenize import detect_encoding
 from unittest import TestCase
 
-from .common import glob_test
+from .common import get_repo_root, glob_test
 from .dis_stable import Disassembler
 
 
@@ -14,7 +18,15 @@ IGNORE_PATTERNS = (
     "lib2to3/tests/data",
     "test/badsyntax_",
     "test/bad_coding",
+    # These are syntax errors in Py3.8, so disable them
+    "test/test_compiler/sbs_code_tests/3.6/58_yield_from_gen_comp.py",
+    "test/test_compiler/sbs_code_tests/3.6/58_yield_gen_comp.py",
+    # run separately via test_corpus.py
+    "test/test_compiler/testcorpus",
 )
+
+if sys.version_info < (3, 8):
+    IGNORE_PATTERNS += ("test/test_compiler/sbs_code_tests/3.8",)
 
 
 class SbsCompileTests(TestCase):
@@ -47,9 +59,16 @@ def add_test(modname, fname):
             newdump = StringIO()
             Disassembler().dump_code(codeobj, newdump)
 
-            self.assertEqual(
-                origdump.getvalue().split("\n"), newdump.getvalue().split("\n")
-            )
+            try:
+                self.assertEqual(
+                    origdump.getvalue().split("\n"), newdump.getvalue().split("\n")
+                )
+            except AssertionError:
+                with open("c_compiler_output.txt", "w") as f:
+                    f.write(origdump.getvalue())
+                with open("py_compiler_output.txt", "w") as f:
+                    f.write(newdump.getvalue())
+                raise
 
     test_stdlib.__name__ = "test_stdlib_" + modname.replace("/", "_")[:-3]
     setattr(SbsCompileTests, test_stdlib.__name__, test_stdlib)
@@ -57,4 +76,12 @@ def add_test(modname, fname):
 
 REPO_ROOT = path.join(path.dirname(__file__), "..", "..", "..")
 libpath = path.join(REPO_ROOT, "Lib")
-glob_test(libpath, "**/*.py", add_test)
+if path.exists(libpath):
+    glob_test(libpath, "**/*.py", add_test)
+else:
+    libpath = LIB_PATH = path.dirname(dis.__file__)
+    glob_test(LIB_PATH, "**/*.py", add_test)
+    IGNORE_PATTERNS = tuple(
+        pattern.replace("test/test_compiler/", "test_compiler/")
+        for pattern in IGNORE_PATTERNS
+    )

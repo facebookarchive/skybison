@@ -10,9 +10,94 @@
 from __future__ import print_function
 
 import dis as _dis
+import opcode
 import re
 import sys
 from types import CodeType
+
+
+def _make_stable(gen):
+    for instr in gen:
+        yield _dis.Instruction(
+            instr.opname,
+            instr.opcode,
+            instr.arg,
+            instr.argval,
+            _stable_repr(instr.argval),
+            instr.offset,
+            instr.starts_line,
+            instr.is_jump_target,
+        )
+
+
+def _stable_repr(obj):
+    if isinstance(obj, frozenset):
+        replacement = frozenset([i for i in sorted(obj)])
+        return repr(replacement)
+    return repr(obj)
+
+
+def _disassemble_bytes(
+    code,
+    lasti=-1,
+    varnames=None,
+    names=None,
+    constants=None,
+    cells=None,
+    linestarts=None,
+    *,
+    file=None,
+    line_offset=0
+):
+    # Omit the line number column entirely if we have no line number info
+    show_lineno = linestarts is not None
+    if show_lineno:
+        maxlineno = max(linestarts.values()) + line_offset
+        if maxlineno >= 1000:
+            lineno_width = len(str(maxlineno))
+        else:
+            lineno_width = 3
+    else:
+        lineno_width = 0
+    maxoffset = len(code) - 2
+    if maxoffset >= 10000:
+        offset_width = len(str(maxoffset))
+    else:
+        offset_width = 4
+    for instr in _make_stable(
+        _dis._get_instructions_bytes(
+            code, varnames, names, constants, cells, linestarts, line_offset=line_offset
+        )
+    ):
+        new_source_line = (
+            show_lineno and instr.starts_line is not None and instr.offset > 0
+        )
+        if new_source_line:
+            print(file=file)
+        is_current_instr = instr.offset == lasti
+
+        print(
+            instr._disassemble(lineno_width, is_current_instr, offset_width),
+            file=file,
+        )
+
+
+def disassemble(co, lasti=-1, *, file=None, skip_line_nos=False):
+    cell_names = co.co_cellvars + co.co_freevars
+    if skip_line_nos:
+        linestarts = None
+    else:
+        linestarts = dict(_dis.findlinestarts(co))
+    _disassemble_bytes(
+        co.co_code,
+        lasti,
+        co.co_varnames,
+        co.co_names,
+        co.co_consts,
+        cell_names,
+        linestarts,
+        file=file,
+    )
 
 
 class Disassembler:
@@ -36,13 +121,32 @@ class Disassembler:
             co.co_firstlineno,
         )
 
-    def disassemble(self, co, lasti=-1, file=None):
+    def disassemble(self, co, lasti=-1, file=None, skip_line_nos=False):
         """Disassemble a code object."""
         consts = tuple(
-            self.co_repr(x) if hasattr(x, "co_code") else x for x in co.co_consts
+            [self.co_repr(x) if hasattr(x, "co_code") else x for x in co.co_consts]
         )
-        _dis.disassemble(
-            CodeType(
+        if sys.version_info >= (3, 8):
+            codeobj = CodeType(
+                co.co_argcount,
+                co.co_posonlyargcount,
+                co.co_kwonlyargcount,
+                co.co_nlocals,
+                co.co_stacksize,
+                co.co_flags,
+                co.co_code,
+                consts,
+                co.co_names,
+                co.co_varnames,
+                co.co_filename,
+                co.co_name,
+                co.co_firstlineno,
+                co.co_lnotab,
+                co.co_freevars,
+                co.co_cellvars,
+            )
+        else:
+            codeobj = CodeType(
                 co.co_argcount,
                 co.co_kwonlyargcount,
                 co.co_nlocals,
@@ -58,15 +162,14 @@ class Disassembler:
                 co.co_lnotab,
                 co.co_freevars,
                 co.co_cellvars,
-            ),
-            file=file,
-        )
+            )
+        disassemble(codeobj, file=file, skip_line_nos=skip_line_nos)
 
     def dump_code(self, co, file):
         if not file:
             file = sys.stdout
         print(self.co_repr(co), file=file)
-        self.disassemble(co, file=file)
+        self.disassemble(co, file=file, skip_line_nos=True)
         print("co_argcount:", co.co_argcount, file=file)
         print("co_kwonlyargcount:", co.co_kwonlyargcount, file=file)
         print("co_stacksize:", co.co_stacksize, file=file)
@@ -82,7 +185,10 @@ class Disassembler:
         print(
             "co_consts:",
             tuple(
-                self.co_repr(x) if hasattr(x, "co_code") else x for x in co.co_consts
+                [
+                    self.co_repr(x) if hasattr(x, "co_code") else _stable_repr(x)
+                    for x in co.co_consts
+                ]
             ),
             file=file,
         )
@@ -91,7 +197,7 @@ class Disassembler:
         print("co_varnames:", co.co_varnames, file=file)
         print("co_cellvars:", co.co_cellvars, file=file)
         print("co_freevars:", co.co_freevars, file=file)
-        print("co_lnotab:", repr(co.co_lnotab), file=file)
+        # print("co_lnotab:", repr(co.co_lnotab), file=file)
         print(file=file)
         for c in co.co_consts:
             if hasattr(c, "co_code"):
@@ -104,11 +210,11 @@ coding_re = re.compile(rb"^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+)")
 
 def open_with_coding(fname):
     with open(fname, "rb") as f:
-        line = f.readline()
-        m = coding_re.match(line)
+        l = f.readline()
+        m = coding_re.match(l)
         if not m:
-            line = f.readline()
-            m = coding_re.match(line)
+            l = f.readline()
+            m = coding_re.match(l)
         encoding = "utf-8"
         if m:
             encoding = m.group(1).decode()
@@ -116,8 +222,6 @@ def open_with_coding(fname):
 
 
 if __name__ == "__main__":
-    import sys
-
     with open_with_coding(sys.argv[1]) as f:
         co = compile(f.read(), sys.argv[1], "exec")
     Disassembler().dump_code(co, file=sys.stdout)

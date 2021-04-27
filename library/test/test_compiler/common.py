@@ -1,12 +1,12 @@
+import dis
 import glob
 import inspect
-import sys
 from compiler.pycodegen import make_compiler
 from io import StringIO
 from os import path
 from subprocess import PIPE, run
-from test.bytecode_helper import BytecodeTestCase
 from types import CodeType
+from unittest import TestCase
 
 
 _UNSPECIFIED = object()
@@ -31,16 +31,63 @@ def glob_test(dir, pattern, adder):
         adder(modname, fname)
 
 
-class CompilerTest(BytecodeTestCase):
-    def compile(self, code, generator=None, modname="<module>", optimize=0):
+class CompilerTest(TestCase):
+    def get_disassembly_as_string(self, co):
+        s = StringIO()
+        dis.dis(co, file=s)
+        return s.getvalue()
+
+    def assertInBytecode(self, x, opname, argval=_UNSPECIFIED):
+        """Returns instr if op is found, otherwise throws AssertionError"""
+        for instr in dis.get_instructions(x):
+            if instr.opname == opname:
+                if argval is _UNSPECIFIED or instr.argval == argval:
+                    return instr
+        disassembly = self.get_disassembly_as_string(x)
+        if argval is _UNSPECIFIED:
+            msg = f"{opname} not found in bytecode:\n{disassembly}"
+        else:
+            msg = f"({opname},{argval}) not found in bytecode:\n{disassembly}"
+        self.fail(msg)
+
+    def assertNotInBytecode(self, x, opname, argval=_UNSPECIFIED):
+        """Throws AssertionError if op is found"""
+        for instr in dis.get_instructions(x):
+            if instr.opname == opname:
+                disassembly = self.get_disassembly_as_string(x)
+                if argval is _UNSPECIFIED:
+                    msg = f"{opname} occurs in bytecode:\n{disassembly}"
+                    self.fail(msg)
+                elif instr.argval == argval:
+                    msg = f"({opname},{argval!r}) occurs in bytecode:\n{disassembly}"
+                    self.fail(msg)
+
+    def compile(
+        self,
+        code,
+        generator=None,
+        modname="<module>",
+        optimize=0,
+        peephole_enabled=True,
+        ast_optimizer_enabled=True,
+    ):
         code = inspect.cleandoc("\n" + code)
         gen = make_compiler(
-            code, "", "exec", generator=generator, modname=modname, optimize=optimize
+            code,
+            "",
+            "exec",
+            generator=generator,
+            modname=modname,
+            optimize=optimize,
+            peephole_enabled=peephole_enabled,
+            ast_optimizer_enabled=ast_optimizer_enabled,
         )
         return gen.getCode()
 
-    def run_code(self, code, generator=None, modname="<module>"):
-        compiled = self.compile(code, generator, modname)
+    def run_code(self, code, generator=None, modname="<module>", peephole_enabled=True):
+        compiled = self.compile(
+            code, generator, modname, peephole_enabled=peephole_enabled
+        )
         d = {}
         exec(compiled, d)
         return d
@@ -59,9 +106,15 @@ class CompilerTest(BytecodeTestCase):
             )
         return consts[0]
 
-    def to_graph(self, code, generator=None):
+    def to_graph(self, code, generator=None, ast_optimizer_enabled=True):
         code = inspect.cleandoc("\n" + code)
-        gen = make_compiler(code, "", "exec", generator=generator)
+        gen = make_compiler(
+            code,
+            "",
+            "exec",
+            generator=generator,
+            ast_optimizer_enabled=ast_optimizer_enabled,
+        )
         return gen.graph
 
     def dump_graph(self, graph):

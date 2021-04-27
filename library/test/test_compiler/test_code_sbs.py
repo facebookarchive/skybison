@@ -1,4 +1,5 @@
 import dis
+import os
 import sys
 from collections import deque
 from compiler import pyassem
@@ -31,7 +32,7 @@ SCRIPT_OPCODE_CODE = "CODE_START"
 class _AnyType:
     """Singleton to indicate that we match any opcode or oparg."""
 
-    def __new__(cls):
+    def __new__(self):
         return Any
 
     def __repr__(self):
@@ -249,9 +250,13 @@ class CodeTests(CompilerTest):
 
 
 def add_test(modname, fname):
+    if "/cinder/" in fname and "cinder" not in sys.version:
+        return
     if "/3.6/" in fname and sys.version_info[:2] != (3, 6):
         return
     elif "/3.7/" in fname and sys.version_info[:2] != (3, 7):
+        return
+    elif "/3.8/" in fname and sys.version_info[:2] != (3, 8):
         return
 
     def test_code(self):
@@ -276,7 +281,7 @@ def add_test(modname, fname):
                 "generated script present, fixup to be a minimal repo and check it in"
             )
 
-        script = eval(parts[1], globals(), SCRIPT_CONTEXT)  # noqa: P204
+        script = eval(parts[1], globals(), SCRIPT_CONTEXT)
         for i, value in enumerate(script):
             if value == ...:
                 script[i] = SkipAny()

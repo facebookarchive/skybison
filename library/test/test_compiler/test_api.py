@@ -31,7 +31,7 @@ class ApiTests(CompilerTest):
     def test_compile_with_unrecognized_flag_raises_value_error(self):
         expected = re.escape("compile(): unrecognised flags")
         with self.assertRaisesRegex(ValueError, expected):
-            compile("42", "foo", "exec", 0x800000)
+            compile("42", "foo", "exec", 0x80000000000)
 
     def test_compile_with_future_annotations_stringifies_annotation(self):
         code = compile(
@@ -48,6 +48,18 @@ class ApiTests(CompilerTest):
         self.assertInBytecode(code, "LOAD_NAME", "List")
         self.assertInBytecode(code, "LOAD_NAME", "int")
         self.assertInBytecode(code, "BINARY_SUBSCR")
+
+    def test_compile_with_annotation_in_except_handler_emits_store_annotation(self):
+        code = compile(
+            """try:
+    pass
+except:
+    x: int = 1""",
+            "foo",
+            "exec",
+            0,
+        )
+        self.assertInBytecode(code, "SETUP_ANNOTATIONS")
 
     def test_compile_with_barry_as_bdfl_emits_ne(self):
         code = compile("a <> b", "foo", "exec", __future__.CO_FUTURE_BARRY_AS_BDFL)

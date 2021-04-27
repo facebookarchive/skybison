@@ -1,14 +1,28 @@
-from .test_api import ApiTests  # noqa: F401
-from .test_code_sbs import CodeTests  # noqa: F401
-from .test_errors import ErrorTests, ErrorTestsBuiltin  # noqa: F401
-from .test_flags import FlagTests  # noqa: F401
-from .test_graph import GraphTests  # noqa: F401
-from .test_peephole import PeepHoleTests  # noqa: F401
-from .test_py37 import Python37Tests  # noqa: F401
-from .test_sbs_stdlib import SbsCompileTests  # noqa: F401
+import sys
 
-# TODO(T78727149): Enable static python in compiler/ in pyro
-# from .test_static import StaticCompilationTests, StaticRuntimeTests  # noqa: F401
-from .test_symbols import SymbolVisitorTests  # noqa: F401
-from .test_unparse import UnparseTests  # noqa: F401
-from .test_visitor import VisitorTests  # noqa: F401
+from .test_api import ApiTests
+from .test_code_sbs import CodeTests
+from .test_corpus import SbsCorpusCompileTests
+from .test_errors import ErrorTests, ErrorTestsBuiltin
+from .test_flags import FlagTests
+from .test_graph import GraphTests
+from .test_optimizer import AstOptimizerTests
+from .test_peephole import PeepHoleTests
+from .test_sbs_stdlib import SbsCompileTests
+from .test_symbols import SymbolVisitorTests
+from .test_unparse import UnparseTests
+from .test_visitor import VisitorTests
+
+try:
+    import cinder
+
+    from .test_static import StaticCompilationTests, StaticRuntimeTests
+except ImportError:
+    pass
+
+
+if sys.version_info >= (3, 7):
+    from .test_py37 import Python37Tests
+
+if sys.version_info >= (3, 8):
+    from .test_py38 import Python38Tests

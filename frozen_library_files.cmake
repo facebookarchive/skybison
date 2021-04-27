@@ -37,6 +37,7 @@ library/compiler/opcode36.py
 library/compiler/opcode37.py
 library/compiler/opcode37static.py
 library/compiler/opcode38.py
+library/compiler/opcode38cinder.py
 library/compiler/opcode38static.py
 library/compiler/opcodebase.py
 library/compiler/optimizer.py

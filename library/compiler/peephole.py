@@ -163,7 +163,6 @@ class Optimizer:
         lnotab: bytes,
         opcode,
     ) -> None:
-        assert len(codestr) % 2 == 0
         self.consts = list(consts)
         self.codestr = bytearray(codestr)
         self.lnotab = lnotab
@@ -171,6 +170,7 @@ class Optimizer:
         self.in_consts = False
         self.opcode = opcode
         self.CODEUNIT_SIZE: int = opcode.CODEUNIT_SIZE
+        assert len(codestr) % self.CODEUNIT_SIZE == 0
         self.EXTENDED_ARG: int = opcode.EXTENDED_ARG
         opmap = opcode.opmap
 
@@ -348,7 +348,7 @@ class Optimizer:
             return
         self.fill_nops(op_start, nexti + 1)
 
-    @ophandler("RETURN_VALUE")
+    @ophandler("RETURN_VALUE", "RETURN_INT")
     def opt_return_value(self, instr_index, opcode, op_start, nextop, nexti):
         block_end = instr_index + 1
         block_id = self.blocks[instr_index]
@@ -530,7 +530,7 @@ class Optimizer:
                 if jmp_target < instr_index + 1:
                     return  # No backward relative jumps
                 jmp_target -= instr_index + 1  # Calc relative jump addr
-            jmp_target *= 2
+            jmp_target *= self.opcode.CODEUNIT_SIZE
             self.copy_op_arg(op_start, opcode, jmp_target, instr_index + 1)
 
     def get_jmp_target(self, index):
@@ -662,15 +662,15 @@ class Optimizer:
         if size == 4:
             codestr[ofs] = self.EXTENDED_ARG
             codestr[ofs + 1] = (oparg >> 24) & 0xFF
-            ofs += 2
+            ofs += self.CODEUNIT_SIZE
         if size >= 3:
             codestr[ofs] = self.EXTENDED_ARG
             codestr[ofs + 1] = (oparg >> 16) & 0xFF
-            ofs += 2
+            ofs += self.CODEUNIT_SIZE
         if size >= 2:
             codestr[ofs] = self.EXTENDED_ARG
             codestr[ofs + 1] = (oparg >> 8) & 0xFF
-            ofs += 2
+            ofs += self.CODEUNIT_SIZE
 
         codestr[ofs] = opcode
         codestr[ofs + 1] = oparg & 0xFF
@@ -730,7 +730,7 @@ class Optimizer:
                 oparg = blocks[oparg // self.CODEUNIT_SIZE] * self.CODEUNIT_SIZE
             elif opcode in self.opcode.hasjrel:
                 oparg = blocks[oparg // self.CODEUNIT_SIZE + i + 1] - blocks[i] - 1
-                oparg *= 2
+                oparg *= self.CODEUNIT_SIZE
             nexti = i - op_start + 1
 
             if instrsize(oparg) > nexti:

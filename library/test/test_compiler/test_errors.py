@@ -1,6 +1,11 @@
+import ast
+import dis
 import inspect
 import sys
 import unittest
+from dis import opmap, opname
+from re import escape
+from unittest import TestCase
 
 from .common import CompilerTest
 
@@ -110,6 +115,7 @@ class ErrorTests(CompilerTest):
         with self.assertRaisesRegex(SyntaxError, "'break' outside loop"):
             self.compile("break")
 
+    @unittest.skipIf(sys.version_info >= (3, 8), "supported on 3.8+")
     def test_continue_try_finally(self):
         with self.assertRaisesRegex(
             SyntaxError, "'continue' not supported inside 'finally' clause"
@@ -123,6 +129,7 @@ class ErrorTests(CompilerTest):
                         continue"""
             )
 
+    @unittest.skipIf(sys.version_info >= (3, 8), "supported on 3.8+")
     def test_continue_try_except_try_finally(self):
         with self.assertRaisesRegex(
             SyntaxError, "'continue' not supported inside 'finally' clause"

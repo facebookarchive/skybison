@@ -31,9 +31,6 @@ argparser = argparse.ArgumentParser(
     epilog="""\
 By default, compile source code into in-memory code object and execute it.
 If -c is specified, instead of executing write .pyc file.
-
-WARNING: This is WIP, co_stacksize may be calculated incorrectly and code
-may crash.
 """,
 )
 argparser.add_argument(
@@ -49,6 +46,13 @@ group.add_argument(
 group.add_argument(
     "--builtin", action="store_true", help="compile using built-in C compiler"
 )
+group.add_argument(
+    "--opt",
+    action="store",
+    type=int,
+    default=-1,
+    help="set optimization level to compile with",
+)
 args = argparser.parse_args()
 
 with open_with_coding(args.input) as f:
@@ -56,16 +60,19 @@ with open_with_coding(args.input) as f:
     source = f.read()
 
 if args.builtin:
-    codeobj = compile(
-        source, args.input, "exec"
-    )
+    codeobj = compile(source, args.input, "exec")
 else:
-    compiler = pycodegen.Python37CodeGenerator
+    compiler = pycodegen.CinderCodeGenerator
     if args.static:
         compiler = static.StaticCodeGenerator
 
     codeobj = pycodegen.compile(
-        source, args.input, "exec", compiler=compiler, modname="__main__"
+        source,
+        args.input,
+        "exec",
+        optimize=args.opt,
+        compiler=compiler,
+        modname="__main__",
     )
 
 if args.dis:

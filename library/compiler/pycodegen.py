@@ -37,7 +37,7 @@ from .visitor import ASTVisitor, walk
 
 TYPE_CHECKING = False
 if TYPE_CHECKING:
-    from typing import List, Optional, Sequence, Union
+    from typing import List, Optional, Sequence, Union, Type
 
 try:
     import _parser  # pyre-ignore[21]
@@ -122,7 +122,7 @@ def make_compiler(
     filename,
     mode,
     flags=0,
-    optimize=0,
+    optimize=-1,
     generator=None,
     modname=_DEFAULT_MODNAME,
     peephole_enabled=True,
@@ -147,6 +147,8 @@ def make_compiler(
 
     if flags & PyCF_ONLY_AST:
         return tree
+
+    optimize = sys.flags.optimize if optimize == -1 else optimize
 
     return generator.make_code_gen(
         modname,
@@ -221,6 +223,7 @@ class CodeGenerator(ASTVisitor):
         self.strip_docstrings = optimization_lvl == 2
         self.__with_count = 0
         self.did_setup_annotations = False
+        self._qual_name = None
 
     def _setupGraphDelegation(self):
         self.emit = self.graph.emit
@@ -230,6 +233,9 @@ class CodeGenerator(ASTVisitor):
     def getCode(self):
         """Return a code object"""
         return self.graph.getCode()
+
+    def set_qual_name(self, qualname):
+        pass
 
     @contextmanager
     def noEmit(self):
@@ -376,6 +382,9 @@ class CodeGenerator(ASTVisitor):
         if not self.graph.first_inst_lineno:
             self.graph.first_inst_lineno = 1
 
+        self.emit_module_return(node)
+
+    def emit_module_return(self, node: ast.Module) -> None:
         self.emit("LOAD_CONST", None)
         self.emit("RETURN_VALUE")
 
@@ -871,6 +880,7 @@ class CodeGenerator(ASTVisitor):
             self.emit("BUILD_TUPLE", len(frees))
             flags |= 0x08
 
+        gen.set_qual_name(prefix + gen.name)
         self.emit("LOAD_CONST", gen)
         self.emit("LOAD_CONST", prefix + gen.name)  # py3 qualname
         self.emit("MAKE_FUNCTION", flags)
@@ -880,17 +890,7 @@ class CodeGenerator(ASTVisitor):
         self.visit(node.targets)
 
     def compile_comprehension(self, node, name, elt, val, opcode, oparg=0):
-        class Holder:
-            pass
-
-        node.args = Holder()
-        arg1 = Holder()
-        arg1.arg = ".0"
-        node.args.args = (arg1,)
-        node.args.kwonlyargs = ()
-        node.args.vararg = None
-        node.args.kwarg = None
-        node.args.posonlyargs = ()
+        node.args = self.conjure_arguments([ast.arg(".0", None)])
         node.body = []
         self.update_lineno(node)
         gen = self.make_func_codegen(node, name, node.lineno)
@@ -898,7 +898,7 @@ class CodeGenerator(ASTVisitor):
         if opcode:
             gen.emit(opcode, oparg)
 
-        gen.compile_comrehension_generator(node.generators, 0, elt, val, type(node))
+        gen.compile_comprehension_generator(node.generators, 0, elt, val, type(node))
 
         if not isinstance(node, ast.GeneratorExp):
             gen.emit("RETURN_VALUE")
@@ -939,7 +939,7 @@ class CodeGenerator(ASTVisitor):
             node, sys.intern("<dictcomp>"), node.key, node.value, "BUILD_MAP"
         )
 
-    def compile_comrehension_generator(self, generators, gen_index, elt, val, type):
+    def compile_comprehension_generator(self, generators, gen_index, elt, val, type):
         if generators[gen_index].is_async:
             self.compile_async_comprehension(generators, gen_index, elt, val, type)
         else:
@@ -985,7 +985,7 @@ class CodeGenerator(ASTVisitor):
 
         gen_index += 1
         if gen_index < len(generators):
-            self.compile_comrehension_generator(generators, gen_index, elt, val, type)
+            self.compile_comprehension_generator(generators, gen_index, elt, val, type)
         elif type is ast.GeneratorExp:
             self.visit(elt)
             self.emit("YIELD_VALUE")
@@ -1036,7 +1036,7 @@ class CodeGenerator(ASTVisitor):
 
         gen_index += 1
         if gen_index < len(generators):
-            self.compile_comrehension_generator(generators, gen_index, elt, val, type)
+            self.compile_comprehension_generator(generators, gen_index, elt, val, type)
         else:
             if type is ast.GeneratorExp:
                 self.visit(elt)
@@ -1068,7 +1068,7 @@ class CodeGenerator(ASTVisitor):
     def visitAssert(self, node):
         # XXX would be interesting to implement this via a
         # transformation of the AST before this stage
-        if __debug__:
+        if not self.optimization_lvl:
             end = self.newBlock()
             self.set_lineno(node)
             # XXX AssertionError appears to be special case -- it is always
@@ -1433,7 +1433,7 @@ class CodeGenerator(ASTVisitor):
                 continue
             elif isinstance(stmt, ast.AnnAssign):
                 return True
-            elif isinstance(stmt, ast.stmt):
+            elif isinstance(stmt, (ast.stmt, ast.ExceptHandler)):
                 for field in stmt._fields:
                     child = getattr(stmt, field)
                     if isinstance(child, list):
@@ -2020,8 +2020,15 @@ class CodeGenerator(ASTVisitor):
             self.emit("LOAD_CONST", None)
         self.emit("RETURN_VALUE")
 
-    def make_child_codegen(self, tree: AST, graph: PyFlowGraph) -> CodeGenerator:
-        return type(self)(self, tree, self.symbols, graph, self.optimization_lvl)
+    def make_child_codegen(
+        self,
+        tree: AST,
+        graph: PyFlowGraph,
+        codegen_type: Optional[Type[CinderCodeGenerator]] = None,
+    ) -> CodeGenerator:
+        if codegen_type is None:
+            codegen_type = type(self)
+        return codegen_type(self, tree, self.symbols, graph, self.optimization_lvl)
 
     def make_func_codegen(
         self, func: AST, name: str, first_lineno: int
@@ -2326,6 +2333,9 @@ class Python37CodeGenerator(CodeGenerator):
         if containers > 1 or is_unpacking:
             self.emit("BUILD_MAP_UNPACK", containers)
 
+    def conjure_arguments(self, args: List[ast.arg]) -> ast.arguments:
+        return ast.arguments(args, None, [], [], None, [])
+
 
 class Entry:
     kind: int
@@ -2343,6 +2353,8 @@ class Python38CodeGenerator(Python37CodeGenerator):
     consts = consts38
 
     @classmethod
+    # pyre-fixme[14]: `optimize_tree` overrides method defined in
+    #  `Python37CodeGenerator` inconsistently.
     def optimize_tree(cls, optimize: int, tree: AST):
         return AstOptimizer38(optimize=optimize > 0).visit(tree)
 
@@ -2569,7 +2581,7 @@ class Python38CodeGenerator(Python37CodeGenerator):
 
         gen_index += 1
         if gen_index < len(generators):
-            self.compile_comrehension_generator(generators, gen_index, elt, val, type)
+            self.compile_comprehension_generator(generators, gen_index, elt, val, type)
         elif type is ast.GeneratorExp:
             self.visit(elt)
             self.emit("YIELD_VALUE")
@@ -2784,6 +2796,9 @@ class Python38CodeGenerator(Python37CodeGenerator):
             self.annotate_arg(args.kwarg, ann_args)
         return ann_args
 
+    def conjure_arguments(self, args: List[ast.arg]) -> ast.arguments:
+        return ast.arguments([], args, None, [], [], None, [])
+
     def skip_visit(self):
         """On Py38 we never want to skip visiting nodes."""
         return False
@@ -2802,7 +2817,106 @@ class Python38CodeGenerator(Python37CodeGenerator):
         return ret
 
 
+class CinderCodeGenerator(Python38CodeGenerator):
+    flow_graph = pyassem.PyFlowGraphCinder
+
+    def set_qual_name(self, qualname):
+        self._qual_name = qualname
+
+    def getCode(self):
+        code = super().getCode()
+        # pyre-fixme [21]: cinder
+        from cinder import _set_qualname
+
+        _set_qualname(code, self._qual_name)
+        return code
+
+    def _nameOp(self, prefix, name) -> None:
+        if (
+            prefix == "LOAD"
+            and name == "super"
+            and isinstance(self.scope, symbols.FunctionScope)
+        ):
+            scope = self.scope.check_name(name)
+            if scope in (SC_GLOBAL_EXPLICIT, SC_GLOBAL_IMPLICIT):
+                self.scope.suppress_jit = True
+        super()._nameOp(prefix, name)
+
+    def _is_super_call(self, node):
+        if (
+            not isinstance(node, ast.Call)
+            or not isinstance(node.func, ast.Name)
+            or node.func.id != "super"
+            or node.keywords
+        ):
+            return False
+
+        # check that 'super' only appear as implicit global:
+        # it is not defined in local or modules scope
+        if (
+            self.scope.check_name("super") != SC_GLOBAL_IMPLICIT
+            or self.module_gen.scope.check_name("super") != SC_GLOBAL_IMPLICIT
+        ):
+            return False
+
+        if len(node.args) == 2:
+            return True
+        if len(node.args) == 0:
+            if len(self.scope.params) == 0:
+                return False
+            return self.scope.check_name("__class__") == SC_FREE
+
+        return False
+
+    def _emit_args_for_super(self, super_call, attr):
+        if len(super_call.args) == 0:
+            self.loadName("__class__")
+            self.loadName(next(iter(self.scope.params)))
+        else:
+            for arg in super_call.args:
+                self.visit(arg)
+        return (self.mangle(attr), len(super_call.args) == 0)
+
+    def visitAttribute(self, node):
+        if isinstance(node.ctx, ast.Load) and self._is_super_call(node.value):
+            self.emit("LOAD_GLOBAL", "super")
+            load_arg = self._emit_args_for_super(node.value, node.attr)
+            self.emit("LOAD_ATTR_SUPER", load_arg)
+        else:
+            super().visitAttribute(node)
+
+    def visitCall(self, node):
+        if (
+            not isinstance(node.func, ast.Attribute)
+            or not isinstance(node.func.ctx, ast.Load)
+            or node.keywords
+            or any(isinstance(arg, ast.Starred) for arg in node.args)
+        ):
+            # We cannot optimize this call
+            return super().visitCall(node)
+
+        self.update_lineno(node)
+        if self._is_super_call(node.func.value):
+            self.emit("LOAD_GLOBAL", "super")
+            load_arg = self._emit_args_for_super(node.func.value, node.func.attr)
+            self.emit("LOAD_METHOD_SUPER", load_arg)
+            for arg in node.args:
+                self.visit(arg)
+            self.emit("CALL_METHOD", len(node.args))
+            return
+
+        self.visit(node.func.value)
+        self.emit("LOAD_METHOD", self.mangle(node.func.attr))
+        for arg in node.args:
+            self.visit(arg)
+
+        self.emit("CALL_METHOD", len(node.args))
+
+
 def get_default_generator():
+
+    if "cinder" in sys.version:
+        return CinderCodeGenerator
     if sys.version_info >= (3, 8):
         return Python38CodeGenerator
     if sys.version_info >= (3, 7):
@@ -2899,10 +3013,7 @@ def wrap_aug(node):
     return wrapper[node.__class__](node)
 
 
-if sys.version_info >= (3, 8):
-    PythonCodeGenerator = Python38CodeGenerator
-else:
-    PythonCodeGenerator = Python37CodeGenerator
+PythonCodeGenerator = get_default_generator()
 
 
 if __name__ == "__main__":

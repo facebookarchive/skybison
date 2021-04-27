@@ -1,16 +1,20 @@
+import __future__
+
+import ast
+import dis
 import sys
 import unittest
 from compiler.consts import (
     CO_ASYNC_GENERATOR,
     CO_COROUTINE,
-    CO_FUTURE_BARRY_AS_BDFL,
-    CO_FUTURE_GENERATOR_STOP,
     CO_GENERATOR,
     CO_NESTED,
     CO_NEWLOCALS,
     CO_NOFREE,
     CO_OPTIMIZED,
 )
+from dis import opmap, opname
+from unittest import TestCase
 
 from .common import CompilerTest
 
@@ -30,9 +34,14 @@ class FlagTests(CompilerTest):
         from __future__ import generator_stop
         def f(): pass"""
         )["f"]
-        expected = CO_FUTURE_GENERATOR_STOP | CO_NOFREE | CO_OPTIMIZED | CO_NEWLOCALS
+        expected = (
+            __future__.CO_FUTURE_GENERATOR_STOP
+            | CO_NOFREE
+            | CO_OPTIMIZED
+            | CO_NEWLOCALS
+        )
         if sys.version_info >= (3, 7):
-            expected &= ~CO_FUTURE_GENERATOR_STOP
+            expected &= ~__future__.CO_FUTURE_GENERATOR_STOP
         self.assertEqual(f.__code__.co_flags, expected)
 
     def test_future_barry_as_bdfl(self):
@@ -43,12 +52,15 @@ class FlagTests(CompilerTest):
         )["f"]
         self.assertEqual(
             f.__code__.co_flags,
-            CO_FUTURE_BARRY_AS_BDFL | CO_NOFREE | CO_OPTIMIZED | CO_NEWLOCALS,
+            __future__.CO_FUTURE_BARRY_AS_BDFL
+            | CO_NOFREE
+            | CO_OPTIMIZED
+            | CO_NEWLOCALS,
         )
 
     def test_braces(self):
         with self.assertRaisesRegex(SyntaxError, "not a chance"):
-            self.run_code(
+            f = self.run_code(
                 """
             from __future__ import braces
             def f(): pass"""

@@ -16,9 +16,7 @@ from .consts import (
 from .misc import mangle
 from .visitor import ASTVisitor
 
-
-VERSION = sys.version_info[0]
-if VERSION >= 3:
+if sys.version_info[0] >= 3:
     long = int
 
 MANGLE_LEN = 256
@@ -54,6 +52,7 @@ class Scope:
         self.global_scope = False
         self.generator = False
         self.klass = None
+        self.suppress_jit = False
         if klass is not None:
             for i in range(len(klass)):
                 if klass[i] != "_":
@@ -286,7 +285,7 @@ class ClassScope(Scope):
 class SymbolVisitor(ASTVisitor):
     def __init__(self):
         super().__init__()
-        self.scopes = {}
+        self.scopes: Dict[ast.AST, Scope] = {}
         self.klass = None
 
     # node that define new scopes

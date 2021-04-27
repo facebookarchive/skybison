@@ -1,5 +1,4 @@
 import ast
-import unittest
 from ast import FunctionDef
 from compiler import walk
 from compiler.consts import SC_GLOBAL_IMPLICIT

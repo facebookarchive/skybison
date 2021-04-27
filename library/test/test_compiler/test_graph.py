@@ -1,10 +1,15 @@
+import ast
+import dis
+import sys
 import unittest
 from compiler.pycodegen import CodeGenerator
+from dis import opmap, opname
+from unittest import TestCase
 
 from .common import CompilerTest
 
 
-class Block:  # noqa: B903
+class Block:
     def __init__(self, label, next=None):
         self.label = label
         self.next = next
@@ -80,13 +85,29 @@ class GraphTests(CompilerTest):
         except:
             pass"""
         )
-        expected = Block(
-            "entry",
-            Block(
-                "try_body",
-                Block("try_handlers", Block("handler_end", Block("try_end"))),
-            ),
-        )
+
+        if sys.version_info >= (3, 8):
+            expected = Block(
+                "entry",
+                Block(
+                    "try_body",
+                    Block(
+                        "try_handlers",
+                        Block(
+                            "try_cleanup_body0",
+                            Block("try_except_0", Block("try_else", Block("try_end"))),
+                        ),
+                    ),
+                ),
+            )
+        else:
+            expected = Block(
+                "entry",
+                Block(
+                    "try_body",
+                    Block("try_handlers", Block("handler_end", Block("try_end"))),
+                ),
+            )
         self.assert_graph_equal(graph, expected)
 
     def test_chained_comparison(self):
@@ -105,22 +126,28 @@ class GraphTests(CompilerTest):
         )
         # graph the graph for f so we can check the async for
         graph = self.get_child_graph(graph, "f")
-        expected = Block(
-            "entry",
-            Block(
-                "async_for_try",
+        if sys.version_info >= (3, 8):
+            expected = Block(
+                "entry",
+                Block("async_for_try", Block("except", Block("end", Block("exit")))),
+            )
+        else:
+            expected = Block(
+                "entry",
                 Block(
-                    "except",
+                    "async_for_try",
                     Block(
-                        "after_try",
+                        "except",
                         Block(
-                            "try_cleanup",
-                            Block("after_loop_else", Block("end", Block("exit"))),
+                            "after_try",
+                            Block(
+                                "try_cleanup",
+                                Block("after_loop_else", Block("end", Block("exit"))),
+                            ),
                         ),
                     ),
                 ),
-            ),
-        )
+            )
         self.assert_graph_equal(graph, expected)
 
 

@@ -1,17 +1,16 @@
+import ast
+import compiler.pycodegen
 import dis
+import opcode
+import sys
 import unittest
+from compiler.opcode37 import opcode as opcode37
 from compiler.peephole import Optimizer
-from compiler.pycodegen import CodeGeneratorNoPeephole
-from dis import opmap
+from dis import opmap, opname
 from types import CodeType
+from unittest import TestCase
 
 from .common import CompilerTest
-
-
-try:
-    import cinder
-except ImportError:
-    cinder = None
 
 
 class PeepHoleTests(CompilerTest):
@@ -86,7 +85,7 @@ class PeepHoleTests(CompilerTest):
         def __init__(self, test, code):
             self.test = test
             self.opt = test.run_code(code)
-            self.notopt = test.run_code(code, CodeGeneratorNoPeephole)
+            self.notopt = test.run_code(code, peephole_enabled=False)
 
         def __getitem__(self, func):
             return PeepHoleTests.PeepholeComparer(
@@ -99,12 +98,12 @@ class PeepHoleTests(CompilerTest):
             return runner[func]
         return runner
 
-    # class PeepholeCompiler()
     def peephole_compile(self, code):
         return PeepHoleTests.PeepholeComparer(
-            self, self.compile(code), self.compile(code, CodeGeneratorNoPeephole)
+            self, self.compile(code), self.compile(code, peephole_enabled=False)
         )
 
+    @unittest.skipIf(sys.version_info >= (3, 7), "3.7+ compiler does this in codegen")
     def test_unot(self):
         source = """
         def unot(x):
@@ -116,6 +115,7 @@ class PeepHoleTests(CompilerTest):
         unot.assert_removed("POP_JUMP_IF_FALSE")
         unot.assert_added("POP_JUMP_IF_TRUE")
 
+    @unittest.skipIf(sys.version_info >= (3, 7), "3.7+ compiler does this in codegen")
     def test_elim_inversion_of_is_or_in(self):
         for line, cmp_op in (
             ("not a is b", "is not"),
@@ -126,11 +126,13 @@ class PeepHoleTests(CompilerTest):
             code = self.peephole_compile(line)
             code.assert_added("COMPARE_OP", cmp_op)
 
+    @unittest.skipIf(sys.version_info >= (3, 7), "3.7+ compiler does this in codegen")
     def test_unary_op_no_fold_across_block(self):
         code = self.peephole_compile("~(- (1 if x else 2))")
         code.assert_both("UNARY_NEGATIVE")
         code.assert_both("UNARY_INVERT")
 
+    @unittest.skipIf(sys.version_info >= (3, 7), "3.7+ compiler does this in codegen")
     def test_unary_op_unfoldable(self):
         lines = [
             "-'abc'",
@@ -203,6 +205,7 @@ class PeepHoleTests(CompilerTest):
         self,
         code,
         argcount=0,
+        posonlyargcount=0,
         kwonlyargcount=0,
         nlocals=0,
         stacksize=0,
@@ -217,6 +220,26 @@ class PeepHoleTests(CompilerTest):
         freevars=(),
         cellvars=(),
     ):
+        if sys.version_info >= (3, 8):
+            return CodeType(
+                argcount,
+                posonlyargcount,
+                kwonlyargcount,
+                nlocals,
+                stacksize,
+                flags,
+                code,
+                constants,
+                names,
+                varnames,
+                filename,
+                name,
+                firstlineno,
+                lnotab,
+                freevars,
+                cellvars,
+            )
+        assert not posonlyargcount
         return CodeType(
             argcount,
             kwonlyargcount,
@@ -239,7 +262,7 @@ class PeepHoleTests(CompilerTest):
         byte_code = self.make_byte_code(
             (opmap["LOAD_CONST"], 0), (opmap["RETURN_VALUE"], 0), constants=(None,)
         )
-        opt = Optimizer(byte_code, (None,), b"")
+        opt = Optimizer(byte_code, (None,), b"", opcode37)
         self.assertEqual(opt.blocks, [0, 0])
 
     def test_mark_blocks_one_block(self):
@@ -251,7 +274,7 @@ class PeepHoleTests(CompilerTest):
             (opmap["LOAD_CONST"], 0),
             (opmap["RETURN_VALUE"], 0),
         )
-        opt = Optimizer(byte_code, (None,), b"")
+        opt = Optimizer(byte_code, (None,), b"", opcode37)
         self.assertEqual(opt.blocks, [0, 0, 0, 0, 1, 1])
 
     def test_mark_blocks_abs_jump_2(self):
@@ -264,7 +287,7 @@ class PeepHoleTests(CompilerTest):
             (opmap["LOAD_CONST"], 0),
             (opmap["RETURN_VALUE"], 0),
         )
-        opt = Optimizer(byte_code, (None,), b"")
+        opt = Optimizer(byte_code, (None,), b"", opcode37)
         self.assertEqual(opt.blocks, [0, 0, 0, 0, 0, 1, 1])
 
     def test_mark_blocks_abs_jump(self):
@@ -276,7 +299,7 @@ class PeepHoleTests(CompilerTest):
             (opmap["LOAD_CONST"], 0),
             (opmap["RETURN_VALUE"], 0),
         )
-        opt = Optimizer(byte_code, (None,), b"")
+        opt = Optimizer(byte_code, (None,), b"", opcode37)
         self.assertEqual(opt.blocks, [0, 0, 0, 0, 1, 1])
 
     def test_mark_blocks_rel_jump(self):
@@ -287,7 +310,7 @@ class PeepHoleTests(CompilerTest):
             (opmap["LOAD_CONST"], 0),
             (opmap["RETURN_VALUE"], 0),
         )
-        opt = Optimizer(byte_code, (None,), b"")
+        opt = Optimizer(byte_code, (None,), b"", opcode37)
         self.assertEqual(opt.blocks, [0, 0, 0, 0, 1])
 
     def test_mark_blocks_rel_jump_2(self):
@@ -299,7 +322,7 @@ class PeepHoleTests(CompilerTest):
             (opmap["LOAD_CONST"], 0),
             (opmap["RETURN_VALUE"], 0),
         )
-        opt = Optimizer(byte_code, (None,), b"")
+        opt = Optimizer(byte_code, (None,), b"", opcode37)
         self.assertEqual(opt.blocks, [0, 0, 0, 0, 0, 1])
 
     def test_fix_blocks(self):
@@ -312,7 +335,7 @@ class PeepHoleTests(CompilerTest):
             (opmap["LOAD_CONST"], 0),
             (opmap["RETURN_VALUE"], 0),
         )
-        opt = Optimizer(byte_code, (None,), b"\x01\x01")
+        opt = Optimizer(byte_code, (None,), b"\x01\x01", opcode37)
         opt.fix_blocks()
         self.assertEqual(opt.blocks, [0, 0, 1, 2, 3, 4])
 
@@ -326,7 +349,7 @@ class PeepHoleTests(CompilerTest):
             (opmap["LOAD_CONST"], 0),
             (opmap["RETURN_VALUE"], 0),
         )
-        opt = Optimizer(byte_code, (None,), b"\x02\x01")
+        opt = Optimizer(byte_code, (None,), b"\x02\x01", opcode37)
         opt.fix_blocks()
         lnotab = bytes(opt.fix_lnotab())
 
@@ -345,7 +368,7 @@ class PeepHoleTests(CompilerTest):
         self.assertInBytecode(
             self.new_code(byte_code, constants=(None,)), "JUMP_FORWARD", 8
         )
-        opt = Optimizer(byte_code, (None,), b"")
+        opt = Optimizer(byte_code, (None,), b"", opcode37)
         opt.fix_blocks()
         code = self.new_code(bytes(opt.fix_jumps()), constants=(None,))
         self.assertInBytecode(code, "JUMP_FORWARD", 6)
@@ -364,7 +387,7 @@ class PeepHoleTests(CompilerTest):
         self.assertInBytecode(
             self.new_code(byte_code, constants=(None,)), "POP_JUMP_IF_TRUE", 10
         )
-        opt = Optimizer(byte_code, (None,), b"")
+        opt = Optimizer(byte_code, (None,), b"", opcode37)
         opt.fix_blocks()
         code = self.new_code(bytes(opt.fix_jumps()), constants=(None,))
         self.assertInBytecode(code, "POP_JUMP_IF_TRUE", 8)
@@ -385,7 +408,7 @@ class PeepHoleTests(CompilerTest):
         self.assertInBytecode(
             self.new_code(byte_code, constants=(None,)), "POP_JUMP_IF_TRUE", 259
         )
-        opt = Optimizer(byte_code, (None,), b"")
+        opt = Optimizer(byte_code, (None,), b"", opcode37)
         opt.fix_blocks()
         code = self.new_code(bytes(opt.fix_jumps()), constants=(None,))
         self.assertInBytecode(code, "EXTENDED_ARG", 0)
@@ -407,6 +430,9 @@ class PeepHoleTests(CompilerTest):
             code.assert_removed("BUILD_TUPLE")
             code.assert_removed("UNPACK_SEQUENCE")
 
+    @unittest.skipIf(
+        sys.version_info >= (3, 7), "3.7+ compiler does this in AST optimizer"
+    )
     def test_folding_of_tuples_of_constants(self):
         for line, elem in (
             ("a = 1,2,3", (1, 2, 3)),
@@ -534,6 +560,9 @@ class PeepHoleTests(CompilerTest):
                 ],
             )
 
+    @unittest.skipIf(
+        sys.version_info >= (3, 7), "3.7+ compiler does this in AST optimizer"
+    )
     def test_folding_of_lists_of_constants(self):
         for line, elem in (
             # in/not in constants with BUILD_LIST should be folded to a tuple:
@@ -546,6 +575,9 @@ class PeepHoleTests(CompilerTest):
             code.assert_added("LOAD_CONST", elem)
             code.assert_removed("BUILD_LIST")
 
+    @unittest.skipIf(
+        sys.version_info >= (3, 7), "3.7+ compiler does this in AST optimizer"
+    )
     def test_folding_of_sets_of_constants(self):
         for line, elem in (
             # in/not in constants with BUILD_SET should be folded to a frozenset:
@@ -575,6 +607,9 @@ class PeepHoleTests(CompilerTest):
         self.assertTrue(not g(3))
         self.assertTrue(g(4))
 
+    @unittest.skipIf(
+        sys.version_info >= (3, 7), "3.7+ compiler does this in AST optimizer"
+    )
     def test_folding_of_binops_on_constants(self):
         for line, elem in (
             ("a = 2+3+4", 9),  # chained fold
@@ -614,6 +649,9 @@ class PeepHoleTests(CompilerTest):
         code.assert_both("LOAD_CONST", 1000)
         self.assertNotIn(2 ** 1000, code.opt.co_consts)
 
+    @unittest.skipIf(
+        sys.version_info >= (3, 7), "3.7+ compiler does this in AST optimizer"
+    )
     def test_binary_subscr_on_unicode(self):
         # valid code get optimized
         code = self.peephole_compile('x = "foo"[0]')
@@ -633,6 +671,9 @@ class PeepHoleTests(CompilerTest):
         code = self.peephole_compile('x = "fuu"[10]')
         code.assert_both("BINARY_SUBSCR")
 
+    @unittest.skipIf(
+        sys.version_info >= (3, 7), "3.7+ compiler does this in AST optimizer"
+    )
     def test_folding_of_unaryops_on_constants(self):
         for line, elem in (
             ("x = -0.5", -0.5),  # unary negative
@@ -658,13 +699,13 @@ class PeepHoleTests(CompilerTest):
         negzero.assert_all_removed("UNARY_")
 
         # Verify that unfoldables are skipped
-        for line, elem, op_name in (
+        for line, elem, opname in (
             ('-"abc"', "abc", "UNARY_NEGATIVE"),
             ('~"abc"', "abc", "UNARY_INVERT"),
         ):
             code = self.peephole_compile(line)
             code.assert_both("LOAD_CONST", elem)
-            code.assert_both(op_name)
+            code.assert_both(opname)
 
     def test_return(self):
         code = "def f():\n    return 42\n    x = 1"
@@ -707,22 +748,10 @@ class PeepHoleTests(CompilerTest):
             return 6"""
         f = self.peephole_run(source, "f")
         f.assert_removed("JUMP_ABSOLUTE")
-        f.assert_instr_count("RETURN_VALUE", 6, 6)
 
-    def test_elim_jump_after_return2(self):
-        # Eliminate dead code: jumps immediately after returns can't be reached
-        source = """
-        def f(cond1, cond2):
-            while 1:
-                if cond1: return 4"""
-        f = self.peephole_run(source, "f")
-        # There should be one jump for the while loop.
-        if cinder is None:
-            f.assert_instr_count("JUMP_ABSOLUTE", 1, 1)
-        else:
-            f.assert_instr_count("JUMP_ABSOLUTE", 1, 0)
-        f.assert_instr_count("RETURN_VALUE", 2, 2)
-
+    @unittest.skipIf(
+        sys.version_info >= (3, 7), "3.7+ compiler does this in AST optimizer"
+    )
     def test_make_function_doesnt_bail(self):
         source = """
         def f():
@@ -732,6 +761,9 @@ class PeepHoleTests(CompilerTest):
         f = self.peephole_run(source, "f")
         f.assert_removed("BINARY_ADD")
 
+    @unittest.skipIf(
+        sys.version_info >= (3, 7), "3.7+ compiler does this in AST optimizer"
+    )
     def test_constant_folding(self):
         # Issue #11244: aggressive constant folding.
         exprs = [
@@ -749,6 +781,9 @@ class PeepHoleTests(CompilerTest):
             code = self.peephole_compile(e)
             code.assert_all_removed("UNARY_", "BINARY_", "BUILD")
 
+    @unittest.skipIf(
+        sys.version_info >= (3, 7), "3.7+ compiler does this optimization natively"
+    )
     def test_fold_cond_jumps(self):
         source = """
         def f(l, r):
@@ -764,6 +799,9 @@ class PeepHoleTests(CompilerTest):
         f = self.peephole_run(source, "f")
         f.assert_removed("JUMP_IF_TRUE_OR_POP")
 
+    @unittest.skipIf(
+        sys.version_info >= (3, 7), "3.7+ compiler does this optimization natively"
+    )
     def test_fold_cond_jumps_2(self):
         source = """
         def f():
@@ -786,9 +824,6 @@ class PeepHoleTests(CompilerTest):
             pass"""
         )
 
-    @unittest.skipIf(
-        True, "TODO(T78726651): Test is failing. Please investigate and fix :)"
-    )
     def test_no_rehash(self):
         source = """
         def f():
