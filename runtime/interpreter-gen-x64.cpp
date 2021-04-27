@@ -211,6 +211,8 @@ class JitEnv : public EmitEnv {
 
   void setCurrentOp(BytecodeOp op) { current_op_ = op; }
 
+  View<RegisterAssignment> jit_handler_assignment = kNoRegisterAssignment;
+
  private:
   Function function_;
   Thread* thread_ = nullptr;
@@ -297,8 +299,20 @@ void emitNextOpcodeImpl(EmitEnv* env) {
 }
 
 // Load the next opcode, advance PC, and jump to the appropriate handler.
+void emitNextOpcodeFallthrough(EmitEnv* env) {
+  if (env->in_jit) {
+    JitEnv* jenv = static_cast<JitEnv*>(env);
+    env->register_state.check(jenv->jit_handler_assignment);
+    return;
+  }
+  emitNextOpcodeImpl(env);
+}
+
 void emitNextOpcode(EmitEnv* env) {
   if (env->in_jit) {
+    JitEnv* jenv = static_cast<JitEnv*>(env);
+    env->register_state.check(jenv->jit_handler_assignment);
+    __ jmp(jenv->opcodeAtByteOffset(jenv->virtualPC()), Assembler::kFarJump);
     return;
   }
   emitNextOpcodeImpl(env);
@@ -1064,7 +1078,7 @@ void emitHandler<LOAD_CONST>(EmitEnv* env) {
   __ movq(r_scratch,
           Address(r_scratch, env->oparg, TIMES_8, heapObjectDisp(0)));
   __ pushq(r_scratch);
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 template <>
@@ -1377,6 +1391,8 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
 
 static void emitFunctionEntrySimpleInterpretedHandler(EmitEnv* env,
                                                       word nargs) {
+  CHECK(!env->in_jit,
+        "should not be emitting function entrypoints in JIT mode");
   CHECK(nargs < kMaxNargs, "only support up to %ld arguments", kMaxNargs);
 
   // Check that we received the right number of arguments.
@@ -1392,6 +1408,8 @@ static void emitFunctionEntrySimpleInterpretedHandler(EmitEnv* env,
 }
 
 void emitCallTrampoline(EmitEnv* env) {
+  CHECK(!env->in_jit,
+        "should not be emitting function entrypoints in JIT mode");
   ScratchReg r_scratch(env);
 
   // Function::cast(callable).entry()(thread, nargs);
@@ -1414,6 +1432,8 @@ void emitCallTrampoline(EmitEnv* env) {
 }
 
 void emitFunctionEntryWithNoIntrinsicHandler(EmitEnv* env, Label* next_opcode) {
+  CHECK(!env->in_jit,
+        "should not be emitting function entrypoints in JIT mode");
   ScratchReg r_scratch(env);
 
   // Check whether the call is interpreted.
@@ -1458,6 +1478,8 @@ static void emitCallInterpretedSlowPath(EmitEnv* env) {
 }
 
 void emitFunctionEntryWithIntrinsicHandler(EmitEnv* env) {
+  CHECK(!env->in_jit,
+        "should not be emitting function entrypoints in JIT mode");
   ScratchReg r_intrinsic(env);
   // if (function.intrinsic() != nullptr)
   __ movq(r_intrinsic, Address(env->callable,
@@ -1486,6 +1508,8 @@ void emitFunctionEntryWithIntrinsicHandler(EmitEnv* env) {
 }
 
 void emitFunctionEntryBuiltin(EmitEnv* env, word nargs) {
+  CHECK(!env->in_jit,
+        "should not be emitting function entrypoints in JIT mode");
   Label stack_overflow;
   Label unwind;
 
@@ -1802,7 +1826,7 @@ void emitHandler<LOAD_BOOL>(EmitEnv* env) {
 
   __ leaq(r_scratch, Address(env->oparg, TIMES_2, Bool::kBoolTag));
   __ pushq(r_scratch);
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 template <>
@@ -1814,19 +1838,19 @@ void emitHandler<LOAD_FAST_REVERSE>(EmitEnv* env) {
   env->register_state.check(env->handler_assignment);
   __ jcc(EQUAL, genericHandlerLabel(env), Assembler::kFarJump);
   __ pushq(r_scratch);
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 template <>
 void emitHandler<LOAD_FAST_REVERSE_UNCHECKED>(EmitEnv* env) {
   __ pushq(Address(env->frame, env->oparg, TIMES_8, Frame::kSize));
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 template <>
 void emitHandler<STORE_FAST_REVERSE>(EmitEnv* env) {
   __ popq(Address(env->frame, env->oparg, TIMES_8, Frame::kSize));
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 template <>
@@ -1835,7 +1859,7 @@ void emitHandler<LOAD_IMMEDIATE>(EmitEnv* env) {
 
   __ movsbq(r_scratch, env->oparg);
   __ pushq(r_scratch);
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 template <>
@@ -1846,7 +1870,7 @@ void emitHandler<LOAD_GLOBAL_CACHED>(EmitEnv* env) {
   __ movq(r_scratch,
           Address(r_scratch, env->oparg, TIMES_8, heapObjectDisp(0)));
   __ pushq(Address(r_scratch, heapObjectDisp(RawValueCell::kValueOffset)));
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 template <>
@@ -1897,7 +1921,7 @@ static void emitPopJumpIfBool(EmitEnv* env, bool jump_value) {
   static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
   __ leaq(env->pc, Address(env->oparg, TIMES_2, 0));
   __ bind(&next);
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 template <>
@@ -1948,20 +1972,20 @@ void emitHandler<JUMP_ABSOLUTE>(EmitEnv* env) {
   env->register_state.assign(&env->pc, kPCReg);
   static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
   __ leaq(env->pc, Address(env->oparg, TIMES_2, 0));
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 template <>
 void emitHandler<JUMP_FORWARD>(EmitEnv* env) {
   static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
   __ leaq(env->pc, Address(env->pc, env->oparg, TIMES_2, 0));
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 template <>
 void emitHandler<DUP_TOP>(EmitEnv* env) {
   __ pushq(Address(RSP, 0));
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 template <>
@@ -1971,7 +1995,7 @@ void emitHandler<ROT_TWO>(EmitEnv* env) {
   __ popq(r_scratch);
   __ pushq(Address(RSP, 0));
   __ movq(Address(RSP, 8), r_scratch);
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 template <>
@@ -1979,7 +2003,7 @@ void emitHandler<POP_TOP>(EmitEnv* env) {
   ScratchReg r_scratch(env);
 
   __ popq(r_scratch);
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 template <>
@@ -2014,7 +2038,7 @@ void emitCompareIs(EmitEnv* env, bool eq_value) {
   __ cmpq(r_rhs, r_lhs);
   __ cmovnel(r_eq_value, r_neq_value);
   __ pushq(r_eq_value);
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 static void emitCompareOpSmallIntHandler(EmitEnv* env, Condition cond) {
@@ -2223,7 +2247,7 @@ void emitHandler<POP_BLOCK>(EmitEnv* env) {
   __ movl(Address(env->frame, Frame::kBlockStackDepthReturnModeOffset),
           r_depth);
 
-  emitNextOpcode(env);
+  emitNextOpcodeFallthrough(env);
 }
 
 word emitHandlerTable(EmitEnv* env);
@@ -2321,6 +2345,8 @@ void jitEmitGenericHandler(JitEnv* env) {
   word arg = env->currentOp().arg;
   env->register_state.assign(&env->oparg, kOpargReg);
   __ movq(env->oparg, Immediate(arg));
+  env->register_state.assign(&env->pc, kPCReg);
+  __ movq(env->pc, Immediate(env->virtualPC()));
   emitHandler<bc>(env);
 }
 
@@ -2404,8 +2430,18 @@ void jitEmitHandler<RETURN_VALUE>(JitEnv* env) {
 
 bool isSupportedInJIT(Bytecode bc) {
   switch (bc) {
+    case BINARY_ADD_SMALLINT:
+    case BINARY_AND_SMALLINT:
+    case BINARY_OR_SMALLINT:
+    case BINARY_SUB_SMALLINT:
+    case COMPARE_EQ_SMALLINT:
+    case COMPARE_GE_SMALLINT:
+    case COMPARE_GT_SMALLINT:
     case COMPARE_IS:
     case COMPARE_IS_NOT:
+    case COMPARE_LE_SMALLINT:
+    case COMPARE_LT_SMALLINT:
+    case COMPARE_NE_SMALLINT:
     case DUP_TOP:
     case LOAD_BOOL:
     case LOAD_CONST:
@@ -2416,6 +2452,7 @@ bool isSupportedInJIT(Bytecode bc) {
     case RETURN_VALUE:
     case ROT_TWO:
     case STORE_FAST_REVERSE:
+    case UNARY_NOT:
       return true;
     default:
       return false;
@@ -2666,6 +2703,15 @@ void compileFunction(Thread* thread, const Function& function) {
       {&env->thread, kThreadReg}, {&env->handlers_base, kHandlersBaseReg},
   };
   env->handler_assignment = handler_assignment;
+
+  // Similar to handler_assignment but no PC or oparg.
+  RegisterAssignment jit_handler_assignment[] = {
+      {&env->bytecode, kBCReg},
+      {&env->frame, kFrameReg},
+      {&env->thread, kThreadReg},
+      {&env->handlers_base, kHandlersBaseReg},
+  };
+  env->jit_handler_assignment = jit_handler_assignment;
 
   RegisterAssignment call_interpreted_slow_path_assignment[] = {
       {&env->pc, kPCReg},       {&env->callable, kCallableReg},

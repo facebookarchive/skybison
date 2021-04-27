@@ -7055,6 +7055,36 @@ static RawObject createTrampolineFunction1(Thread* thread, const Object& obj) {
   return *function;
 }
 
+// Create the function:
+//   def caller():
+//     return foo(left, right)
+// where obj is the parameter to createTrampolineFunction2, without rewriting
+// the bytecode.
+static RawObject createTrampolineFunction2(Thread* thread, const Object& left,
+                                           const Object& right) {
+  HandleScope scope(thread);
+  Code code(&scope, newEmptyCode());
+  Str foo(&scope, Runtime::internStrFromCStr(thread, "foo"));
+  Runtime* runtime = thread->runtime();
+  Tuple names(&scope, runtime->newTupleWith1(foo));
+  code.setNames(*names);
+  Tuple consts(&scope, runtime->newTupleWith2(left, right));
+  code.setConsts(*consts);
+  const byte bytecode_src[] = {
+      LOAD_GLOBAL,   0, LOAD_CONST,   0, LOAD_CONST, 1,
+      CALL_FUNCTION, 2, RETURN_VALUE, 0,
+  };
+  Bytes bytecode(&scope, runtime->newBytesWithAll(bytecode_src));
+  code.setCode(*bytecode);
+  Str qualname(&scope, runtime->newStrFromCStr("qualname"));
+  Module module(&scope, findMainModule(runtime));
+  Function function(
+      &scope, runtime->newFunctionWithCode(thread, qualname, code, module));
+  MutableBytes rewritten(&scope, expandBytecode(thread, bytecode));
+  function.setRewrittenBytecode(*rewritten);
+  return *function;
+}
+
 // Replace the bytecode with an empty bytes object after a function has been
 // compiled so that the function cannot be interpreted normally. This is useful
 // for ensuring that we are running the JITed function.
@@ -7076,6 +7106,17 @@ static RawObject compileAndCallJITFunction1(Thread* thread,
                                             const Object& param) {
   HandleScope scope(thread);
   Function caller(&scope, createTrampolineFunction1(thread, param));
+  compileFunction(thread, function);
+  setEmptyBytecode(function);
+  return Interpreter::call0(thread, caller);
+}
+
+static RawObject compileAndCallJITFunction2(Thread* thread,
+                                            const Function& function,
+                                            const Object& param1,
+                                            const Object& param2) {
+  HandleScope scope(thread);
+  Function caller(&scope, createTrampolineFunction2(thread, param1, param2));
   compileFunction(thread, function);
   setEmptyBytecode(function);
   return Interpreter::call0(thread, caller);
@@ -7261,6 +7302,254 @@ def foo():
   EXPECT_TRUE(containsBytecode(function, COMPARE_IS_NOT));
   Object result(&scope, compileAndCallJITFunction(thread_, function));
   EXPECT_EQ(*result, Bool::trueObj());
+}
+
+TEST_F(JitTest, BinaryAddSmallintWithSmallIntsReturnsInt) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(left, right):
+  return left + right
+
+# Rewrite BINARY_OP_ANAMORPHIC to BINARY_ADD_SMALLINT
+foo(1, 1)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BINARY_ADD_SMALLINT));
+  Object left(&scope, SmallInt::fromWord(5));
+  Object right(&scope, SmallInt::fromWord(10));
+  Object result(&scope,
+                compileAndCallJITFunction2(thread_, function, left, right));
+  EXPECT_TRUE(isIntEqualsWord(*result, 15));
+}
+
+TEST_F(JitTest, BinaryAndSmallintWithSmallIntsReturnsInt) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(left, right):
+  return left & right
+
+# Rewrite BINARY_OP_ANAMORPHIC to BINARY_AND_SMALLINT
+foo(1, 1)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BINARY_AND_SMALLINT));
+  Object left(&scope, SmallInt::fromWord(0xff));
+  Object right(&scope, SmallInt::fromWord(0x0f));
+  Object result(&scope,
+                compileAndCallJITFunction2(thread_, function, left, right));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0x0f));
+}
+
+TEST_F(JitTest, BinaryOrSmallintWithSmallIntsReturnsInt) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(left, right):
+  return left | right
+
+# Rewrite BINARY_OP_ANAMORPHIC to BINARY_OR_SMALLINT
+foo(1, 1)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BINARY_OR_SMALLINT));
+  Object left(&scope, SmallInt::fromWord(0xf0));
+  Object right(&scope, SmallInt::fromWord(0x0f));
+  Object result(&scope,
+                compileAndCallJITFunction2(thread_, function, left, right));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0xff));
+}
+
+TEST_F(JitTest, BinarySubSmallintWithSmallIntsReturnsInt) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(left, right):
+  return left - right
+
+# Rewrite BINARY_OP_ANAMORPHIC to BINARY_SUB_SMALLINT
+foo(1, 1)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BINARY_SUB_SMALLINT));
+  Object left(&scope, SmallInt::fromWord(7));
+  Object right(&scope, SmallInt::fromWord(4));
+  Object result(&scope,
+                compileAndCallJITFunction2(thread_, function, left, right));
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
+}
+
+TEST_F(JitTest, CompareEqSmallintWithSmallIntsReturnsBool) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(left, right):
+  return left == right
+
+# Rewrite BINARY_OP_ANAMORPHIC to COMPARE_EQ_SMALLINT
+foo(1, 1)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, COMPARE_EQ_SMALLINT));
+  Object left(&scope, SmallInt::fromWord(7));
+  Object right(&scope, SmallInt::fromWord(4));
+  Object result(&scope,
+                compileAndCallJITFunction2(thread_, function, left, right));
+  EXPECT_EQ(*result, Bool::falseObj());
+}
+
+TEST_F(JitTest, CompareNeSmallintWithSmallIntsReturnsBool) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(left, right):
+  return left != right
+
+# Rewrite BINARY_OP_ANAMORPHIC to COMPARE_NE_SMALLINT
+foo(1, 1)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, COMPARE_NE_SMALLINT));
+  Object left(&scope, SmallInt::fromWord(7));
+  Object right(&scope, SmallInt::fromWord(4));
+  Object result(&scope,
+                compileAndCallJITFunction2(thread_, function, left, right));
+  EXPECT_EQ(*result, Bool::trueObj());
+}
+
+TEST_F(JitTest, CompareGtSmallintWithSmallIntsReturnsBool) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(left, right):
+  return left > right
+
+# Rewrite BINARY_OP_ANAMORPHIC to COMPARE_GT_SMALLINT
+foo(1, 1)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, COMPARE_GT_SMALLINT));
+  Object left(&scope, SmallInt::fromWord(7));
+  Object right(&scope, SmallInt::fromWord(4));
+  Object result(&scope,
+                compileAndCallJITFunction2(thread_, function, left, right));
+  EXPECT_EQ(*result, Bool::trueObj());
+}
+
+TEST_F(JitTest, CompareGeSmallintWithSmallIntsReturnsBool) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(left, right):
+  return left >= right
+
+# Rewrite BINARY_OP_ANAMORPHIC to COMPARE_GE_SMALLINT
+foo(1, 1)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, COMPARE_GE_SMALLINT));
+  Object left(&scope, SmallInt::fromWord(7));
+  Object right(&scope, SmallInt::fromWord(4));
+  Object result(&scope,
+                compileAndCallJITFunction2(thread_, function, left, right));
+  EXPECT_EQ(*result, Bool::trueObj());
+}
+
+TEST_F(JitTest, CompareLtSmallintWithSmallIntsReturnsBool) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(left, right):
+  return left < right
+
+# Rewrite BINARY_OP_ANAMORPHIC to COMPARE_LT_SMALLINT
+foo(1, 1)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, COMPARE_LT_SMALLINT));
+  Object left(&scope, SmallInt::fromWord(7));
+  Object right(&scope, SmallInt::fromWord(4));
+  Object result(&scope,
+                compileAndCallJITFunction2(thread_, function, left, right));
+  EXPECT_EQ(*result, Bool::falseObj());
+}
+
+TEST_F(JitTest, CompareLeSmallintWithSmallIntsReturnsBool) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(left, right):
+  return left <= right
+
+# Rewrite BINARY_OP_ANAMORPHIC to COMPARE_LE_SMALLINT
+foo(1, 1)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, COMPARE_LE_SMALLINT));
+  Object left(&scope, SmallInt::fromWord(7));
+  Object right(&scope, SmallInt::fromWord(4));
+  Object result(&scope,
+                compileAndCallJITFunction2(thread_, function, left, right));
+  EXPECT_EQ(*result, Bool::falseObj());
+}
+
+TEST_F(JitTest, UnaryNotWithBoolReturnsBool) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(obj):
+  return not obj
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, UNARY_NOT));
+  Object param(&scope, Bool::trueObj());
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, param));
+  EXPECT_EQ(*result, Bool::falseObj());
 }
 
 }  // namespace testing
