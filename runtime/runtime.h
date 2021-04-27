@@ -60,6 +60,9 @@ class Runtime {
   RawObject createLargeInt(word num_digits);
   RawObject createLargeStr(word length);
 
+  // Allocate memory for JITed code.
+  bool allocateForMachineCode(word size, uword* address_out);
+
   RawObject newBoundMethod(const Object& function, const Object& self);
 
   RawObject newBytearray();
@@ -867,6 +870,7 @@ class Runtime {
 
   void initializeHeapTypes(Thread* thread);
   void initializeInterned(Thread* thread);
+  void initializeJITState();
   void initializeLayouts();
   void initializeModules(Thread* thread);
   void initializePrimitiveInstances();
@@ -1005,6 +1009,9 @@ class Runtime {
   void* at_exit_context_ = nullptr;
 
   bool initialized_ = false;
+
+  // Non-moving memory for JIT compiled functions.
+  Space* machine_code_ = nullptr;
 
   static word next_module_index_;
 

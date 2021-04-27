@@ -13,7 +13,7 @@ class OS {
  public:
   enum { kPageSize = 4 * kKiB };
 
-  enum Protection { kNoAccess, kReadWrite, kReadExecute };
+  enum Protection { kNoAccess, kReadWrite, kReadExecute, kReadWriteExecute };
 
   static const word kNumSignals;
   static bool volatile pending_signals_[];

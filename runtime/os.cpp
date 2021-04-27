@@ -78,6 +78,9 @@ bool OS::protectMemory(byte* address, word size, Protection mode) {
     case kReadExecute:
       prot = PROT_READ | PROT_EXEC;
       break;
+    case kReadWriteExecute:
+      prot = PROT_READ | PROT_WRITE | PROT_EXEC;
+      break;
     default:
       std::abort();
   }

@@ -158,6 +158,7 @@ Runtime::Runtime(word heap_size, Interpreter* interpreter,
   initializeCAPIState(this);
   initializeModules(thread);
   initializeCAPIModules();
+  initializeJITState();
 
   // This creates a reference that prevents the linker from garbage collecting
   // all of the symbols in debugging.cpp.  This is a temporary workaround until
@@ -192,6 +193,15 @@ Runtime::~Runtime() {
     }
   }
   delete symbols_;
+  delete machine_code_;
+}
+
+bool Runtime::allocateForMachineCode(word size, uword* address_out) {
+  DCHECK(Utils::isAligned(size, kPointerSize), "request %ld not aligned", size);
+  if (UNLIKELY(!machine_code_->allocate(size, address_out))) {
+    UNIMPLEMENTED("out of fixed memory");
+  }
+  return true;
 }
 
 RawObject Runtime::newBoundMethod(const Object& function, const Object& self) {
@@ -1631,6 +1641,16 @@ RawObject Runtime::signalCallback(word signum) {
 
 void Runtime::populateEntryAsm(const Function& function) {
   function.setEntryAsm(interpreter_->entryAsm(function));
+}
+
+static const word kFixedSpaceSize = 1 * kGiB;
+
+void Runtime::initializeJITState() {
+  machine_code_ = new Space(kFixedSpaceSize);
+  // TODO(T89276586): Only set X bit per-page after code is written and
+  // finalized.
+  OS::protectMemory(reinterpret_cast<byte*>(machine_code_->start()),
+                    machine_code_->size(), OS::kReadWriteExecute);
 }
 
 void Runtime::initializeLayouts() {

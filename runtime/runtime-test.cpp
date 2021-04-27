@@ -3721,5 +3721,20 @@ TEST(RuntimeTestNoFixture, DestructorRestoresSignalHandlers) {
   EXPECT_EQ(OS::signalHandler(SIGINT), SIG_DFL);
 }
 
+TEST_F(RuntimeTest, AllocateForMachineCodeReturnsTrue) {
+  uword address = 0;
+  EXPECT_TRUE(runtime_->allocateForMachineCode(1 * kKiB, &address));
+  EXPECT_NE(address, uword{0});
+}
+
+TEST_F(RuntimeTest, AllocateForMachineCodeReturnsSequentialAddresses) {
+  uword address = 0;
+  runtime_->allocateForMachineCode(1 * kKiB, &address);
+  EXPECT_NE(address, uword{0});
+  uword address2 = 0;
+  runtime_->allocateForMachineCode(2 * kKiB, &address2);
+  EXPECT_EQ(address2, address + 1 * kKiB);
+}
+
 }  // namespace testing
 }  // namespace py
