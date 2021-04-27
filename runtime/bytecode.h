@@ -418,6 +418,10 @@ inline RawObject objectFromOparg(word arg) {
   return RawObject(static_cast<uword>(static_cast<int8_t>(arg)));
 }
 
+// Expand kCompilerCodeUnitSize bytecode to kCodeUnitSize bytecode, leaving all
+// opcodes and arguments intact.
+RawObject expandBytecode(Thread* thread, const Bytes& bytecode);
+
 // Prepares bytecode for caching: Adds a rewritten variant of the bytecode to
 // `function`. It has the arguments of opcodes that use the cache replaced with
 // a cache index. The previous arguments are moved to a separate tuple and can

@@ -644,6 +644,16 @@ def _int_new_from_str(cls, x, base):
     _builtin()
 
 
+def _jit(func):
+    """Compile the function's body to native code. Return the function. Useful
+    as a decorator:
+    @_jit
+    def foo:
+      pass
+    """
+    _builtin()
+
+
 def _list_append(self, item):
     "$intrinsic$"
     _builtin()

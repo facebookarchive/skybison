@@ -556,6 +556,24 @@ RawObject icLookupBinaryOp(RawMutableTuple caches, word index,
                                   right_layout_id, flags_out);
 }
 
+::testing::AssertionResult containsBytecode(const Function& function,
+                                            Bytecode bc) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  MutableBytes bytecode(&scope, function.rewrittenBytecode());
+  for (word i = 0, num_opcodes = rewrittenBytecodeLength(bytecode);
+       i < num_opcodes;) {
+    BytecodeOp bco = nextBytecodeOp(bytecode, &i);
+    if (bco.bc == bc) {
+      return ::testing::AssertionSuccess();
+    }
+  }
+  unique_c_ptr<char> name(Str::cast(function.name()).toCStr());
+  return ::testing::AssertionFailure()
+         << "opcode " << kBytecodeNames[static_cast<word>(bc)]
+         << " not found in '" << name.get() << "'";
+}
+
 ::testing::AssertionResult isBytearrayEqualsBytes(const Object& result,
                                                   View<byte> expected) {
   Thread* thread = Thread::current();

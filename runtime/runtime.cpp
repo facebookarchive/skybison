@@ -606,20 +606,6 @@ RawObject Runtime::newFunction(Thread* thread, const Object& name,
   return *function;
 }
 
-RawObject Runtime::expandBytecode(Thread* thread, const Bytes& bytecode) {
-  // Bytecode comes in in (OP, ARG) pairs. Bytecode goes out in (OP, ARG,
-  // CACHE, CACHE) four-tuples.
-  HandleScope scope(thread);
-  word num_opcodes = bytecodeLength(bytecode);
-  MutableBytes result(&scope, createMutableBytes(num_opcodes * kCodeUnitSize));
-  for (word i = 0; i < num_opcodes; i++) {
-    rewrittenBytecodeOpAtPut(result, i, bytecodeOpAt(bytecode, i));
-    rewrittenBytecodeArgAtPut(result, i, bytecodeArgAt(bytecode, i));
-    rewrittenBytecodeCacheAtPut(result, i, 0);
-  }
-  return *result;
-}
-
 RawObject Runtime::newFunctionWithCode(Thread* thread, const Object& qualname,
                                        const Code& code,
                                        const Object& module_obj) {

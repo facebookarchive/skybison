@@ -899,8 +899,6 @@ class Runtime {
 
   static word immediateHash(RawObject object);
 
-  RawObject expandBytecode(Thread* thread, const Bytes& bytecode);
-
   // Clear all active handle scopes
   void clearHandleScopes();
 

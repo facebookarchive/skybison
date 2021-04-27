@@ -240,6 +240,21 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op,
   return RewrittenOp{UNUSED_BYTECODE_0, 0, false};
 }
 
+RawObject expandBytecode(Thread* thread, const Bytes& bytecode) {
+  // Bytecode comes in in (OP, ARG) pairs. Bytecode goes out in (OP, ARG,
+  // CACHE, CACHE) four-tuples.
+  HandleScope scope(thread);
+  word num_opcodes = bytecodeLength(bytecode);
+  MutableBytes result(&scope, thread->runtime()->newMutableBytesUninitialized(
+                                  num_opcodes * kCodeUnitSize));
+  for (word i = 0; i < num_opcodes; i++) {
+    rewrittenBytecodeOpAtPut(result, i, bytecodeOpAt(bytecode, i));
+    rewrittenBytecodeArgAtPut(result, i, bytecodeArgAt(bytecode, i));
+    rewrittenBytecodeCacheAtPut(result, i, 0);
+  }
+  return *result;
+}
+
 static const word kMaxCaches = 65536;
 
 void rewriteBytecode(Thread* thread, const Function& function) {

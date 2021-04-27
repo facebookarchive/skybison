@@ -172,6 +172,52 @@ struct EmitEnv {
   word handler_offset;
   word counting_handler_offset;
   bool count_opcodes;
+  bool in_jit = false;
+};
+
+class JitEnv : public EmitEnv {
+ public:
+  JitEnv(HandleScope* scope, Thread* compiling_thread, const Function& function,
+         word num_opcodes)
+      : function_(scope, *function),
+        thread_(compiling_thread),
+        num_opcodes_(num_opcodes) {
+    in_jit = true;
+    opcode_handlers = new Label[num_opcodes];
+  }
+
+  ~JitEnv() {
+    delete[] opcode_handlers;
+    opcode_handlers = nullptr;
+  }
+
+  RawObject function() { return *function_; }
+
+  Thread* compilingThread() { return thread_; }
+
+  word numOpcodes() { return num_opcodes_; }
+
+  Label* opcodeAtByteOffset(word byte_offset) {
+    word opcode_index = byte_offset / kCodeUnitSize;
+    DCHECK_INDEX(opcode_index, num_opcodes_);
+    return &opcode_handlers[opcode_index];
+  }
+
+  word virtualPC() { return virtual_pc_; }
+
+  void setVirtualPC(word virtual_pc) { virtual_pc_ = virtual_pc; }
+
+  BytecodeOp currentOp() { return current_op_; }
+
+  void setCurrentOp(BytecodeOp op) { current_op_ = op; }
+
+ private:
+  Function function_;
+  Thread* thread_ = nullptr;
+  word num_opcodes_ = 0;
+  word virtual_pc_ = 0;
+  Label* opcode_handlers = nullptr;
+  BytecodeOp current_op_;
 };
 
 // This macro helps instruction-emitting code stand out while staying compact.
@@ -232,8 +278,7 @@ void emitCurrentCacheIndex(EmitEnv* env, Register dst) {
                          heapObjectDisp(-kCodeUnitSize + 2)));
 }
 
-// Load the next opcode, advance PC, and jump to the appropriate handler.
-void emitNextOpcode(EmitEnv* env) {
+void emitNextOpcodeImpl(EmitEnv* env) {
   ScratchReg r_scratch(env);
 
   __ movzbl(r_scratch,
@@ -249,6 +294,14 @@ void emitNextOpcode(EmitEnv* env) {
   // Hint to the branch predictor that the indirect jmp never falls through to
   // here.
   __ ud2();
+}
+
+// Load the next opcode, advance PC, and jump to the appropriate handler.
+void emitNextOpcode(EmitEnv* env) {
+  if (env->in_jit) {
+    return;
+  }
+  emitNextOpcodeImpl(env);
 }
 
 enum SaveRestoreFlags {
@@ -364,6 +417,30 @@ void emitHandleContinue(EmitEnv* env, SaveRestoreFlags flags) {
   // are already active at the time the handlers are switched.
   emitRestoreInterpreterState(env, flags);
   emitNextOpcode(env);
+
+  __ bind(&handle_flow);
+  __ shll(r_result, Immediate(kHandlerSizeShift));
+  __ leaq(r_result, Address(env->handlers_base, r_result, TIMES_1,
+                            -Interpreter::kNumContinues * kHandlerSize));
+  env->register_state.check(env->return_handler_assignment);
+  __ jmp(r_result);
+  env->register_state.reset();
+}
+
+void emitHandleContinueIntoInterpreter(EmitEnv* env, SaveRestoreFlags flags) {
+  ScratchReg r_result(env, kReturnRegs[0]);
+
+  Label handle_flow;
+  static_assert(static_cast<int>(Interpreter::Continue::NEXT) == 0,
+                "NEXT must be 0");
+  __ testl(r_result, r_result);
+  __ jcc(NOT_ZERO, &handle_flow, Assembler::kNearJump);
+
+  // Note that we do not restore the `kHandlerBase` for now. That saves some
+  // cycles but fail to cleanly switch interpreter handlers for stackframes that
+  // are already active at the time the handlers are switched.
+  emitRestoreInterpreterState(env, flags);
+  emitNextOpcodeImpl(env);
 
   __ bind(&handle_flow);
   __ shll(r_result, Immediate(kHandlerSizeShift));
@@ -1377,7 +1454,7 @@ static void emitCallInterpretedSlowPath(EmitEnv* env) {
   emitCall<Interpreter::Continue (*)(Thread*, word, RawFunction)>(
       env, Interpreter::callInterpreted);
   emitRestoreInterpreterState(env, kHandlerBase);
-  emitHandleContinue(env, kGenericHandler);
+  emitHandleContinueIntoInterpreter(env, kGenericHandler);
 }
 
 void emitFunctionEntryWithIntrinsicHandler(EmitEnv* env) {
@@ -2239,6 +2316,112 @@ void emitInterpreter(EmitEnv* env) {
   env->register_state.reset();
 }
 
+template <Bytecode bc>
+void jitEmitGenericHandler(JitEnv* env) {
+  word arg = env->currentOp().arg;
+  env->register_state.assign(&env->oparg, kOpargReg);
+  __ movq(env->oparg, Immediate(arg));
+  emitHandler<bc>(env);
+}
+
+template <Bytecode bc>
+void jitEmitHandler(JitEnv* env) {
+  jitEmitGenericHandler<bc>(env);
+}
+
+void emitPushImmediate(EmitEnv* env, word value) {
+  if (Utils::fits<int32_t>(value)) {
+    __ pushq(Immediate(value));
+  } else {
+    ScratchReg r_scratch(env);
+
+    __ movq(r_scratch, Immediate(value));
+    __ pushq(r_scratch);
+  }
+}
+
+template <>
+void jitEmitHandler<LOAD_BOOL>(JitEnv* env) {
+  word arg = env->currentOp().arg;
+  DCHECK(arg == 0x80 || arg == 0, "unexpected arg");
+  word value = Bool::fromBool(arg).raw();
+  __ pushq(Immediate(value));
+}
+
+template <>
+void jitEmitHandler<LOAD_CONST>(JitEnv* env) {
+  HandleScope scope(env->compilingThread());
+  Code code(&scope, Function::cast(env->function()).code());
+  Tuple consts(&scope, code.consts());
+  word arg = env->currentOp().arg;
+  Object value(&scope, consts.at(arg));
+  if (!value.isHeapObject()) {
+    emitPushImmediate(env, value.raw());
+    return;
+  }
+  // Fall back to runtime LOAD_CONST for non-immediates like tuples, etc.
+  jitEmitGenericHandler<LOAD_CONST>(env);
+}
+
+template <>
+void jitEmitHandler<LOAD_IMMEDIATE>(JitEnv* env) {
+  word arg = env->currentOp().arg;
+  emitPushImmediate(env, objectFromOparg(arg).raw());
+}
+
+template <>
+void jitEmitHandler<RETURN_VALUE>(JitEnv* env) {
+  ScratchReg r_return_value(env);
+
+  // The return mode for simple interpreted functions is normally 0 (see
+  // emitPushCallFrame/Thread::pushCallFrameImpl), so we can skip the slow
+  // path.
+  // TODO(T89514778): When profiling is enabled, discard all JITed functions
+  // and stop JITing.
+
+  // Fast path: pop return value, restore caller frame, push return value.
+  __ popq(r_return_value);
+
+  {
+    ScratchReg r_scratch(env);
+    // RSP = frame->frameEnd()
+    //     = locals() + (kFunctionOffsetFromLocals + 1) * kPointerSize)
+    // (The +1 is because we have to point behind the field)
+    __ movq(r_scratch, Address(env->frame, Frame::kLocalsOffsetOffset));
+    __ leaq(RSP,
+            Address(env->frame, r_scratch, TIMES_1,
+                    (Frame::kFunctionOffsetFromLocals + 1) * kPointerSize));
+    __ movq(env->frame, Address(env->frame, Frame::kPreviousFrameOffset));
+  }
+
+  // Need to restore handler base from the calling frame, which (so far) is
+  // always the assembly interpreter. This allows emitNextOpcode to find a
+  // handler for the next opcode.
+  emitRestoreInterpreterState(env, kBytecode | kVMPC | kHandlerBase);
+  __ pushq(r_return_value);
+  emitNextOpcodeImpl(env);
+}
+
+bool isSupportedInJIT(Bytecode bc) {
+  switch (bc) {
+    case COMPARE_IS:
+    case COMPARE_IS_NOT:
+    case DUP_TOP:
+    case LOAD_BOOL:
+    case LOAD_CONST:
+    case LOAD_FAST_REVERSE_UNCHECKED:
+    case LOAD_GLOBAL_CACHED:
+    case LOAD_IMMEDIATE:
+    case POP_TOP:
+    case RETURN_VALUE:
+    case ROT_TWO:
+    case STORE_FAST_REVERSE:
+      return true;
+    default:
+      return false;
+  }
+}
+
 void emitBeforeHandler(EmitEnv* env) {
   if (env->count_opcodes) {
     __ incq(Address(env->thread, Thread::opcodeCountOffset()));
@@ -2458,6 +2641,116 @@ void* X64Interpreter::entryAsm(const Function& function) {
 }
 
 }  // namespace
+
+void compileFunction(Thread* thread, const Function& function) {
+  HandleScope scope(thread);
+  MutableBytes code(&scope, function.rewrittenBytecode());
+  word num_opcodes = rewrittenBytecodeLength(code);
+  JitEnv environ(&scope, thread, function, num_opcodes);
+  JitEnv* env = &environ;
+
+  // TODO(T89721395): Deduplicate these assignments with emitInterpreter.
+  RegisterAssignment function_entry_assignment[] = {
+      {&env->pc, kPCReg},
+      {&env->oparg, kOpargReg},
+      {&env->frame, kFrameReg},
+      {&env->thread, kThreadReg},
+      {&env->handlers_base, kHandlersBaseReg},
+      {&env->callable, kCallableReg},
+  };
+  env->function_entry_assignment = function_entry_assignment;
+
+  RegisterAssignment handler_assignment[] = {
+      {&env->bytecode, kBCReg},   {&env->pc, kPCReg},
+      {&env->oparg, kOpargReg},   {&env->frame, kFrameReg},
+      {&env->thread, kThreadReg}, {&env->handlers_base, kHandlersBaseReg},
+  };
+  env->handler_assignment = handler_assignment;
+
+  RegisterAssignment call_interpreted_slow_path_assignment[] = {
+      {&env->pc, kPCReg},       {&env->callable, kCallableReg},
+      {&env->frame, kFrameReg}, {&env->thread, kThreadReg},
+      {&env->oparg, kOpargReg}, {&env->handlers_base, kHandlersBaseReg},
+  };
+  env->call_interpreted_slow_path_assignment =
+      call_interpreted_slow_path_assignment;
+
+  RegisterAssignment call_trampoline_assignment[] = {
+      {&env->pc, kPCReg},       {&env->callable, kCallableReg},
+      {&env->frame, kFrameReg}, {&env->thread, kThreadReg},
+      {&env->oparg, kOpargReg}, {&env->handlers_base, kHandlersBaseReg},
+  };
+  env->call_trampoline_assignment = call_trampoline_assignment;
+
+  RegisterAssignment return_handler_assignment[] = {
+      {&env->thread, kThreadReg},
+      {&env->handlers_base, kHandlersBaseReg},
+  };
+  env->return_handler_assignment = return_handler_assignment;
+
+  RegisterAssignment do_return_assignment[] = {
+      {&env->return_value, kReturnRegs[0]},
+  };
+  env->do_return_assignment = do_return_assignment;
+
+  DCHECK(function.isInterpreted(), "function must be interpreted");
+  DCHECK(function.hasSimpleCall(),
+         "function must have a simple calling convention");
+
+  // JIT entrypoints are in entryAsm and are called with the function entry
+  // assignment.
+  env->register_state.resetTo(function_entry_assignment);
+
+  // Check that we received the right number of arguments.
+  Label call_interpreted_slow_path;
+  __ cmpl(env->oparg, Immediate(function.argcount()));
+  env->register_state.check(env->call_interpreted_slow_path_assignment);
+  __ jcc(NOT_EQUAL, &call_interpreted_slow_path, Assembler::kFarJump);
+
+  // Open a new frame.
+  emitPushCallFrame(env, /*stack_overflow=*/&call_interpreted_slow_path);
+
+  for (word i = 0; i < num_opcodes;) {
+    word current_pc = i * kCodeUnitSize;
+    BytecodeOp op = nextBytecodeOp(code, &i);
+    if (!isSupportedInJIT(op.bc)) {
+      UNIMPLEMENTED("unsupported jit opcode %s", kBytecodeNames[op.bc]);
+    }
+    env->current_op = op.bc;
+    env->setCurrentOp(op);
+    env->setVirtualPC(i * kCodeUnitSize);
+    env->register_state.resetTo(env->handler_assignment);
+    __ bind(env->opcodeAtByteOffset(current_pc));
+    switch (op.bc) {
+#define BC(name, _0, _1)                                                       \
+  case name: {                                                                 \
+    jitEmitHandler<name>(env);                                                 \
+    break;                                                                     \
+  }
+      FOREACH_BYTECODE(BC)
+#undef BC
+    }
+  }
+
+  __ bind(&call_interpreted_slow_path);
+  // TODO(T89721522): Have one canonical slow path chunk of code that all JIT
+  // functions jump to, instead of one per function.
+  env->register_state.resetTo(env->call_interpreted_slow_path_assignment);
+  emitCallInterpretedSlowPath(env);
+
+  // Finalize the code.
+  word jit_size = Utils::roundUp(env->as.codeSize(), kBitsPerByte);
+  uword address;
+  bool allocated =
+      thread->runtime()->allocateForMachineCode(jit_size, &address);
+  CHECK(allocated, "could not allocate memory for JIT function");
+  byte* jit_code = reinterpret_cast<byte*>(address);
+  env->as.finalizeInstructions(MemoryRegion(jit_code, jit_size));
+  // TODO(T83754516): Mark memory as RX.
+
+  // Replace the entrypoint.
+  function.setEntryAsm(jit_code);
+}
 
 Interpreter* createAsmInterpreter() { return new X64Interpreter; }
 

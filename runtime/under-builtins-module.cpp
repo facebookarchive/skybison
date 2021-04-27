@@ -3387,6 +3387,13 @@ RawObject FUNC(_builtins, _iter)(Thread* thread, Arguments args) {
   return Interpreter::createIterator(thread, object);
 }
 
+RawObject FUNC(_builtins, _jit)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Function function(&scope, args.get(0));
+  compileFunction(thread, function);
+  return *function;
+}
+
 RawObject FUNC(_builtins, _list_append)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self(&scope, args.get(0));

@@ -218,6 +218,9 @@ RawObject icLookupBinaryOp(RawMutableTuple caches, word index,
                            LayoutId left_layout_id, LayoutId right_layout_id,
                            BinaryOpFlags* flags_out);
 
+::testing::AssertionResult containsBytecode(const Function& function,
+                                            Bytecode bc);
+
 ::testing::AssertionResult isBytearrayEqualsBytes(const Object& result,
                                                   View<byte> expected);
 

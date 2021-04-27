@@ -26,6 +26,7 @@ namespace testing {
 
 using InterpreterDeathTest = RuntimeFixture;
 using InterpreterTest = RuntimeFixture;
+using JitTest = RuntimeFixture;
 
 TEST_F(InterpreterTest, IsTrueBool) {
   HandleScope scope(thread_);
@@ -669,20 +670,6 @@ TEST_F(InterpreterTest, DoBinaryOpWithSmallIntsRewritesOpcode) {
   // Updated opcode returns the same value.
   EXPECT_TRUE(
       isIntEqualsWord(Interpreter::call0(thread_, function), left - right));
-}
-
-static bool containsBytecode(const Function& function, Bytecode bc) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  MutableBytes bytecode(&scope, function.rewrittenBytecode());
-  for (word i = 0, num_opcodes = rewrittenBytecodeLength(bytecode);
-       i < num_opcodes;) {
-    BytecodeOp bco = nextBytecodeOp(bytecode, &i);
-    if (bco.bc == bc) {
-      return true;
-    }
-  }
-  return false;
 }
 
 static bool functionMatchesRef2(const Function& function,
@@ -6988,6 +6975,292 @@ TEST_F(InterpreterTest, IntrinsicWithSlowPathDoesNotAlterStack) {
   ASSERT_NE(function, nullptr);
   ASSERT_FALSE(function(thread_));
   EXPECT_EQ(thread_->stackPeek(0), *obj);
+}
+
+TEST_F(JitTest, CompileFunctionSetsEntryAsm) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  Object obj1(&scope, NoneType::object());
+  Tuple consts(&scope, runtime_->newTupleWith1(obj1));
+  code.setConsts(*consts);
+  const byte bytecode[] = {
+      LOAD_CONST,
+      0,
+      RETURN_VALUE,
+      0,
+  };
+  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Object qualname(&scope, Str::empty());
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+}
+
+// Create the function:
+//   def caller():
+//     return foo()
+// without rewriting the bytecode.
+static RawObject createTrampolineFunction(Thread* thread) {
+  HandleScope scope(thread);
+  Code code(&scope, newEmptyCode());
+  Str foo(&scope, Runtime::internStrFromCStr(thread, "foo"));
+  Runtime* runtime = thread->runtime();
+  Tuple names(&scope, runtime->newTupleWith1(foo));
+  code.setNames(*names);
+  const byte bytecode_src[] = {
+      LOAD_GLOBAL, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0,
+  };
+  Bytes bytecode(&scope, runtime->newBytesWithAll(bytecode_src));
+  code.setCode(*bytecode);
+  Str qualname(&scope, runtime->newStrFromCStr("qualname"));
+  Module module(&scope, findMainModule(runtime));
+  Function function(
+      &scope, runtime->newFunctionWithCode(thread, qualname, code, module));
+  MutableBytes rewritten(&scope, expandBytecode(thread, bytecode));
+  function.setRewrittenBytecode(*rewritten);
+  return *function;
+}
+
+// Create the function:
+//   def caller():
+//     return foo(obj)
+// where obj is the parameter to createTrampolineFunction1, without rewriting
+// the bytecode.
+static RawObject createTrampolineFunction1(Thread* thread, const Object& obj) {
+  HandleScope scope(thread);
+  Code code(&scope, newEmptyCode());
+  Str foo(&scope, Runtime::internStrFromCStr(thread, "foo"));
+  Runtime* runtime = thread->runtime();
+  Tuple names(&scope, runtime->newTupleWith1(foo));
+  code.setNames(*names);
+  Tuple consts(&scope, runtime->newTupleWith1(obj));
+  code.setConsts(*consts);
+  const byte bytecode_src[] = {
+      LOAD_GLOBAL, 0, LOAD_CONST, 0, CALL_FUNCTION, 1, RETURN_VALUE, 0,
+  };
+  Bytes bytecode(&scope, runtime->newBytesWithAll(bytecode_src));
+  code.setCode(*bytecode);
+  Str qualname(&scope, runtime->newStrFromCStr("qualname"));
+  Module module(&scope, findMainModule(runtime));
+  Function function(
+      &scope, runtime->newFunctionWithCode(thread, qualname, code, module));
+  MutableBytes rewritten(&scope, expandBytecode(thread, bytecode));
+  function.setRewrittenBytecode(*rewritten);
+  return *function;
+}
+
+// Replace the bytecode with an empty bytes object after a function has been
+// compiled so that the function cannot be interpreted normally. This is useful
+// for ensuring that we are running the JITed function.
+static void setEmptyBytecode(const Function& function) {
+  function.setRewrittenBytecode(SmallBytes::empty());
+}
+
+static RawObject compileAndCallJITFunction(Thread* thread,
+                                           const Function& function) {
+  HandleScope scope(thread);
+  Function caller(&scope, createTrampolineFunction(thread));
+  compileFunction(thread, function);
+  setEmptyBytecode(function);
+  return Interpreter::call0(thread, caller);
+}
+
+static RawObject compileAndCallJITFunction1(Thread* thread,
+                                            const Function& function,
+                                            const Object& param) {
+  HandleScope scope(thread);
+  Function caller(&scope, createTrampolineFunction1(thread, param));
+  compileFunction(thread, function);
+  setEmptyBytecode(function);
+  return Interpreter::call0(thread, caller);
+}
+
+TEST_F(JitTest, CallFunctionWithTooFewArgsRaisesTypeError) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(obj):
+  return (1, 2, 3)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_CONST));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_TRUE(
+      raisedWithStr(*result, LayoutId::kTypeError,
+                    "'foo' takes min 1 positional arguments but 0 given"));
+}
+
+// TODO(T89353729): Add test for calling a JIT function with a signal set.
+
+TEST_F(JitTest, LoadConstLoadsConstant) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  return (1, 2, 3)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_CONST));
+  Object result_obj(&scope, compileAndCallJITFunction(thread_, function));
+  ASSERT_TRUE(result_obj.isTuple());
+  Tuple result(&scope, *result_obj);
+  ASSERT_EQ(result.length(), 3);
+  EXPECT_TRUE(isIntEqualsWord(result.at(0), 1));
+  EXPECT_TRUE(isIntEqualsWord(result.at(1), 2));
+  EXPECT_TRUE(isIntEqualsWord(result.at(2), 3));
+}
+
+TEST_F(JitTest, LoadBoolLoadsBool) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  return True
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_BOOL));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_EQ(*result, Bool::trueObj());
+}
+
+TEST_F(JitTest, LoadImmediateLoadsImmediate) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  return None
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_IMMEDIATE));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_EQ(*result, NoneType::object());
+}
+
+TEST_F(JitTest, LoadFastReverseUncheckedLoadsParameter) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(param):
+  return param
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_FAST_REVERSE_UNCHECKED));
+  Object param(&scope, SmallInt::fromWord(123));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, param));
+  EXPECT_TRUE(isIntEqualsWord(*result, 123));
+}
+
+TEST_F(JitTest, StoreFastReverseWritesToParameter) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(param):
+  param = 3
+  return param
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_FAST_REVERSE_UNCHECKED));
+  Object param(&scope, SmallInt::fromWord(123));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, param));
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
+}
+
+TEST_F(JitTest, CompareIsWithSameObjectsReturnsTrue) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  return 123 is 123
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, COMPARE_IS));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_EQ(*result, Bool::trueObj());
+}
+
+TEST_F(JitTest, CompareIsWithDifferentObjectsReturnsFalse) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  return 123 is 124
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, COMPARE_IS));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_EQ(*result, Bool::falseObj());
+}
+
+TEST_F(JitTest, CompareIsNotWithSameObjectsReturnsFalse) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  return 123 is not 123
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, COMPARE_IS_NOT));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_EQ(*result, Bool::falseObj());
+}
+
+TEST_F(JitTest, CompareIsNotWithDifferentObjectsReturnsTrue) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  return 123 is not 124
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, COMPARE_IS_NOT));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_EQ(*result, Bool::trueObj());
 }
 
 }  // namespace testing
