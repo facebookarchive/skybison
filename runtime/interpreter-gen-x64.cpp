@@ -487,6 +487,15 @@ Label* genericHandlerLabel(EmitEnv* env) {
 
 // Jump to the generic handler for the Bytecode being currently emitted.
 void emitJumpToGenericHandler(EmitEnv* env) {
+  if (env->in_jit) {
+    // Just generate the jump to generic handler inline. No side table.
+    emitGenericHandler(env, env->current_op);
+    // Then jump to the next opcode, as emitJumpToGenericHandler can be called
+    // from the middle of an opcode and is commonly used in a slow path,
+    // anyway.
+    emitNextOpcode(env);
+    return;
+  }
   env->register_state.check(env->handler_assignment);
   __ jmp(genericHandlerLabel(env), Assembler::kFarJump);
 }
