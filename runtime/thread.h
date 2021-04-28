@@ -49,7 +49,7 @@ class Thread {
     kProfile = 1 << 2,
   };
 
-  explicit Thread(word size);
+  explicit Thread(Runtime* runtime, word size);
   ~Thread();
 
   void begin();
@@ -142,8 +142,6 @@ class Thread {
   void visitRoots(PointerVisitor* visitor);
 
   void visitStackRoots(PointerVisitor* visitor);
-
-  void setRuntime(Runtime* runtime) { runtime_ = runtime; }
 
   // Calls out to the interpreter to lookup and call a method on the receiver
   // with the given argument(s). Returns Error<NotFound> if the method can't be

@@ -44,8 +44,7 @@ TEST_F(ThreadTest, RunEmptyFunction) {
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
   code.setCode(runtime_->newBytesWithAll(bytecode));
 
-  Thread thread2(1 * kKiB);
-  thread2.setRuntime(runtime_);
+  Thread thread2(runtime_, 1 * kKiB);
   runtime_->interpreter()->setupThread(&thread2);
   Thread::setCurrentThread(&thread2);
   EXPECT_TRUE(runCode(code).isNoneType());

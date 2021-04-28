@@ -37,7 +37,7 @@ RawObject uninitializedInterpreterFunc(Thread*) {
 
 thread_local Thread* Thread::current_thread_ = nullptr;
 
-Thread::Thread(word size) {
+Thread::Thread(Runtime* runtime, word size) : runtime_(runtime) {
   CHECK(size % kPointerSize == 0, "size must be a multiple of kPointerSize");
   start_ = new byte[size]();  // Zero-initialize the stack
   // Stack growns down in order to match machine convention
@@ -45,13 +45,13 @@ Thread::Thread(word size) {
   limit_ = start_;
   stack_pointer_ = reinterpret_cast<RawObject*>(end_);
   current_frame_ = pushInitialFrame();
+  setCaughtExceptionState(runtime_->newExceptionState());
 }
 
 Thread::~Thread() { delete[] start_; }
 
 void Thread::begin() {
   Thread::setCurrentThread(this);
-  setCaughtExceptionState(runtime_->newExceptionState());
   runtime_->interpreter()->setupThread(this);
 }
 

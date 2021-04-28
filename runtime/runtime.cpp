@@ -1739,8 +1739,7 @@ void Runtime::immortalizeCurrentHeapObjects() {
 }
 
 Thread* Runtime::newThread() {
-  Thread* thread = new Thread(Thread::kDefaultStackSize);
-  thread->setRuntime(this);
+  Thread* thread = new Thread(this, Thread::kDefaultStackSize);
   {
     MutexGuard lock(&threads_mutex_);
     if (main_thread_ == nullptr) {
