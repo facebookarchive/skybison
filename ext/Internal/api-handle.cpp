@@ -358,7 +358,7 @@ ApiHandle* ApiHandle::newReferenceWithManaged(Runtime* runtime, RawObject obj) {
   EVENT_ID(AllocateCAPIHandle, obj.layoutId());
   ApiHandle* handle = allocateHandle(runtime);
   handle->reference_ = NoneType::object().raw();
-  handle->ob_refcnt = 1 | kManagedBit;
+  handle->ob_refcnt = 1;
 
   handles->atPutValue(index, handle);
   handle->reference_ = obj.raw();
@@ -399,20 +399,21 @@ RawObject ApiHandle::checkFunctionResult(Thread* thread, PyObject* result) {
 void* ApiHandle::cache(Runtime* runtime) {
   // Only managed objects can have a cached value
   DCHECK(!isImmediate(), "immediate handles do not have caches");
-  if (!isManaged()) return nullptr;
 
   ApiHandleDict* caches = capiCaches(runtime);
   RawObject obj = asObjectNoImmediate();
+  DCHECK(!runtime->isInstanceOfNativeProxy(obj),
+         "cache must not be called on extension object");
   return caches->at(obj);
 }
 
 void ApiHandle::dispose(Runtime* runtime) {
-  DCHECK(isManaged(), "Dispose should only be called on managed handles");
-
   // TODO(T46009838): If a module handle is being disposed, this should register
   // a weakref to call the module's m_free once's the module is collected
 
   RawObject obj = asObjectNoImmediate();
+  DCHECK(!runtime->isInstanceOfNativeProxy(obj),
+         "Dispose must not be called on extension object");
   capiHandles(runtime)->remove(obj);
 
   void* cache = capiCaches(runtime)->remove(obj);
@@ -436,9 +437,8 @@ void ApiHandle::setCache(Runtime* runtime, void* value) {
 
 void ApiHandle::setRefcnt(Py_ssize_t count) {
   if (isImmediate()) return;
-  DCHECK((count & (kManagedBit | kBorrowedBit)) == 0,
-         "count must not have high bits set");
-  Py_ssize_t flags = ob_refcnt & (kManagedBit | kBorrowedBit);
+  DCHECK((count & kBorrowedBit) == 0, "count must not have high bits set");
+  Py_ssize_t flags = ob_refcnt & kBorrowedBit;
   ob_refcnt = count | flags;
 }
 

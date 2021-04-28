@@ -55,9 +55,11 @@ PY_EXPORT PyObject* PyNotImplemented_Ptr() {
 
 PY_EXPORT void _Py_Dealloc(PyObject* pyobj) {
   Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  Type obj_type(&scope, thread->runtime()->typeOf(*obj));
+  if (!runtime->isInstanceOfNativeProxy(*obj)) return;
+  Type obj_type(&scope, runtime->typeOf(*obj));
   // Do nothing for builtin types since we have our own GC to deallocate objects
   if (typeHasSlots(obj_type)) {
     destructor dealloc =
@@ -95,9 +97,11 @@ PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
 }
 
 PY_EXPORT Py_ssize_t* Py_SIZE_Func(PyVarObject* obj) {
-  DCHECK(
-      !ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(obj))->isManaged(),
-      "Py_SIZE should only be necessary for user-defined extension types");
+  // Cannot call this on builtin types like `int`.
+  DCHECK(Thread::current()->runtime()->isInstanceOfNativeProxy(
+             ApiHandle::fromPyObject(reinterpret_cast<PyObject*>(obj))
+                 ->asObject()),
+         "must only be called on extension object");
   return &(obj->ob_size);
 }
 

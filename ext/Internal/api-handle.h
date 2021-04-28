@@ -11,7 +11,7 @@ namespace py {
 
 class PointerVisitor;
 
-static const Py_ssize_t kImmediateRefcnt = Py_ssize_t{1} << 62;
+static const Py_ssize_t kImmediateRefcnt = Py_ssize_t{1} << 63;
 
 class ApiHandle : public PyObject {
  public:
@@ -64,11 +64,6 @@ class ApiHandle : public PyObject {
   // Remove the ApiHandle from the dictionary and free its memory
   void dispose(Runtime* runtime);
 
-  // Returns true if the handle has `kManagedBit` set. This means it references
-  // an object on the managed heap that is not a NativeProxy, meaning exccept
-  // for the `ApiHandle` there is no associated object in the C/C++ heap.
-  bool isManaged();
-
   bool isImmediate();
 
   // Increments the reference count of the handle to signal the addition of a
@@ -87,8 +82,7 @@ class ApiHandle : public PyObject {
  private:
   static bool isEncodeableAsImmediate(RawObject obj);
 
-  static const Py_ssize_t kManagedBit = Py_ssize_t{1} << 63;
-  static const Py_ssize_t kBorrowedBit = Py_ssize_t{1} << 62;
+  static const Py_ssize_t kBorrowedBit = Py_ssize_t{1} << 63;
 
   static const long kImmediateTag = 0x1;
   static const long kImmediateMask = 0x7;
@@ -124,8 +118,6 @@ inline RawObject ApiHandle::asObjectImmediate() {
 
 inline RawObject ApiHandle::asObjectNoImmediate() {
   DCHECK(!isImmediate(), "must not be called with immediate object");
-  DCHECK(reference_ != 0 || isManaged(),
-         "A handle or native instance must point back to a heap instance");
   return RawObject{reference_};
 }
 
@@ -136,11 +128,7 @@ inline void ApiHandle::decref() {
 
 inline void ApiHandle::decrefNoImmediate() {
   DCHECK(!isImmediate(), "must not be called with immediate object");
-  // All extension objects have a reference count of 1 which describes the
-  // reference from the heap. Therefore, only the garbage collector can cause
-  // an object to have its reference go below 1.
-  DCHECK((ob_refcnt & ~(kManagedBit | kBorrowedBit)) > (isManaged() ? 0 : 1),
-         "Reference count underflowed");
+  DCHECK((ob_refcnt & ~kBorrowedBit) > 0, "reference count underflow");
   --ob_refcnt;
 }
 
@@ -164,20 +152,14 @@ inline void ApiHandle::incref() {
 
 inline void ApiHandle::increfNoImmediate() {
   DCHECK(!isImmediate(), "must not be called with immediate object");
-  DCHECK((ob_refcnt & ~(kManagedBit | kBorrowedBit)) <
-             (std::numeric_limits<Py_ssize_t>::max() &
-              ~(kManagedBit | kBorrowedBit)),
+  DCHECK((ob_refcnt & ~kBorrowedBit) <
+             (std::numeric_limits<Py_ssize_t>::max() & ~kBorrowedBit),
          "Reference count overflowed");
   ++ob_refcnt;
 }
 
 inline bool ApiHandle::isImmediate() {
   return (reinterpret_cast<uword>(this) & kImmediateMask) != 0;
-}
-
-inline bool ApiHandle::isManaged() {
-  DCHECK(!isImmediate(), "must not be called with an immediate");
-  return (ob_refcnt & kManagedBit) != 0;
 }
 
 inline Py_ssize_t ApiHandle::refcnt() {
@@ -187,7 +169,7 @@ inline Py_ssize_t ApiHandle::refcnt() {
 
 inline Py_ssize_t ApiHandle::refcntNoImmediate() {
   DCHECK(!isImmediate(), "must not be called with immediate object");
-  return ob_refcnt & ~(kManagedBit | kBorrowedBit);
+  return ob_refcnt & ~kBorrowedBit;
 }
 
 inline RawObject ApiHandle::stealReference(PyObject* py_obj) {
