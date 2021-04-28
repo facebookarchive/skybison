@@ -8,7 +8,7 @@ import sys
 import unittest
 from http.client import HTTPException
 from test.support import open_urlresource
-from unicodedata import normalize, unidata_version
+from unicodedata import normalize, is_normalized, unidata_version
 
 
 TESTDATAFILE = "NormalizationTest.txt"
@@ -95,6 +95,15 @@ class NormalizationTest(unittest.TestCase):
             self.assertTrue(c5 == NFKD(c1) == NFKD(c2) == \
                             NFKD(c3) == NFKD(c4) == NFKD(c5),
                             line)
+
+            self.assertTrue(is_normalized("NFC", c2))
+            self.assertTrue(is_normalized("NFC", c4))
+
+            self.assertTrue(is_normalized("NFD", c3))
+            self.assertTrue(is_normalized("NFD", c5))
+
+            self.assertTrue(is_normalized("NFKC", c4))
+            self.assertTrue(is_normalized("NFKD", c5))
 
             # Record part 1 data
             if part == "@Part1":

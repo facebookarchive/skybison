@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(python LANGUAGES C CXX VERSION 3.7.4)
+project(python LANGUAGES C CXX VERSION 3.8.5)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -149,10 +149,10 @@ list(FILTER CPYTHON_FILES EXCLUDE REGEX "/__pycache__/")
 set(CPYTHON_CONFIGURE_FLAGS)
 string(TOUPPER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_UPPER)
 if (${BUILD_TYPE_UPPER} MATCHES "^DEBUG")
+  set(LIBCPYTHON_BIN ${CPYTHON_BUILD_DIR}/libpython3.8d.a)
   set(CPYTHON_CONFIGURE_FLAGS "${CPYTHON_CONFIGURE_FLAGS} --with-pydebug")
-  set(LIBCPYTHON_BIN ${CPYTHON_BUILD_DIR}/libpython3.7dm.a)
 else()
-  set(LIBCPYTHON_BIN ${CPYTHON_BUILD_DIR}/libpython3.7m.a)
+  set(LIBCPYTHON_BIN ${CPYTHON_BUILD_DIR}/libpython3.8.a)
 endif()
 
 set(CPYTHON_CFLAGS
@@ -431,7 +431,7 @@ set_target_properties(
   libpython
   PROPERTIES
   OUTPUT_NAME
-  python.pyro3.7  # Produces libpython.pyro3.7.so
+  python.pyro3.8  # Produces libpython.pyro3.8.so
 )
 
 add_library(
@@ -649,7 +649,6 @@ add_library(
   ${CPYTHON_DIR}/Modules/expat/iasciitab.h
   ${CPYTHON_DIR}/Modules/expat/internal.h
   ${CPYTHON_DIR}/Modules/expat/latin1tab.h
-  ${CPYTHON_DIR}/Modules/expat/loadlibrary.c
   ${CPYTHON_DIR}/Modules/expat/nametab.h
   ${CPYTHON_DIR}/Modules/expat/pyexpatns.h
   ${CPYTHON_DIR}/Modules/expat/siphash.h
@@ -695,6 +694,7 @@ add_library(
   ${CPYTHON_DIR}/Modules/_math.h
   ${CPYTHON_DIR}/Modules/_multiprocessing/multiprocessing.h
   ${CPYTHON_DIR}/Modules/_multiprocessing/multiprocessing.c
+  ${CPYTHON_DIR}/Modules/_multiprocessing/posixshmem.c
   ${CPYTHON_DIR}/Modules/_multiprocessing/semaphore.c
   ${CPYTHON_DIR}/Modules/_posixsubprocess.c
   ${CPYTHON_DIR}/Modules/_randommodule.c
@@ -768,19 +768,14 @@ add_library(
   ${CPYTHON_DIR}/Objects/unicodectype.c
   ${CPYTHON_DIR}/Objects/unicodetype_db.h
   ${CPYTHON_DIR}/Parser/acceler.c
-  ${CPYTHON_DIR}/Parser/bitset.c
-  ${CPYTHON_DIR}/Parser/firstsets.c
-  ${CPYTHON_DIR}/Parser/grammar.c
   ${CPYTHON_DIR}/Parser/grammar1.c
   ${CPYTHON_DIR}/Parser/listnode.c
-  ${CPYTHON_DIR}/Parser/metagrammar.c
   ${CPYTHON_DIR}/Parser/myreadline.c
   ${CPYTHON_DIR}/Parser/node.c
   ${CPYTHON_DIR}/Parser/parser.c
   ${CPYTHON_DIR}/Parser/parser.h
   ${CPYTHON_DIR}/Parser/parsetok.c
-  ${CPYTHON_DIR}/Parser/pgen.c
-  ${CPYTHON_DIR}/Parser/printgrammar.c
+  ${CPYTHON_DIR}/Parser/token.c
   ${CPYTHON_DIR}/Parser/tokenizer.c
   ${CPYTHON_DIR}/Parser/tokenizer.h
   ${CPYTHON_DIR}/Python/Python-ast.c
@@ -803,18 +798,14 @@ add_library(
   ${CPYTHON_DIR}/Python/symtable.c
   ${CPYTHON_DIR}/Python/wordcode_helpers.h
   capi/cpython-internal/Python-ast.h
-  capi/cpython-internal/accu.h
   capi/cpython-internal/asdl.h
   capi/cpython-internal/ast.h
   capi/cpython-internal/bitset.h
   capi/cpython-internal/errcode.h
   capi/cpython-internal/graminit.h
   capi/cpython-internal/grammar.h
-  capi/cpython-internal/metagrammar.h
   capi/cpython-internal/node.h
   capi/cpython-internal/osdefs.h
-  capi/cpython-internal/pgen.h
-  capi/cpython-internal/pgenheaders.h
   capi/cpython-internal/py_curses.h
   capi/cpython-internal/pystrhex.h
   capi/cpython-internal/symtable.h
@@ -1052,8 +1043,6 @@ target_link_libraries(
 
 set(EXECUTABLE python${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 set(EXECUTABLE_SYMLINKS
-  # TODO(T88520820): Remove this symlink.
-  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/python3.8
   ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/python${PROJECT_VERSION_MAJOR}
   ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/python)
 add_executable(

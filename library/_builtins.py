@@ -729,9 +729,9 @@ def _list_swap(list, i, j):
     _builtin()
 
 
-def _lt(obj, other):
-    "Same as obj < other."
-    return obj < other
+def _lt(a, b):
+    "Same as a < b."
+    return a < b
 
 
 def _lt_key(obj, other):

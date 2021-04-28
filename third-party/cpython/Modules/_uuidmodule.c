@@ -1,16 +1,20 @@
+/*
+ * Python UUID module that wraps libuuid -
+ * DCE compatible Universally Unique Identifier library.
+ */
+
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
 #ifdef HAVE_UUID_UUID_H
 #include <uuid/uuid.h>
-#endif
-#ifdef HAVE_UUID_H
+#elif defined(HAVE_UUID_H)
 #include <uuid.h>
 #endif
 
-
 static PyObject *
-py_uuid_generate_time_safe(void)
+py_uuid_generate_time_safe(PyObject *Py_UNUSED(context),
+                           PyObject *Py_UNUSED(ignored))
 {
     uuid_t uuid;
 #ifdef HAVE_UUID_GENERATE_TIME_SAFE
@@ -36,7 +40,7 @@ py_uuid_generate_time_safe(void)
 
 
 static PyMethodDef uuid_methods[] = {
-    {"generate_time_safe", (PyCFunction) py_uuid_generate_time_safe, METH_NOARGS, NULL},
+    {"generate_time_safe", py_uuid_generate_time_safe, METH_NOARGS, NULL},
     {NULL, NULL, 0, NULL}           /* sentinel */
 };
 

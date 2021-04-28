@@ -130,6 +130,7 @@ PyLzma_Free(void *opaque, void *ptr)
 #define INITIAL_BUFFER_SIZE BUFSIZ
 #endif
 
+
 /* Some custom type conversions for PyArg_ParseTupleAndKeywords(),
    since the predefined conversion specifiers do not suit our needs:
 
@@ -209,7 +210,7 @@ parse_filter_spec_lzma(PyObject *spec)
 
     if (lzma_lzma_preset(options, preset)) {
         PyMem_Free(options);
-        PyErr_Format(lzmamodulestate_global->Error, "Invalid compression preset: %d", preset);
+        PyErr_Format(lzmamodulestate_global->Error, "Invalid compression preset: %u", preset);
         return NULL;
     }
 
@@ -580,14 +581,6 @@ _lzma_LZMACompressor_flush_impl(Compressor *self)
     return result;
 }
 
-static PyObject *
-Compressor_getstate(Compressor *self, PyObject *noargs)
-{
-    PyErr_Format(PyExc_TypeError, "cannot serialize '%s' object",
-                 _PyType_Name(Py_TYPE(self)));
-    return NULL;
-}
-
 static int
 Compressor_init_xz(lzma_stream *lzs, int check, uint32_t preset,
                    PyObject *filterspecs)
@@ -782,10 +775,20 @@ Compressor_dealloc(Compressor *self)
     Py_DECREF(tp);
 }
 
+static PyObject * Compressor_reduce(Compressor *self) {
+    PyErr_Format(PyExc_TypeError, "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
+    return NULL;
+}
+
+static PyObject * Compressor_reduceex(Compressor *self, int protocol) {
+    return Compressor_reduce(self);
+}
+
 static PyMethodDef Compressor_methods[] = {
     _LZMA_LZMACOMPRESSOR_COMPRESS_METHODDEF
     _LZMA_LZMACOMPRESSOR_FLUSH_METHODDEF
-    {"__getstate__", (PyCFunction)Compressor_getstate, METH_NOARGS},
+    {"__reduce__", (PyCFunction) Compressor_reduce, METH_NOARGS, ""},
+    {"__reduce_ex__", (PyCFunction) Compressor_reduceex, METH_VARARGS, ""},
     {NULL}
 };
 
@@ -819,7 +822,7 @@ PyDoc_STRVAR(Compressor_doc,
 
 static PyType_Slot Compressor_type_slots[] = {
     {Py_tp_dealloc, Compressor_dealloc},
-    {Py_tp_doc, Compressor_doc},
+    {Py_tp_doc, (void *) Compressor_doc},
     {Py_tp_methods, Compressor_methods},
     {Py_tp_init, Compressor_init},
     {Py_tp_new, PyType_GenericNew},
@@ -833,7 +836,6 @@ static PyType_Spec Compressor_type_spec = {
     Py_TPFLAGS_DEFAULT,
     Compressor_type_slots
 };
-
 
 /* LZMADecompressor class. */
 
@@ -850,17 +852,12 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
     lzma_stream *lzs = &d->lzs;
 
     _PyBytesWriter_Init(&writer);
-    if (lzs->avail_in == 0) {
-        result = _PyBytesWriter_Alloc(&writer, 0);
-        return _PyBytesWriter_Finish(&writer, result);
-    }
 
     buffer_size =  max_length < 0 || max_length >= INITIAL_BUFFER_SIZE ?
-        INITIAL_BUFFER_SIZE : max_length;
+      INITIAL_BUFFER_SIZE : max_length;
     result = _PyBytesWriter_Alloc(&writer, buffer_size);
     if (result == NULL)
         return NULL;
-
     lzs->next_out = (uint8_t *)result;
     lzs->avail_out = buffer_size;
 
@@ -870,7 +867,10 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
         Py_BEGIN_ALLOW_THREADS
         lzret = lzma_code(lzs, LZMA_RUN);
         data_size = (char *)lzs->next_out - result;
+        if (lzret == LZMA_BUF_ERROR && lzs->avail_in == 0 && lzs->avail_out > 0)
+            lzret = LZMA_OK; /* That wasn't a real error */
         Py_END_ALLOW_THREADS
+
         if (catch_lzma_error(lzret))
             goto error;
         if (lzret == LZMA_GET_CHECK || lzret == LZMA_NO_CHECK)
@@ -878,9 +878,11 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
         if (lzret == LZMA_STREAM_END) {
             d->eof = 1;
             break;
-        } else if (lzs->avail_in == 0) {
-            break;
         } else if (lzs->avail_out == 0) {
+            /* Need to check lzs->avail_out before lzs->avail_in.
+               Maybe lzs's internal state still have a few bytes
+               can be output, grow the output buffer and continue
+               if max_lengh < 0. */
             if (data_size == max_length)
                 break;
             buffer_size = buffer_size + (buffer_size >> 3) + 6;
@@ -890,6 +892,8 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
 
             lzs->next_out = (uint8_t *)result + data_size;
             lzs->avail_out = buffer_size - data_size;
+        } else if (lzs->avail_in == 0) {
+            break;
         }
     }
     return _PyBytesWriter_Finish(&writer, result + data_size);
@@ -968,7 +972,19 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
     }
     else if (lzs->avail_in == 0) {
         lzs->next_in = NULL;
-        d->needs_input = 1;
+
+        if (lzs->avail_out == 0) {
+            /* (avail_in==0 && avail_out==0)
+               Maybe lzs's internal state still have a few bytes can
+               be output, try to output them next time. */
+            d->needs_input = 0;
+
+            /* if max_length < 0, lzs->avail_out always > 0 */
+            assert(max_length >= 0);
+        } else {
+            /* Input buffer exhausted, output buffer has space. */
+            d->needs_input = 1;
+        }
     }
     else {
         d->needs_input = 0;
@@ -1047,14 +1063,6 @@ _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
     return result;
 }
 
-static PyObject *
-Decompressor_getstate(Decompressor *self, PyObject *noargs)
-{
-    PyErr_Format(PyExc_TypeError, "cannot serialize '%s' object",
-                 _PyType_Name(Py_TYPE(self)));
-    return NULL;
-}
-
 static int
 Decompressor_init_raw(lzma_stream *lzs, PyObject *filterspecs)
 {
@@ -1101,10 +1109,10 @@ _lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
                                      PyObject *memlimit, PyObject *filters)
 /*[clinic end generated code: output=3e1821f8aa36564c input=81fe684a6c2f8a27]*/
 {
-    const uint32_t decoder_flags = LZMA_TELL_ANY_CHECK | LZMA_TELL_NO_CHECK;
-    uint64_t memlimit_ = UINT64_MAX;
     _PyBytesWriter writer;
     char *result;
+    const uint32_t decoder_flags = LZMA_TELL_ANY_CHECK | LZMA_TELL_NO_CHECK;
+    uint64_t memlimit_ = UINT64_MAX;
     lzma_ret lzret;
 
     if (memlimit != Py_None) {
@@ -1148,7 +1156,6 @@ _lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
     self->needs_input = 1;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-
     _PyBytesWriter_Init(&writer);
     result = _PyBytesWriter_Alloc(&writer, 0);
     Py_XSETREF(self->unused_data, _PyBytesWriter_Finish(&writer, result));
@@ -1209,9 +1216,19 @@ Decompressor_dealloc(Decompressor *self)
     Py_DECREF(tp);
 }
 
+static PyObject * Decompressor_reduce(Decompressor *self) {
+    PyErr_Format(PyExc_TypeError, "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
+    return NULL;
+}
+
+static PyObject * Decompressor_reduceex(Decompressor *self, int protocol) {
+    return Decompressor_reduce(self);
+}
+
 static PyMethodDef Decompressor_methods[] = {
     _LZMA_LZMADECOMPRESSOR_DECOMPRESS_METHODDEF
-    {"__getstate__", (PyCFunction)Decompressor_getstate, METH_NOARGS},
+    {"__reduce__", (PyCFunction) Decompressor_reduce, METH_NOARGS, ""},
+    {"__reduce_ex__", (PyCFunction) Decompressor_reduceex, METH_VARARGS, ""},
     {NULL}
 };
 
@@ -1241,7 +1258,7 @@ static PyMemberDef Decompressor_members[] = {
 
 static PyType_Slot Decompressor_type_slots[] = {
     {Py_tp_dealloc, Decompressor_dealloc},
-    {Py_tp_doc, _lzma_LZMADecompressor___init____doc__},
+    {Py_tp_doc, (void *) _lzma_LZMADecompressor___init____doc__},
     {Py_tp_methods, Decompressor_methods},
     {Py_tp_members, Decompressor_members},
     {Py_tp_init, _lzma_LZMADecompressor___init__},
@@ -1256,7 +1273,6 @@ static PyType_Spec Decompressor_type_spec = {
     Py_TPFLAGS_DEFAULT,
     Decompressor_type_slots
 };
-
 
 /* Module-level functions. */
 
@@ -1416,8 +1432,7 @@ module_add_int_constant(PyObject *m, const char *name, long long value)
 PyMODINIT_FUNC
 PyInit__lzma(void)
 {
-    PyObject *m, *Compressor_type, *Decompressor_type, *Error, *empty_tuple;
-
+    PyObject *m, *empty_tuple, *Error, *Decompressor_type, *Compressor_type;
     m = PyState_FindModule(&_lzmamodule);
     if (m != NULL) {
         Py_INCREF(m);

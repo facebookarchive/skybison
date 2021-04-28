@@ -20,7 +20,7 @@ steps:
 - script: ./configure --with-pydebug
   displayName: 'Configure CPython (debug)'
 
-- script: make -s -j4
+- script: make -j4
   displayName: 'Build CPython'
 
 - ${{ if eq(parameters.coverage, 'true') }}:
@@ -34,7 +34,7 @@ steps:
       $COMMAND -m coverage run --pylib -m test \
                 --fail-env-changed \
                 -uall,-cpu \
-                --junit-xml=$(build.binariesDirectory)/test-results.xml" \
+                --junit-xml=$(build.binariesDirectory)/test-results.xml \
                 -x test_multiprocessing_fork \
                 -x test_multiprocessing_forkserver \
                 -x test_multiprocessing_spawn \

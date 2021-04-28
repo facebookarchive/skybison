@@ -23,5 +23,14 @@ FILTER+=" | grep -v test.test_ssl.ThreadedTests.test_version_basic"
 FILTER+=" | grep -v test.test_ssl.ContextTests.test_options"
 eval ./python -m test test_ssl --list-cases $FILTER > test_ssl_cases.txt
 
-./python -s -m test -x test_ssl "$@" 
+# TODO(T89719678): fix refleaks in fork
+EXCLUDE=""
+if [[ "$@" == *"-R"* ]]; then
+EXCLUDE+=" -x test_concurrent_futures"
+EXCLUDE+=" -x test_multiprocessing_fork"
+EXCLUDE+=" -x test_multiprocessing_forkserver"
+EXCLUDE+=" -x test_multiprocessing_spawn"
+fi
+
+./python -s -m test -x test_ssl $EXCLUDE "$@"
 ./python -s -m test test_ssl --matchfile test_ssl_cases.txt "$@"

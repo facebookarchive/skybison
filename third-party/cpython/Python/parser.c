@@ -32,6 +32,8 @@ static int PARSER_FLAGS(PyCompilerFlags *flags)
         parser_flags |= PyPARSE_IGNORE_COOKIE;
     if (flags->cf_flags & CO_FUTURE_BARRY_AS_BDFL)
         parser_flags |= PyPARSE_BARRY_AS_BDFL;
+    if (flags->cf_flags & PyCF_TYPE_COMMENTS)
+        parser_flags |= PyPARSE_TYPE_COMMENTS;
     return parser_flags;
 }
 
@@ -43,21 +45,25 @@ static int PARSER_FLAGS(PyCompilerFlags *flags)
                 | ((flags)->cf_flags & CO_FUTURE_WITH_STATEMENT ? \
                    PyPARSE_WITH_IS_KEYWORD : 0)) : 0)
 #endif
-
 struct symtable *
 Py_SymtableStringObject(const char *str, PyObject *filename, int start)
 {
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
+    return _Py_SymtableStringObjectFlags(str, filename, start, &flags);
+}
+
+struct symtable *
+_Py_SymtableStringObjectFlags(const char *str, PyObject *filename, int start, PyCompilerFlags *flags)
+{
     struct symtable *st;
     mod_ty mod;
-    PyCompilerFlags flags;
     PyArena *arena;
 
     arena = PyArena_New();
     if (arena == NULL)
         return NULL;
 
-    flags.cf_flags = 0;
-    mod = PyParser_ASTFromStringObject(str, filename, start, &flags, arena);
+    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;
@@ -87,15 +93,16 @@ PyParser_ASTFromStringObject(const char *s, PyObject *filename, int start,
                              PyCompilerFlags *flags, PyArena *arena)
 {
     mod_ty mod;
-    PyCompilerFlags localflags;
+    PyCompilerFlags localflags = _PyCompilerFlags_INIT;
     perrdetail err;
     int iflags = PARSER_FLAGS(flags);
+    if (flags && (flags->cf_flags & PyCF_ONLY_AST) && flags->cf_feature_version < 7)
+        iflags |= PyPARSE_ASYNC_HACKS;
 
     node *n = PyParser_ParseStringObject(s, filename,
                                          &_PyParser_Grammar, start, &err,
                                          &iflags);
     if (flags == NULL) {
-        localflags.cf_flags = 0;
         flags = &localflags;
     }
     if (n) {
@@ -132,7 +139,7 @@ PyParser_ASTFromFileObject(FILE *fp, PyObject *filename, const char* enc,
                            PyArena *arena)
 {
     mod_ty mod;
-    PyCompilerFlags localflags;
+    PyCompilerFlags localflags = _PyCompilerFlags_INIT;
     perrdetail err;
     int iflags = PARSER_FLAGS(flags);
 
@@ -140,7 +147,6 @@ PyParser_ASTFromFileObject(FILE *fp, PyObject *filename, const char* enc,
                                        &_PyParser_Grammar,
                                        start, ps1, ps2, &err, &iflags);
     if (flags == NULL) {
-        localflags.cf_flags = 0;
         flags = &localflags;
     }
     if (n) {
@@ -216,12 +222,6 @@ PyParser_SimpleParseStringFlagsFilename(const char *str, const char *filename,
         err_input(&err);
     err_free(&err);
     return n;
-}
-
-node *
-PyParser_SimpleParseStringFilename(const char *str, const char *filename, int start)
-{
-    return PyParser_SimpleParseStringFlagsFilename(str, filename, start, 0);
 }
 
 /* May want to move a more generalized form of this to parsetok.c or
@@ -372,6 +372,55 @@ cleanup:
         PyObject_FREE(err->text);
         err->text = NULL;
     }
+}
+
+const char *
+_Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyCompilerFlags *cf, PyObject **cmd_copy)
+{
+    const char *str;
+    Py_ssize_t size;
+    Py_buffer view;
+
+    *cmd_copy = NULL;
+    if (PyUnicode_Check(cmd)) {
+        cf->cf_flags |= PyCF_IGNORE_COOKIE;
+        str = PyUnicode_AsUTF8AndSize(cmd, &size);
+        if (str == NULL)
+            return NULL;
+    }
+    else if (PyBytes_Check(cmd)) {
+        str = PyBytes_AS_STRING(cmd);
+        size = PyBytes_GET_SIZE(cmd);
+    }
+    else if (PyByteArray_Check(cmd)) {
+        str = PyByteArray_AS_STRING(cmd);
+        size = PyByteArray_GET_SIZE(cmd);
+    }
+    else if (PyObject_GetBuffer(cmd, &view, PyBUF_SIMPLE) == 0) {
+        /* Copy to NUL-terminated buffer. */
+        *cmd_copy = PyBytes_FromStringAndSize(
+            (const char *)view.buf, view.len);
+        PyBuffer_Release(&view);
+        if (*cmd_copy == NULL) {
+            return NULL;
+        }
+        str = PyBytes_AS_STRING(*cmd_copy);
+        size = PyBytes_GET_SIZE(*cmd_copy);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+            "%s() arg 1 must be a %s object",
+            funcname, what);
+        return NULL;
+    }
+
+    if (strlen(str) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError,
+            "source code string cannot contain null bytes");
+        Py_CLEAR(*cmd_copy);
+        return NULL;
+    }
+    return str;
 }
 
 /* Deprecated C API functions still provided for binary compatibility */

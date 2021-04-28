@@ -23,6 +23,7 @@
 
 #ifndef PYSQLITE_MODULE_H
 #define PYSQLITE_MODULE_H
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
 #define PYSQLITE_VERSION "2.6.0"
@@ -42,7 +43,7 @@ typedef struct {
     PyTypeObject* RowType;
     PyTypeObject* StatementType;
 
-    /* error types */
+      /* error types */
     PyObject* Error;
     PyObject* Warning;
     PyObject* InterfaceError;
@@ -60,6 +61,7 @@ typedef struct {
     PyObject* cursor;
     PyObject* finalize;
     PyObject* upper;
+    PyObject* iterdump;
 
     /* A dictionary, mapping column types (INTEGER, VARCHAR, etc.) to converter
     * functions, that convert the SQL value to the appropriate Python value.
@@ -77,7 +79,7 @@ typedef struct {
 extern struct PyModuleDef _sqlite3module;
 
 #define pysqlite_state(o) ((pysqlite_state*)PyModule_GetState(o))
-#define pysqlite_global(x) (pysqlite_state(PyState_FindModule(&_sqlite3module))->x)
+#define pysqlite_global (pysqlite_state(PyState_FindModule(&_sqlite3module)))
 
 #define PARSE_DECLTYPES 1
 #define PARSE_COLNAMES 2

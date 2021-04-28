@@ -2924,7 +2924,16 @@ class code(bootstrap=True):
         )
 
 
-def compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1):
+def compile(
+    source,
+    filename,
+    mode,
+    flags=0,
+    dont_inherit=False,
+    optimize=-1,
+    *,
+    _feature_version=-1,
+):
     from _compiler import compile
 
     if not dont_inherit:

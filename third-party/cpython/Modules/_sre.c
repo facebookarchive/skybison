@@ -87,24 +87,17 @@ static const char copyright[] =
 /* search engine state */
 
 #define SRE_IS_DIGIT(ch)\
-    ((ch) < 128 && Py_ISDIGIT(ch))
+    ((ch) <= '9' && Py_ISDIGIT(ch))
 #define SRE_IS_SPACE(ch)\
-    ((ch) < 128 && Py_ISSPACE(ch))
+    ((ch) <= ' ' && Py_ISSPACE(ch))
 #define SRE_IS_LINEBREAK(ch)\
     ((ch) == '\n')
-#define SRE_IS_ALNUM(ch)\
-    ((ch) < 128 && Py_ISALNUM(ch))
 #define SRE_IS_WORD(ch)\
-    ((ch) < 128 && (Py_ISALNUM(ch) || (ch) == '_'))
+    ((ch) <= 'z' && (Py_ISALNUM(ch) || (ch) == '_'))
 
 static unsigned int sre_lower_ascii(unsigned int ch)
 {
     return ((ch) < 128 ? Py_TOLOWER(ch) : ch);
-}
-
-static unsigned int sre_upper_ascii(unsigned int ch)
-{
-    return ((ch) < 128 ? Py_TOUPPER(ch) : ch);
 }
 
 /* locale-specific character predicates */
@@ -303,7 +296,7 @@ _sre_ascii_iscased_impl(PyObject *module, int character)
 /*[clinic end generated code: output=4f454b630fbd19a2 input=9f0bd952812c7ed3]*/
 {
     unsigned int ch = (unsigned int)character;
-    return ch != sre_lower_ascii(ch) || ch != sre_upper_ascii(ch);
+    return ch < 128 && Py_ISALPHA(ch);
 }
 
 /*[clinic input]
@@ -1918,15 +1911,7 @@ match_getslice_by_index(MatchObject* self, Py_ssize_t index, PyObject* def)
     void* ptr;
     Py_ssize_t i, j;
 
-    if (index < 0 || index >= self->groups) {
-        /* raise IndexError if we were given a bad group number */
-        PyErr_SetString(
-            PyExc_IndexError,
-            "no such group"
-            );
-        return NULL;
-    }
-
+    assert(0 <= index && index < self->groups);
     index *= 2;
 
     if (self->string == Py_None || self->mark[index] < 0) {
@@ -1959,16 +1944,24 @@ match_getindex(MatchObject* self, PyObject* index)
         return 0;
 
     if (PyIndex_Check(index)) {
-        return PyNumber_AsSsize_t(index, NULL);
+        i = PyNumber_AsSsize_t(index, NULL);
     }
+    else {
+        i = -1;
 
-    i = -1;
-
-    if (self->pattern->groupindex) {
-        index = PyDict_GetItem(self->pattern->groupindex, index);
-        if (index && PyLong_Check(index)) {
-            i = PyLong_AsSsize_t(index);
+        if (self->pattern->groupindex) {
+            index = PyDict_GetItemWithError(self->pattern->groupindex, index);
+            if (index && PyLong_Check(index)) {
+                i = PyLong_AsSsize_t(index);
+            }
         }
+    }
+    if (i < 0 || i >= self->groups) {
+        /* raise IndexError if we were given a bad group number */
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_IndexError, "no such group");
+        }
+        return -1;
     }
 
     return i;
@@ -1977,7 +1970,13 @@ match_getindex(MatchObject* self, PyObject* index)
 static PyObject*
 match_getslice(MatchObject* self, PyObject* index, PyObject* def)
 {
-    return match_getslice_by_index(self, match_getindex(self, index), def);
+    Py_ssize_t i = match_getindex(self, index);
+
+    if (i < 0) {
+        return NULL;
+    }
+
+    return match_getslice_by_index(self, i, def);
 }
 
 /*[clinic input]
@@ -2133,11 +2132,7 @@ _sre_SRE_Match_start_impl(MatchObject *self, PyObject *group)
 {
     Py_ssize_t index = match_getindex(self, group);
 
-    if (index < 0 || index >= self->groups) {
-        PyErr_SetString(
-            PyExc_IndexError,
-            "no such group"
-            );
+    if (index < 0) {
         return -1;
     }
 
@@ -2160,11 +2155,7 @@ _sre_SRE_Match_end_impl(MatchObject *self, PyObject *group)
 {
     Py_ssize_t index = match_getindex(self, group);
 
-    if (index < 0 || index >= self->groups) {
-        PyErr_SetString(
-            PyExc_IndexError,
-            "no such group"
-            );
+    if (index < 0) {
         return -1;
     }
 
@@ -2214,11 +2205,7 @@ _sre_SRE_Match_span_impl(MatchObject *self, PyObject *group)
 {
     Py_ssize_t index = match_getindex(self, group);
 
-    if (index < 0 || index >= self->groups) {
-        PyErr_SetString(
-            PyExc_IndexError,
-            "no such group"
-            );
+    if (index < 0) {
         return NULL;
     }
 
@@ -2608,11 +2595,11 @@ static PyGetSetDef pattern_getset[] = {
 
 #define PAT_OFF(x) offsetof(PatternObject, x)
 static PyMemberDef pattern_members[] = {
-    {"pattern",    T_OBJECT,    PAT_OFF(pattern),       READONLY,
+    {"pattern",            T_OBJECT,   PAT_OFF(pattern),     READONLY,
      "The pattern string from which the RE object was compiled."},
-    {"flags",      T_INT,       PAT_OFF(flags),         READONLY,
+    {"flags",              T_INT,      PAT_OFF(flags),       READONLY,
      "The regex matching flags."},
-    {"groups",     T_PYSSIZET,  PAT_OFF(groups),        READONLY,
+    {"groups",             T_PYSSIZET, PAT_OFF(groups),      READONLY,
      "The number of capturing groups in the pattern."},
     {"__weaklistoffset__", T_PYSSIZET, PAT_OFF(weakreflist), READONLY},
     {NULL}  /* Sentinel */
@@ -2622,7 +2609,7 @@ static PyType_Slot Pattern_Type_slots[] = {
     {Py_tp_dealloc, pattern_dealloc},
     {Py_tp_repr, pattern_repr},
     {Py_tp_hash, pattern_hash},
-    {Py_tp_doc, pattern_doc},
+    {Py_tp_doc, (void *)pattern_doc},
     {Py_tp_richcompare, pattern_richcompare},
     {Py_tp_methods, pattern_methods},
     {Py_tp_members, pattern_members},
@@ -2637,9 +2624,6 @@ static PyType_Spec Pattern_Type_spec = {
     Py_TPFLAGS_DEFAULT,
     Pattern_Type_slots
 };
-
-/* Match objects do not support length or assignment, but do support
-   __getitem__. */
 
 static PyMethodDef match_methods[] = {
     {"group", (PyCFunction) match_group, METH_VARARGS, match_group_doc},
@@ -2682,7 +2666,7 @@ static PyMemberDef match_members[] = {
 static PyType_Slot Match_Type_slots[] = {
     {Py_tp_dealloc, match_dealloc},
     {Py_tp_repr, match_repr},
-    {Py_tp_doc, match_doc},
+    {Py_tp_doc, (void *)match_doc},
     {Py_tp_methods, match_methods},
     {Py_tp_members, match_members},
     {Py_tp_getset, match_getset},
@@ -2792,11 +2776,13 @@ PyMODINIT_FUNC PyInit__sre(void)
         return NULL;
     }
     _srestate(m)->Pattern_Type = (PyObject *)Pattern_Type;
+
     PyTypeObject *Match_Type = (PyTypeObject *)PyType_FromSpec(&Match_Type_spec);
     if (Match_Type == NULL) {
         return NULL;
     }
     _srestate(m)->Match_Type = (PyObject *)Match_Type;
+
     PyTypeObject *Scanner_Type = (PyTypeObject *)PyType_FromSpec(&Scanner_Type_spec);
     if (Scanner_Type == NULL) {
         return NULL;
@@ -2827,7 +2813,6 @@ PyMODINIT_FUNC PyInit__sre(void)
     if (x) {
         PyModule_AddObject(m, "copyright", x);
     }
-
     return m;
 }
 

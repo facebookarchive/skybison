@@ -49,13 +49,13 @@ append_charp(_PyUnicodeWriter *writer, const char *charp)
     } while (0)
 
 #define APPEND_EXPR(expr, pr)  do { \
-        if (-1 == append_ast_expr(ctx, writer, (expr), (pr))) { \
+        if (-1 == append_ast_expr(ctx, writer, (expr), (pr))) {      \
             return -1; \
         } \
     } while (0)
 
 #define APPEND(type, value)  do { \
-        if (-1 == append_ast_ ## type(ctx, writer, (value))) { \
+        if (-1 == append_ast_ ## type(ctx, writer, (value))) {       \
             return -1; \
         } \
     } while (0)
@@ -195,21 +195,29 @@ static int
 append_ast_args(struct _unparse_context* ctx, _PyUnicodeWriter *writer, arguments_ty args)
 {
     bool first;
-    Py_ssize_t i, di, arg_count, default_count;
+    Py_ssize_t i, di, arg_count, posonlyarg_count, default_count;
 
     first = true;
 
-    /* positional arguments with defaults */
+    /* positional-only and positional arguments with defaults */
+    posonlyarg_count = asdl_seq_LEN(args->posonlyargs);
     arg_count = asdl_seq_LEN(args->args);
     default_count = asdl_seq_LEN(args->defaults);
-    for (i = 0; i < arg_count; i++) {
+    for (i = 0; i < posonlyarg_count + arg_count; i++) {
         APPEND_STR_IF_NOT_FIRST(", ");
-        APPEND(arg, (arg_ty)asdl_seq_GET(args->args, i));
+        if (i < posonlyarg_count){
+            APPEND(arg, (arg_ty)asdl_seq_GET(args->posonlyargs, i));
+        } else {
+            APPEND(arg, (arg_ty)asdl_seq_GET(args->args, i-posonlyarg_count));
+        }
 
-        di = i - arg_count + default_count;
+        di = i - posonlyarg_count - arg_count + default_count;
         if (di >= 0) {
             APPEND_STR("=");
             APPEND_EXPR((expr_ty)asdl_seq_GET(args->defaults, di), PR_TEST);
+        }
+        if (posonlyarg_count && i + 1 == posonlyarg_count) {
+            APPEND_STR(", /");
         }
     }
 
@@ -253,7 +261,9 @@ static int
 append_ast_lambda(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
 {
     APPEND_STR_IF(level > PR_TEST, "(");
-    APPEND_STR(asdl_seq_LEN(e->v.Lambda.args->args) ? "lambda " : "lambda");
+    Py_ssize_t n_positional = (asdl_seq_LEN(e->v.Lambda.args->args) +
+                               asdl_seq_LEN(e->v.Lambda.args->posonlyargs));
+    APPEND_STR(n_positional ? "lambda " : "lambda");
     APPEND(args, e->v.Lambda.args);
     APPEND_STR(": ");
     APPEND_EXPR(e->v.Lambda.body, PR_TEST);
@@ -572,8 +582,6 @@ append_fstring_element(struct _unparse_context* ctx, _PyUnicodeWriter *writer, e
     switch (e->kind) {
     case Constant_kind:
         return append_fstring_unicode(ctx, writer, e->v.Constant.value);
-    case Str_kind:
-        return append_fstring_unicode(ctx, writer, e->v.Str.s);
     case JoinedStr_kind:
         return append_joinedstr(ctx, writer, e, is_format_spec);
     case FormattedValue_kind:
@@ -598,7 +606,8 @@ build_fstring_body(struct _unparse_context* ctx, asdl_seq *values, bool is_forma
 
     value_count = asdl_seq_LEN(values);
     for (i = 0; i < value_count; ++i) {
-        if (-1 == append_fstring_element(ctx, &body_writer,
+        if (-1 == append_fstring_element(ctx,
+                                         &body_writer,
                                          (expr_ty)asdl_seq_GET(values, i),
                                          is_format_spec
                                          )) {
@@ -679,7 +688,8 @@ append_formattedvalue(struct _unparse_context* ctx, _PyUnicodeWriter *writer, ex
     }
     if (e->v.FormattedValue.format_spec) {
         if (-1 == _PyUnicodeWriter_WriteASCIIString(writer, ":", 1) ||
-            -1 == append_fstring_element(ctx, writer,
+            -1 == append_fstring_element(ctx,
+                                         writer,
                                          e->v.FormattedValue.format_spec,
                                          true
                                         ))
@@ -695,13 +705,12 @@ static int
 append_ast_attribute(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e)
 {
     const char *period;
-    APPEND_EXPR(e->v.Attribute.value, PR_ATOM);
+    expr_ty v = e->v.Attribute.value;
+    APPEND_EXPR(v, PR_ATOM);
 
     /* Special case: integers require a space for attribute access to be
-       unambiguous.  Floats and complex numbers don't but work with it, too. */
-    if (e->v.Attribute.value->kind == Num_kind ||
-        e->v.Attribute.value->kind == Constant_kind)
-    {
+       unambiguous. */
+    if (v->kind == Constant_kind && PyLong_CheckExact(v->v.Constant.value)) {
         period = " .";
     }
     else {
@@ -741,6 +750,25 @@ append_ast_ext_slice(struct _unparse_context* ctx, _PyUnicodeWriter *writer, sli
         APPEND_STR_IF(i > 0, ", ");
         APPEND(slice, (slice_ty)asdl_seq_GET(slice->v.ExtSlice.dims, i));
     }
+    APPEND_STR_IF(dims_count == 1, ",");
+    return 0;
+}
+
+static int
+append_ast_index_slice(struct _unparse_context* ctx, _PyUnicodeWriter *writer, slice_ty slice)
+{
+    int level = PR_TUPLE;
+    expr_ty value = slice->v.Index.value;
+    if (value->kind == Tuple_kind) {
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(value->v.Tuple.elts); i++) {
+            expr_ty element = asdl_seq_GET(value->v.Tuple.elts, i);
+            if (element->kind == Starred_kind) {
+                ++level;
+                break;
+            }
+        }
+    }
+    APPEND_EXPR(value, level);
     return 0;
 }
 
@@ -753,8 +781,7 @@ append_ast_slice(struct _unparse_context* ctx, _PyUnicodeWriter *writer, slice_t
     case ExtSlice_kind:
         return append_ast_ext_slice(ctx, writer, slice);
     case Index_kind:
-        APPEND_EXPR(slice->v.Index.value, PR_TUPLE);
-        return 0;
+        return append_ast_index_slice(ctx, writer, slice);
     default:
         PyErr_SetString(PyExc_SystemError,
                         "unexpected slice kind");
@@ -810,6 +837,17 @@ append_ast_await(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty
 }
 
 static int
+append_named_expr(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
+{
+    APPEND_STR_IF(level > PR_TUPLE, "(");
+    APPEND_EXPR(e->v.NamedExpr.target, PR_ATOM);
+    APPEND_STR(":=");
+    APPEND_EXPR(e->v.NamedExpr.value, PR_ATOM);
+    APPEND_STR_IF(level > PR_TUPLE, ")");
+    return 0;
+}
+
+static int
 append_ast_expr(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty e, int level)
 {
     switch (e->kind) {
@@ -846,21 +884,14 @@ append_ast_expr(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty 
     case Call_kind:
         return append_ast_call(ctx, writer, e);
     case Constant_kind:
+        if (e->v.Constant.value == Py_Ellipsis) {
+            APPEND_STR_FINISH("...");
+        }
         return append_repr(writer, e->v.Constant.value);
-    case Num_kind:
-        return append_repr(writer, e->v.Num.n);
-    case Str_kind:
-        return append_repr(writer, e->v.Str.s);
     case JoinedStr_kind:
         return append_joinedstr(ctx, writer, e, false);
     case FormattedValue_kind:
         return append_formattedvalue(ctx, writer, e, false);
-    case Bytes_kind:
-        return append_repr(writer, e->v.Bytes.s);
-    case Ellipsis_kind:
-        APPEND_STR_FINISH("...");
-    case NameConstant_kind:
-        return append_repr(writer, e->v.NameConstant.value);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         return append_ast_attribute(ctx, writer, e);
@@ -874,6 +905,8 @@ append_ast_expr(struct _unparse_context* ctx, _PyUnicodeWriter *writer, expr_ty 
         return append_ast_list(ctx, writer, e);
     case Tuple_kind:
         return append_ast_tuple(ctx, writer, e, level);
+    case NamedExpr_kind:
+        return append_named_expr(ctx, writer, e, level);
     default:
         PyErr_SetString(PyExc_SystemError,
                         "unknown expression kind");
@@ -888,7 +921,8 @@ expr_as_unicode(struct _unparse_context* ctx, expr_ty e, int level)
     _PyUnicodeWriter_Init(&writer);
     writer.min_length = 256;
     writer.overallocate = 1;
-    if (-1 == append_ast_expr(ctx, &writer, e, level)) {
+    if (-1 == append_ast_expr(ctx, &writer, e, level))
+    {
         _PyUnicodeWriter_Dealloc(&writer);
         return NULL;
     }

@@ -87,6 +87,7 @@ PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor destructor)
             return NULL;
         }
     }
+
     capsule = PyObject_NEW(PyCapsule, (PyTypeObject *)capsulestate_global->PyCapsule_Type);
     if (capsule == NULL) {
         return NULL;
@@ -345,7 +346,7 @@ Python import mechanism to link to one another.\n\
 static PyType_Slot PyCapsule_Type_slots[] = {
     {Py_tp_dealloc, capsule_dealloc},
     {Py_tp_repr, capsule_repr},
-    {Py_tp_doc, PyCapsule_Type__doc__},
+    {Py_tp_doc, (void *) PyCapsule_Type__doc__},
     {0, 0},
 };
 
@@ -367,7 +368,7 @@ int _PyCapsule_Init(void) {
     }
     mod = PyModule_Create(&capsulemodule);
     if (mod == NULL) {
-        return -1;
+      return -1;
     }
     if (PyState_AddModule(mod, &capsulemodule) < 0) {
         Py_DECREF(mod);

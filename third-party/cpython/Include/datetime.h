@@ -219,26 +219,11 @@ extern struct PyModuleDef datetimemodule;
     (datetime_state(PyState_FindModule(&datetimemodule))->x)
 
 
-#ifdef Py_BUILD_CORE
-
-/* Macros for type checking when building the Python core. */
-#define PyDate_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.DateType))
-#define PyDate_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.DateType))
-
-#define PyDateTime_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.DateTimeType))
-#define PyDateTime_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.DateTimeType))
-
-#define PyTime_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.TimeType))
-#define PyTime_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.TimeType))
-
-#define PyDelta_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.DeltaType))
-#define PyDelta_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.DeltaType))
-
-#define PyTZInfo_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.TZInfoType))
-#define PyTZInfo_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.TZInfoType))
-
-#else
-
+/* This block is only used as part of the public API and should not be
+ * included in _datetimemodule.c, which does not use the C API capsule.
+ * See bpo-35081 for more details.
+ * */
+#ifndef _PY_DATETIME_IMPL
 /* Define global variable for the C API and a macro for setting it. */
 static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 
@@ -263,6 +248,7 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, PyDateTimeAPI->TZInfoType)
 #define PyTZInfo_CheckExact(op) (Py_TYPE(op) == PyDateTimeAPI->TZInfoType)
+
 
 /* Macros for accessing constructors in a simplified fashion. */
 #define PyDate_FromDate(year, month, day) \
@@ -303,7 +289,7 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
     PyDateTimeAPI->Date_FromTimestamp( \
         (PyObject*) (PyDateTimeAPI->DateType), args)
 
-#endif  /* Py_BUILD_CORE */
+#endif   /* !defined(_PY_DATETIME_IMPL) */
 
 #ifdef __cplusplus
 }

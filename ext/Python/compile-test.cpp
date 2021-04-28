@@ -74,8 +74,7 @@ TEST_F(CompileExtensionApiTest, PyNodeCompileReturnsCodeObject) {
 
 TEST_F(CompileExtensionApiTest, PyAstCompileExReturnsCodeObject) {
   PyArena* arena = PyArena_New();
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   _mod* mod = PyParser_ASTFromString("4+5", "<test string>", Py_eval_input,
                                      &flags, arena);
   ASSERT_NE(mod, nullptr);
@@ -87,8 +86,7 @@ TEST_F(CompileExtensionApiTest, PyAstCompileExReturnsCodeObject) {
 
 TEST_F(CompileExtensionApiTest, PyAstCompileReturnsCodeObject) {
   PyArena* arena = PyArena_New();
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   _mod* mod = PyParser_ASTFromString("4+5", "<test string>", Py_single_input,
                                      &flags, arena);
   ASSERT_NE(mod, nullptr);
@@ -100,8 +98,7 @@ TEST_F(CompileExtensionApiTest, PyAstCompileReturnsCodeObject) {
 
 TEST_F(CompileExtensionApiTest, PyAstCompileObjectReturnsCodeObject) {
   PyArena* arena = PyArena_New();
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   _mod* mod = PyParser_ASTFromString("def foo(): pass", "<test string>",
                                      Py_file_input, &flags, arena);
   ASSERT_NE(mod, nullptr);
@@ -118,8 +115,7 @@ TEST_F(CompileExtensionApiTest, PyAstCompileObjectReturnsCodeObject) {
 TEST_F(CompileExtensionApiTest,
        PyAstCompileObjectAcceptsOptimizationLevelGreaterThanTwo) {
   PyArena* arena = PyArena_New();
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   _mod* mod = PyParser_ASTFromString("def foo(): pass", "<test string>",
                                      Py_file_input, &flags, arena);
   ASSERT_NE(mod, nullptr);

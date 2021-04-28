@@ -18,7 +18,7 @@
 #include <sys/ioctl.h>
 
 /* HP-UX requires that this be included to pick up MDCD, MCTS, MDSR,
- * MDTR, MRI, and MRTS (appearantly used internally by some things
+ * MDTR, MRI, and MRTS (apparently used internally by some things
  * defined as macros; these are not used here directly).
  */
 #ifdef HAVE_SYS_MODEM_H
@@ -166,9 +166,8 @@ termios_tcsetattr(PyObject *self, PyObject *args)
     }
 
     /* Get the old mode, in case there are any hidden fields... */
-    termiosmodulestate *state = modulestate_global;
     if (tcgetattr(fd, &mode) == -1)
-        return PyErr_SetFromErrno(state->TermiosError);
+        return PyErr_SetFromErrno(modulestate_global->TermiosError);
     mode.c_iflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 0));
     mode.c_oflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 1));
     mode.c_cflag = (tcflag_t) PyLong_AsLong(PyList_GetItem(term, 2));
@@ -201,11 +200,11 @@ termios_tcsetattr(PyObject *self, PyObject *args)
     }
 
     if (cfsetispeed(&mode, (speed_t) ispeed) == -1)
-        return PyErr_SetFromErrno(state->TermiosError);
+        return PyErr_SetFromErrno(modulestate_global->TermiosError);
     if (cfsetospeed(&mode, (speed_t) ospeed) == -1)
-        return PyErr_SetFromErrno(state->TermiosError);
+        return PyErr_SetFromErrno(modulestate_global->TermiosError);
     if (tcsetattr(fd, when, &mode) == -1)
-        return PyErr_SetFromErrno(state->TermiosError);
+        return PyErr_SetFromErrno(modulestate_global->TermiosError);
 
     Py_RETURN_NONE;
 }
@@ -942,6 +941,7 @@ static struct constant {
     {NULL, 0}
 };
 
+
 static int termiosmodule_traverse(PyObject *m, visitproc visit, void *arg) {
     Py_VISIT(modulestate(m)->TermiosError);
     return 0;
@@ -974,14 +974,14 @@ PyInit_termios(void)
     PyObject *m;
     struct constant *constant = termios_constants;
 
-    if ((m = PyState_FindModule(&termiosmodule)) != NULL) {
-        Py_INCREF(m);
-        return m;
+    m = PyState_FindModule(&termiosmodule);
+    if (m != NULL) {
+      Py_INCREF(m);
+      return m;
     }
-
-    if ((m = PyModule_Create(&termiosmodule)) == NULL) {
+    m = PyModule_Create(&termiosmodule);
+    if (m == NULL)
         return NULL;
-    }
 
     termiosmodulestate *state = PyModule_GetState(m);
     state->TermiosError = PyErr_NewException("termios.error", NULL, NULL);

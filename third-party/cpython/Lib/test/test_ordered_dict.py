@@ -459,7 +459,9 @@ class OrderedDictTests:
         self.assertEqual(list(MyOD(items).items()), items)
 
     def test_highly_nested(self):
-        # Issue 25395: crashes during garbage collection
+        # Issues 25395 and 35983: test that the trashcan mechanism works
+        # correctly for OrderedDict: deleting a highly nested OrderDict
+        # should not crash Python.
         OrderedDict = self.OrderedDict
         obj = None
         for _ in range(1000):
@@ -468,7 +470,9 @@ class OrderedDictTests:
         support.gc_collect()
 
     def test_highly_nested_subclass(self):
-        # Issue 25395: crashes during garbage collection
+        # Issues 25395 and 35983: test that the trashcan mechanism works
+        # correctly for OrderedDict: deleting a highly nested OrderDict
+        # should not crash Python.
         OrderedDict = self.OrderedDict
         deleted = []
         class MyOD(OrderedDict):
@@ -748,6 +752,26 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
                     unpickled = pickle.loads(p)
                     self.assertEqual(list(unpickled), expected)
                     self.assertEqual(list(it), expected)
+
+    @support.cpython_only
+    def test_weakref_list_is_not_traversed(self):
+        # Check that the weakref list is not traversed when collecting
+        # OrderedDict objects. See bpo-39778 for more information.
+
+        gc.collect()
+
+        x = self.OrderedDict()
+        x.cycle = x
+
+        cycle = []
+        cycle.append(cycle)
+
+        x_ref = weakref.ref(x)
+        cycle.append(x_ref)
+
+        del x, cycle, x_ref
+
+        gc.collect()
 
 
 class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):

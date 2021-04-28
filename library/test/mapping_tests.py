@@ -4,9 +4,9 @@
 # flake8: noqa
 # fmt: off
 
+# tests common to dict and UserDict
 import collections
 import sys
-# tests common to dict and UserDict
 import unittest
 
 

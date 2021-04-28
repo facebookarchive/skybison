@@ -35,7 +35,6 @@ typedef struct {
     PyObject *BitXor_type;
     PyObject *BoolOp_type;
     PyObject *Break_type;
-    PyObject *Bytes_type;
     PyObject *Call_type;
     PyObject *ClassDef_type;
     PyObject *Compare_type;
@@ -48,7 +47,6 @@ typedef struct {
     PyObject *Dict_type;
     PyObject *Div_singleton;
     PyObject *Div_type;
-    PyObject *Ellipsis_type;
     PyObject *Eq_singleton;
     PyObject *Eq_type;
     PyObject *ExceptHandler_type;
@@ -60,6 +58,7 @@ typedef struct {
     PyObject *For_type;
     PyObject *FormattedValue_type;
     PyObject *FunctionDef_type;
+    PyObject *FunctionType_type;
     PyObject *GeneratorExp_type;
     PyObject *Global_type;
     PyObject *GtE_singleton;
@@ -99,8 +98,8 @@ typedef struct {
     PyObject *Module_type;
     PyObject *Mult_singleton;
     PyObject *Mult_type;
-    PyObject *NameConstant_type;
     PyObject *Name_type;
+    PyObject *NamedExpr_type;
     PyObject *Nonlocal_type;
     PyObject *NotEq_singleton;
     PyObject *NotEq_type;
@@ -108,7 +107,6 @@ typedef struct {
     PyObject *NotIn_type;
     PyObject *Not_singleton;
     PyObject *Not_type;
-    PyObject *Num_type;
     PyObject *Or_singleton;
     PyObject *Or_type;
     PyObject *Param_singleton;
@@ -126,13 +124,13 @@ typedef struct {
     PyObject *Starred_type;
     PyObject *Store_singleton;
     PyObject *Store_type;
-    PyObject *Str_type;
     PyObject *Sub_singleton;
     PyObject *Sub_type;
     PyObject *Subscript_type;
     PyObject *Suite_type;
     PyObject *Try_type;
     PyObject *Tuple_type;
+    PyObject *TypeIgnore_type;
     PyObject *UAdd_singleton;
     PyObject *UAdd_type;
     PyObject *USub_singleton;
@@ -143,6 +141,8 @@ typedef struct {
     PyObject *YieldFrom_type;
     PyObject *Yield_type;
     PyObject *__dict__;
+    PyObject *__module__;
+    PyObject *_ast;
     PyObject *_attributes;
     PyObject *_fields;
     PyObject *alias_type;
@@ -150,6 +150,7 @@ typedef struct {
     PyObject *arg;
     PyObject *arg_type;
     PyObject *args;
+    PyObject *argtypes;
     PyObject *arguments_type;
     PyObject *asname;
     PyObject *attr;
@@ -169,6 +170,8 @@ typedef struct {
     PyObject *dims;
     PyObject *elt;
     PyObject *elts;
+    PyObject *end_col_offset;
+    PyObject *end_lineno;
     PyObject *exc;
     PyObject *excepthandler_type;
     PyObject *expr_context_type;
@@ -187,6 +190,7 @@ typedef struct {
     PyObject *keys;
     PyObject *keyword_type;
     PyObject *keywords;
+    PyObject *kind;
     PyObject *kw_defaults;
     PyObject *kwarg;
     PyObject *kwonlyargs;
@@ -197,7 +201,6 @@ typedef struct {
     PyObject *mod_type;
     PyObject *module;
     PyObject *msg;
-    PyObject *n;
     PyObject *name;
     PyObject *names;
     PyObject *op;
@@ -209,16 +212,19 @@ typedef struct {
     PyObject *posonlyargs;
     PyObject *returns;
     PyObject *right;
-    PyObject *s;
     PyObject *simple;
     PyObject *slice;
     PyObject *slice_type;
     PyObject *step;
     PyObject *stmt_type;
+    PyObject *tag;
     PyObject *target;
     PyObject *targets;
     PyObject *test;
     PyObject *type;
+    PyObject *type_comment;
+    PyObject *type_ignore_type;
+    PyObject *type_ignores;
     PyObject *unaryop_type;
     PyObject *upper;
     PyObject *value;
@@ -259,7 +265,6 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->BitXor_type);
     Py_CLEAR(astmodulestate(module)->BoolOp_type);
     Py_CLEAR(astmodulestate(module)->Break_type);
-    Py_CLEAR(astmodulestate(module)->Bytes_type);
     Py_CLEAR(astmodulestate(module)->Call_type);
     Py_CLEAR(astmodulestate(module)->ClassDef_type);
     Py_CLEAR(astmodulestate(module)->Compare_type);
@@ -272,7 +277,6 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->Dict_type);
     Py_CLEAR(astmodulestate(module)->Div_singleton);
     Py_CLEAR(astmodulestate(module)->Div_type);
-    Py_CLEAR(astmodulestate(module)->Ellipsis_type);
     Py_CLEAR(astmodulestate(module)->Eq_singleton);
     Py_CLEAR(astmodulestate(module)->Eq_type);
     Py_CLEAR(astmodulestate(module)->ExceptHandler_type);
@@ -284,6 +288,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->For_type);
     Py_CLEAR(astmodulestate(module)->FormattedValue_type);
     Py_CLEAR(astmodulestate(module)->FunctionDef_type);
+    Py_CLEAR(astmodulestate(module)->FunctionType_type);
     Py_CLEAR(astmodulestate(module)->GeneratorExp_type);
     Py_CLEAR(astmodulestate(module)->Global_type);
     Py_CLEAR(astmodulestate(module)->GtE_singleton);
@@ -323,8 +328,8 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->Module_type);
     Py_CLEAR(astmodulestate(module)->Mult_singleton);
     Py_CLEAR(astmodulestate(module)->Mult_type);
-    Py_CLEAR(astmodulestate(module)->NameConstant_type);
     Py_CLEAR(astmodulestate(module)->Name_type);
+    Py_CLEAR(astmodulestate(module)->NamedExpr_type);
     Py_CLEAR(astmodulestate(module)->Nonlocal_type);
     Py_CLEAR(astmodulestate(module)->NotEq_singleton);
     Py_CLEAR(astmodulestate(module)->NotEq_type);
@@ -332,7 +337,6 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->NotIn_type);
     Py_CLEAR(astmodulestate(module)->Not_singleton);
     Py_CLEAR(astmodulestate(module)->Not_type);
-    Py_CLEAR(astmodulestate(module)->Num_type);
     Py_CLEAR(astmodulestate(module)->Or_singleton);
     Py_CLEAR(astmodulestate(module)->Or_type);
     Py_CLEAR(astmodulestate(module)->Param_singleton);
@@ -350,13 +354,13 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->Starred_type);
     Py_CLEAR(astmodulestate(module)->Store_singleton);
     Py_CLEAR(astmodulestate(module)->Store_type);
-    Py_CLEAR(astmodulestate(module)->Str_type);
     Py_CLEAR(astmodulestate(module)->Sub_singleton);
     Py_CLEAR(astmodulestate(module)->Sub_type);
     Py_CLEAR(astmodulestate(module)->Subscript_type);
     Py_CLEAR(astmodulestate(module)->Suite_type);
     Py_CLEAR(astmodulestate(module)->Try_type);
     Py_CLEAR(astmodulestate(module)->Tuple_type);
+    Py_CLEAR(astmodulestate(module)->TypeIgnore_type);
     Py_CLEAR(astmodulestate(module)->UAdd_singleton);
     Py_CLEAR(astmodulestate(module)->UAdd_type);
     Py_CLEAR(astmodulestate(module)->USub_singleton);
@@ -367,6 +371,8 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->YieldFrom_type);
     Py_CLEAR(astmodulestate(module)->Yield_type);
     Py_CLEAR(astmodulestate(module)->__dict__);
+    Py_CLEAR(astmodulestate(module)->__module__);
+    Py_CLEAR(astmodulestate(module)->_ast);
     Py_CLEAR(astmodulestate(module)->_attributes);
     Py_CLEAR(astmodulestate(module)->_fields);
     Py_CLEAR(astmodulestate(module)->alias_type);
@@ -374,6 +380,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->arg);
     Py_CLEAR(astmodulestate(module)->arg_type);
     Py_CLEAR(astmodulestate(module)->args);
+    Py_CLEAR(astmodulestate(module)->argtypes);
     Py_CLEAR(astmodulestate(module)->arguments_type);
     Py_CLEAR(astmodulestate(module)->asname);
     Py_CLEAR(astmodulestate(module)->attr);
@@ -393,6 +400,8 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->dims);
     Py_CLEAR(astmodulestate(module)->elt);
     Py_CLEAR(astmodulestate(module)->elts);
+    Py_CLEAR(astmodulestate(module)->end_col_offset);
+    Py_CLEAR(astmodulestate(module)->end_lineno);
     Py_CLEAR(astmodulestate(module)->exc);
     Py_CLEAR(astmodulestate(module)->excepthandler_type);
     Py_CLEAR(astmodulestate(module)->expr_context_type);
@@ -411,6 +420,7 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->keys);
     Py_CLEAR(astmodulestate(module)->keyword_type);
     Py_CLEAR(astmodulestate(module)->keywords);
+    Py_CLEAR(astmodulestate(module)->kind);
     Py_CLEAR(astmodulestate(module)->kw_defaults);
     Py_CLEAR(astmodulestate(module)->kwarg);
     Py_CLEAR(astmodulestate(module)->kwonlyargs);
@@ -421,7 +431,6 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->mod_type);
     Py_CLEAR(astmodulestate(module)->module);
     Py_CLEAR(astmodulestate(module)->msg);
-    Py_CLEAR(astmodulestate(module)->n);
     Py_CLEAR(astmodulestate(module)->name);
     Py_CLEAR(astmodulestate(module)->names);
     Py_CLEAR(astmodulestate(module)->op);
@@ -433,16 +442,19 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->posonlyargs);
     Py_CLEAR(astmodulestate(module)->returns);
     Py_CLEAR(astmodulestate(module)->right);
-    Py_CLEAR(astmodulestate(module)->s);
     Py_CLEAR(astmodulestate(module)->simple);
     Py_CLEAR(astmodulestate(module)->slice);
     Py_CLEAR(astmodulestate(module)->slice_type);
     Py_CLEAR(astmodulestate(module)->step);
     Py_CLEAR(astmodulestate(module)->stmt_type);
+    Py_CLEAR(astmodulestate(module)->tag);
     Py_CLEAR(astmodulestate(module)->target);
     Py_CLEAR(astmodulestate(module)->targets);
     Py_CLEAR(astmodulestate(module)->test);
     Py_CLEAR(astmodulestate(module)->type);
+    Py_CLEAR(astmodulestate(module)->type_comment);
+    Py_CLEAR(astmodulestate(module)->type_ignore_type);
+    Py_CLEAR(astmodulestate(module)->type_ignores);
     Py_CLEAR(astmodulestate(module)->unaryop_type);
     Py_CLEAR(astmodulestate(module)->upper);
     Py_CLEAR(astmodulestate(module)->value);
@@ -482,7 +494,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->BitXor_type);
     Py_VISIT(astmodulestate(module)->BoolOp_type);
     Py_VISIT(astmodulestate(module)->Break_type);
-    Py_VISIT(astmodulestate(module)->Bytes_type);
     Py_VISIT(astmodulestate(module)->Call_type);
     Py_VISIT(astmodulestate(module)->ClassDef_type);
     Py_VISIT(astmodulestate(module)->Compare_type);
@@ -495,7 +506,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->Dict_type);
     Py_VISIT(astmodulestate(module)->Div_singleton);
     Py_VISIT(astmodulestate(module)->Div_type);
-    Py_VISIT(astmodulestate(module)->Ellipsis_type);
     Py_VISIT(astmodulestate(module)->Eq_singleton);
     Py_VISIT(astmodulestate(module)->Eq_type);
     Py_VISIT(astmodulestate(module)->ExceptHandler_type);
@@ -507,6 +517,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->For_type);
     Py_VISIT(astmodulestate(module)->FormattedValue_type);
     Py_VISIT(astmodulestate(module)->FunctionDef_type);
+    Py_VISIT(astmodulestate(module)->FunctionType_type);
     Py_VISIT(astmodulestate(module)->GeneratorExp_type);
     Py_VISIT(astmodulestate(module)->Global_type);
     Py_VISIT(astmodulestate(module)->GtE_singleton);
@@ -546,8 +557,8 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->Module_type);
     Py_VISIT(astmodulestate(module)->Mult_singleton);
     Py_VISIT(astmodulestate(module)->Mult_type);
-    Py_VISIT(astmodulestate(module)->NameConstant_type);
     Py_VISIT(astmodulestate(module)->Name_type);
+    Py_VISIT(astmodulestate(module)->NamedExpr_type);
     Py_VISIT(astmodulestate(module)->Nonlocal_type);
     Py_VISIT(astmodulestate(module)->NotEq_singleton);
     Py_VISIT(astmodulestate(module)->NotEq_type);
@@ -555,7 +566,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->NotIn_type);
     Py_VISIT(astmodulestate(module)->Not_singleton);
     Py_VISIT(astmodulestate(module)->Not_type);
-    Py_VISIT(astmodulestate(module)->Num_type);
     Py_VISIT(astmodulestate(module)->Or_singleton);
     Py_VISIT(astmodulestate(module)->Or_type);
     Py_VISIT(astmodulestate(module)->Param_singleton);
@@ -573,13 +583,13 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->Starred_type);
     Py_VISIT(astmodulestate(module)->Store_singleton);
     Py_VISIT(astmodulestate(module)->Store_type);
-    Py_VISIT(astmodulestate(module)->Str_type);
     Py_VISIT(astmodulestate(module)->Sub_singleton);
     Py_VISIT(astmodulestate(module)->Sub_type);
     Py_VISIT(astmodulestate(module)->Subscript_type);
     Py_VISIT(astmodulestate(module)->Suite_type);
     Py_VISIT(astmodulestate(module)->Try_type);
     Py_VISIT(astmodulestate(module)->Tuple_type);
+    Py_VISIT(astmodulestate(module)->TypeIgnore_type);
     Py_VISIT(astmodulestate(module)->UAdd_singleton);
     Py_VISIT(astmodulestate(module)->UAdd_type);
     Py_VISIT(astmodulestate(module)->USub_singleton);
@@ -590,6 +600,8 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->YieldFrom_type);
     Py_VISIT(astmodulestate(module)->Yield_type);
     Py_VISIT(astmodulestate(module)->__dict__);
+    Py_VISIT(astmodulestate(module)->__module__);
+    Py_VISIT(astmodulestate(module)->_ast);
     Py_VISIT(astmodulestate(module)->_attributes);
     Py_VISIT(astmodulestate(module)->_fields);
     Py_VISIT(astmodulestate(module)->alias_type);
@@ -597,6 +609,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->arg);
     Py_VISIT(astmodulestate(module)->arg_type);
     Py_VISIT(astmodulestate(module)->args);
+    Py_VISIT(astmodulestate(module)->argtypes);
     Py_VISIT(astmodulestate(module)->arguments_type);
     Py_VISIT(astmodulestate(module)->asname);
     Py_VISIT(astmodulestate(module)->attr);
@@ -616,6 +629,8 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->dims);
     Py_VISIT(astmodulestate(module)->elt);
     Py_VISIT(astmodulestate(module)->elts);
+    Py_VISIT(astmodulestate(module)->end_col_offset);
+    Py_VISIT(astmodulestate(module)->end_lineno);
     Py_VISIT(astmodulestate(module)->exc);
     Py_VISIT(astmodulestate(module)->excepthandler_type);
     Py_VISIT(astmodulestate(module)->expr_context_type);
@@ -634,6 +649,7 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->keys);
     Py_VISIT(astmodulestate(module)->keyword_type);
     Py_VISIT(astmodulestate(module)->keywords);
+    Py_VISIT(astmodulestate(module)->kind);
     Py_VISIT(astmodulestate(module)->kw_defaults);
     Py_VISIT(astmodulestate(module)->kwarg);
     Py_VISIT(astmodulestate(module)->kwonlyargs);
@@ -644,7 +660,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->mod_type);
     Py_VISIT(astmodulestate(module)->module);
     Py_VISIT(astmodulestate(module)->msg);
-    Py_VISIT(astmodulestate(module)->n);
     Py_VISIT(astmodulestate(module)->name);
     Py_VISIT(astmodulestate(module)->names);
     Py_VISIT(astmodulestate(module)->op);
@@ -656,16 +671,19 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->posonlyargs);
     Py_VISIT(astmodulestate(module)->returns);
     Py_VISIT(astmodulestate(module)->right);
-    Py_VISIT(astmodulestate(module)->s);
     Py_VISIT(astmodulestate(module)->simple);
     Py_VISIT(astmodulestate(module)->slice);
     Py_VISIT(astmodulestate(module)->slice_type);
     Py_VISIT(astmodulestate(module)->step);
     Py_VISIT(astmodulestate(module)->stmt_type);
+    Py_VISIT(astmodulestate(module)->tag);
     Py_VISIT(astmodulestate(module)->target);
     Py_VISIT(astmodulestate(module)->targets);
     Py_VISIT(astmodulestate(module)->test);
     Py_VISIT(astmodulestate(module)->type);
+    Py_VISIT(astmodulestate(module)->type_comment);
+    Py_VISIT(astmodulestate(module)->type_ignore_type);
+    Py_VISIT(astmodulestate(module)->type_ignores);
     Py_VISIT(astmodulestate(module)->unaryop_type);
     Py_VISIT(astmodulestate(module)->upper);
     Py_VISIT(astmodulestate(module)->value);
@@ -698,11 +716,14 @@ static int init_identifiers(void)
 {
     astmodulestate *state = astmodulestate_global;
     if ((state->__dict__ = PyUnicode_InternFromString("__dict__")) == NULL) return 0;
+    if ((state->__module__ = PyUnicode_InternFromString("__module__")) == NULL) return 0;
+    if ((state->_ast = PyUnicode_InternFromString("_ast")) == NULL) return 0;
     if ((state->_attributes = PyUnicode_InternFromString("_attributes")) == NULL) return 0;
     if ((state->_fields = PyUnicode_InternFromString("_fields")) == NULL) return 0;
     if ((state->annotation = PyUnicode_InternFromString("annotation")) == NULL) return 0;
     if ((state->arg = PyUnicode_InternFromString("arg")) == NULL) return 0;
     if ((state->args = PyUnicode_InternFromString("args")) == NULL) return 0;
+    if ((state->argtypes = PyUnicode_InternFromString("argtypes")) == NULL) return 0;
     if ((state->asname = PyUnicode_InternFromString("asname")) == NULL) return 0;
     if ((state->attr = PyUnicode_InternFromString("attr")) == NULL) return 0;
     if ((state->bases = PyUnicode_InternFromString("bases")) == NULL) return 0;
@@ -718,6 +739,8 @@ static int init_identifiers(void)
     if ((state->dims = PyUnicode_InternFromString("dims")) == NULL) return 0;
     if ((state->elt = PyUnicode_InternFromString("elt")) == NULL) return 0;
     if ((state->elts = PyUnicode_InternFromString("elts")) == NULL) return 0;
+    if ((state->end_col_offset = PyUnicode_InternFromString("end_col_offset")) == NULL) return 0;
+    if ((state->end_lineno = PyUnicode_InternFromString("end_lineno")) == NULL) return 0;
     if ((state->exc = PyUnicode_InternFromString("exc")) == NULL) return 0;
     if ((state->finalbody = PyUnicode_InternFromString("finalbody")) == NULL) return 0;
     if ((state->format_spec = PyUnicode_InternFromString("format_spec")) == NULL) return 0;
@@ -732,6 +755,7 @@ static int init_identifiers(void)
     if ((state->key = PyUnicode_InternFromString("key")) == NULL) return 0;
     if ((state->keys = PyUnicode_InternFromString("keys")) == NULL) return 0;
     if ((state->keywords = PyUnicode_InternFromString("keywords")) == NULL) return 0;
+    if ((state->kind = PyUnicode_InternFromString("kind")) == NULL) return 0;
     if ((state->kw_defaults = PyUnicode_InternFromString("kw_defaults")) == NULL) return 0;
     if ((state->kwarg = PyUnicode_InternFromString("kwarg")) == NULL) return 0;
     if ((state->kwonlyargs = PyUnicode_InternFromString("kwonlyargs")) == NULL) return 0;
@@ -741,7 +765,6 @@ static int init_identifiers(void)
     if ((state->lower = PyUnicode_InternFromString("lower")) == NULL) return 0;
     if ((state->module = PyUnicode_InternFromString("module")) == NULL) return 0;
     if ((state->msg = PyUnicode_InternFromString("msg")) == NULL) return 0;
-    if ((state->n = PyUnicode_InternFromString("n")) == NULL) return 0;
     if ((state->name = PyUnicode_InternFromString("name")) == NULL) return 0;
     if ((state->names = PyUnicode_InternFromString("names")) == NULL) return 0;
     if ((state->op = PyUnicode_InternFromString("op")) == NULL) return 0;
@@ -752,14 +775,16 @@ static int init_identifiers(void)
     if ((state->posonlyargs = PyUnicode_InternFromString("posonlyargs")) == NULL) return 0;
     if ((state->returns = PyUnicode_InternFromString("returns")) == NULL) return 0;
     if ((state->right = PyUnicode_InternFromString("right")) == NULL) return 0;
-    if ((state->s = PyUnicode_InternFromString("s")) == NULL) return 0;
     if ((state->simple = PyUnicode_InternFromString("simple")) == NULL) return 0;
     if ((state->slice = PyUnicode_InternFromString("slice")) == NULL) return 0;
     if ((state->step = PyUnicode_InternFromString("step")) == NULL) return 0;
+    if ((state->tag = PyUnicode_InternFromString("tag")) == NULL) return 0;
     if ((state->target = PyUnicode_InternFromString("target")) == NULL) return 0;
     if ((state->targets = PyUnicode_InternFromString("targets")) == NULL) return 0;
     if ((state->test = PyUnicode_InternFromString("test")) == NULL) return 0;
     if ((state->type = PyUnicode_InternFromString("type")) == NULL) return 0;
+    if ((state->type_comment = PyUnicode_InternFromString("type_comment")) == NULL) return 0;
+    if ((state->type_ignores = PyUnicode_InternFromString("type_ignores")) == NULL) return 0;
     if ((state->upper = PyUnicode_InternFromString("upper")) == NULL) return 0;
     if ((state->value = PyUnicode_InternFromString("value")) == NULL) return 0;
     if ((state->values = PyUnicode_InternFromString("values")) == NULL) return 0;
@@ -770,6 +795,7 @@ static int init_identifiers(void)
 static PyObject* ast2obj_mod(void*);
 static char *Module_fields[]={
     "body",
+    "type_ignores",
 };
 static char *Interactive_fields[]={
     "body",
@@ -777,12 +803,18 @@ static char *Interactive_fields[]={
 static char *Expression_fields[]={
     "body",
 };
+static char *FunctionType_fields[]={
+    "argtypes",
+    "returns",
+};
 static char *Suite_fields[]={
     "body",
 };
 static char *stmt_attributes[] = {
     "lineno",
     "col_offset",
+    "end_lineno",
+    "end_col_offset",
 };
 static PyObject* ast2obj_stmt(void*);
 static char *FunctionDef_fields[]={
@@ -791,6 +823,7 @@ static char *FunctionDef_fields[]={
     "body",
     "decorator_list",
     "returns",
+    "type_comment",
 };
 static char *AsyncFunctionDef_fields[]={
     "name",
@@ -798,6 +831,7 @@ static char *AsyncFunctionDef_fields[]={
     "body",
     "decorator_list",
     "returns",
+    "type_comment",
 };
 static char *ClassDef_fields[]={
     "name",
@@ -815,6 +849,7 @@ static char *Delete_fields[]={
 static char *Assign_fields[]={
     "targets",
     "value",
+    "type_comment",
 };
 static char *AugAssign_fields[]={
     "target",
@@ -832,12 +867,14 @@ static char *For_fields[]={
     "iter",
     "body",
     "orelse",
+    "type_comment",
 };
 static char *AsyncFor_fields[]={
     "target",
     "iter",
     "body",
     "orelse",
+    "type_comment",
 };
 static char *While_fields[]={
     "test",
@@ -852,10 +889,12 @@ static char *If_fields[]={
 static char *With_fields[]={
     "items",
     "body",
+    "type_comment",
 };
 static char *AsyncWith_fields[]={
     "items",
     "body",
+    "type_comment",
 };
 static char *Raise_fields[]={
     "exc",
@@ -891,11 +930,17 @@ static char *Expr_fields[]={
 static char *expr_attributes[] = {
     "lineno",
     "col_offset",
+    "end_lineno",
+    "end_col_offset",
 };
 static PyObject* ast2obj_expr(void*);
 static char *BoolOp_fields[]={
     "op",
     "values",
+};
+static char *NamedExpr_fields[]={
+    "target",
+    "value",
 };
 static char *BinOp_fields[]={
     "left",
@@ -958,12 +1003,6 @@ static char *Call_fields[]={
     "args",
     "keywords",
 };
-static char *Num_fields[]={
-    "n",
-};
-static char *Str_fields[]={
-    "s",
-};
 static char *FormattedValue_fields[]={
     "value",
     "conversion",
@@ -972,14 +1011,9 @@ static char *FormattedValue_fields[]={
 static char *JoinedStr_fields[]={
     "values",
 };
-static char *Bytes_fields[]={
-    "s",
-};
-static char *NameConstant_fields[]={
-    "value",
-};
 static char *Constant_fields[]={
     "value",
+    "kind",
 };
 static char *Attribute_fields[]={
     "value",
@@ -1034,6 +1068,8 @@ static char *comprehension_fields[]={
 static char *excepthandler_attributes[] = {
     "lineno",
     "col_offset",
+    "end_lineno",
+    "end_col_offset",
 };
 static PyObject* ast2obj_excepthandler(void*);
 static char *ExceptHandler_fields[]={
@@ -1055,10 +1091,13 @@ static PyObject* ast2obj_arg(void*);
 static char *arg_attributes[] = {
     "lineno",
     "col_offset",
+    "end_lineno",
+    "end_col_offset",
 };
 static char *arg_fields[]={
     "arg",
     "annotation",
+    "type_comment",
 };
 static PyObject* ast2obj_keyword(void*);
 static char *keyword_fields[]={
@@ -1075,6 +1114,12 @@ static char *withitem_fields[]={
     "context_expr",
     "optional_vars",
 };
+static PyObject* ast2obj_type_ignore(void*);
+static char *TypeIgnore_fields[]={
+    "lineno",
+    "tag",
+};
+
 
 
 typedef struct {
@@ -1085,12 +1130,12 @@ typedef struct {
 static void
 ast_dealloc(AST_object *self)
 {
-    freefunc free_func;
-    PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_CLEAR(self->dict);
-    free_func = PyType_GetSlot(tp, Py_tp_free);
+    freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
+    assert(free_func != NULL);
     free_func(self);
     Py_DECREF(tp);
 }
@@ -1120,8 +1165,9 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     }
     if (fields) {
         numfields = PySequence_Size(fields);
-        if (numfields == -1)
+        if (numfields == -1) {
             goto cleanup;
+        }
     }
 
     res = 0; /* if no error occurs, this stays 0 to the end */
@@ -1142,15 +1188,35 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         }
         res = PyObject_SetAttr(self, name, PyTuple_GET_ITEM(args, i));
         Py_DECREF(name);
-        if (res < 0)
+        if (res < 0) {
             goto cleanup;
+        }
     }
     if (kw) {
         i = 0;  /* needed by PyDict_Next */
         while (PyDict_Next(kw, &i, &key, &value)) {
-            res = PyObject_SetAttr(self, key, value);
-            if (res < 0)
+            int contains = PySequence_Contains(fields, key);
+            if (contains == -1) {
+                res = -1;
                 goto cleanup;
+            } else if (contains == 1) {
+                Py_ssize_t p = PySequence_Index(fields, key);
+                if (p == -1) {
+                    res = -1;
+                    goto cleanup;
+                }
+                if (p < PyTuple_GET_SIZE(args)) {
+                    PyErr_Format(PyExc_TypeError,
+                        "%.400s got multiple values for argument '%U'",
+                        _PyType_Name(Py_TYPE(self)), key);
+                    res = -1;
+                    goto cleanup;
+                }
+            }
+            res = PyObject_SetAttr(self, key, value);
+            if (res < 0) {
+                goto cleanup;
+            }
         }
     }
   cleanup:
@@ -1199,6 +1265,7 @@ static PyType_Slot AST_type_slots[] = {
     {Py_tp_init, ast_type_init},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, PyType_GenericNew},
+    {Py_tp_free, PyType_GenericNew},
     {Py_tp_free, PyObject_GC_Del},
     {0, 0},
 };
@@ -1211,7 +1278,8 @@ static PyType_Spec AST_type_spec = {
     AST_type_slots
 };
 
-static PyObject* make_type(char *type, PyObject* base, char** fields, int num_fields)
+
+static PyObject* make_type(char *type, PyObject* base, char**fields, int num_fields)
 {
     PyObject *fnames, *result;
     int i;
@@ -1225,13 +1293,16 @@ static PyObject* make_type(char *type, PyObject* base, char** fields, int num_fi
         }
         PyTuple_SET_ITEM(fnames, i, field);
     }
-    result = PyObject_CallFunction((PyObject*)Py_TYPE(base), "s(O){sOss}",
-                    type, base, "_fields", fnames, "__module__", "_ast");
+    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOO}",
+                    type, base,
+                    astmodulestate_global->_fields, fnames,
+                    astmodulestate_global->__module__,
+                    astmodulestate_global->_ast);
     Py_DECREF(fnames);
     return result;
 }
 
-static int add_attributes(PyObject* type, char** attrs, int num_fields)
+static int add_attributes(PyObject* type, char**attrs, int num_fields)
 {
     int i, result;
     PyObject *s, *l = PyTuple_New(num_fields);
@@ -1290,17 +1361,6 @@ static PyObject* ast2obj_int(long b)
 
 /* Conversion Python -> AST */
 
-static int obj2ast_singleton(PyObject *obj, PyObject** out, PyArena* arena)
-{
-    if (obj != Py_None && obj != Py_True && obj != Py_False) {
-        PyErr_SetString(PyExc_ValueError,
-                        "AST singleton must be True, False, or None");
-        return 1;
-    }
-    *out = obj;
-    return 0;
-}
-
 static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (obj == Py_None)
@@ -1318,13 +1378,11 @@ static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 
 static int obj2ast_constant(PyObject* obj, PyObject** out, PyArena* arena)
 {
-    if (obj) {
-        if (PyArena_AddPyObject(arena, obj) < 0) {
-            *out = NULL;
-            return -1;
-        }
-        Py_INCREF(obj);
+    if (PyArena_AddPyObject(arena, obj) < 0) {
+        *out = NULL;
+        return -1;
     }
+    Py_INCREF(obj);
     *out = obj;
     return 0;
 }
@@ -1342,15 +1400,6 @@ static int obj2ast_string(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (!PyUnicode_CheckExact(obj) && !PyBytes_CheckExact(obj)) {
         PyErr_SetString(PyExc_TypeError, "AST string must be of type str");
-        return 1;
-    }
-    return obj2ast_object(obj, out, arena);
-}
-
-static int obj2ast_bytes(PyObject* obj, PyObject** out, PyArena* arena)
-{
-    if (!PyBytes_CheckExact(obj)) {
-        PyErr_SetString(PyExc_TypeError, "AST bytes must be of type bytes");
         return 1;
     }
     return obj2ast_object(obj, out, arena);
@@ -1391,7 +1440,7 @@ static int init_types(void)
     PyObject *m;
     if (PyState_FindModule(&_astmodule) == NULL) {
         m = PyModule_Create(&_astmodule);
-                                                if (!m) return 0;
+        if (!m) return 0;
         PyState_AddModule(m, &_astmodule);
     }
     astmodulestate *state = astmodulestate_global;
@@ -1403,7 +1452,7 @@ static int init_types(void)
     state->mod_type = make_type("mod", state->AST_type, NULL, 0);
     if (!state->mod_type) return 0;
     if (!add_attributes(state->mod_type, NULL, 0)) return 0;
-    state->Module_type = make_type("Module", state->mod_type, Module_fields, 1);
+    state->Module_type = make_type("Module", state->mod_type, Module_fields, 2);
     if (!state->Module_type) return 0;
     state->Interactive_type = make_type("Interactive", state->mod_type,
                                         Interactive_fields, 1);
@@ -1411,17 +1460,20 @@ static int init_types(void)
     state->Expression_type = make_type("Expression", state->mod_type,
                                        Expression_fields, 1);
     if (!state->Expression_type) return 0;
+    state->FunctionType_type = make_type("FunctionType", state->mod_type,
+                                         FunctionType_fields, 2);
+    if (!state->FunctionType_type) return 0;
     state->Suite_type = make_type("Suite", state->mod_type, Suite_fields, 1);
     if (!state->Suite_type) return 0;
     state->stmt_type = make_type("stmt", state->AST_type, NULL, 0);
     if (!state->stmt_type) return 0;
-    if (!add_attributes(state->stmt_type, stmt_attributes, 2)) return 0;
+    if (!add_attributes(state->stmt_type, stmt_attributes, 4)) return 0;
     state->FunctionDef_type = make_type("FunctionDef", state->stmt_type,
-                                        FunctionDef_fields, 5);
+                                        FunctionDef_fields, 6);
     if (!state->FunctionDef_type) return 0;
     state->AsyncFunctionDef_type = make_type("AsyncFunctionDef",
                                              state->stmt_type,
-                                             AsyncFunctionDef_fields, 5);
+                                             AsyncFunctionDef_fields, 6);
     if (!state->AsyncFunctionDef_type) return 0;
     state->ClassDef_type = make_type("ClassDef", state->stmt_type,
                                      ClassDef_fields, 5);
@@ -1433,7 +1485,7 @@ static int init_types(void)
                                    1);
     if (!state->Delete_type) return 0;
     state->Assign_type = make_type("Assign", state->stmt_type, Assign_fields,
-                                   2);
+                                   3);
     if (!state->Assign_type) return 0;
     state->AugAssign_type = make_type("AugAssign", state->stmt_type,
                                       AugAssign_fields, 3);
@@ -1441,19 +1493,19 @@ static int init_types(void)
     state->AnnAssign_type = make_type("AnnAssign", state->stmt_type,
                                       AnnAssign_fields, 4);
     if (!state->AnnAssign_type) return 0;
-    state->For_type = make_type("For", state->stmt_type, For_fields, 4);
+    state->For_type = make_type("For", state->stmt_type, For_fields, 5);
     if (!state->For_type) return 0;
     state->AsyncFor_type = make_type("AsyncFor", state->stmt_type,
-                                     AsyncFor_fields, 4);
+                                     AsyncFor_fields, 5);
     if (!state->AsyncFor_type) return 0;
     state->While_type = make_type("While", state->stmt_type, While_fields, 3);
     if (!state->While_type) return 0;
     state->If_type = make_type("If", state->stmt_type, If_fields, 3);
     if (!state->If_type) return 0;
-    state->With_type = make_type("With", state->stmt_type, With_fields, 2);
+    state->With_type = make_type("With", state->stmt_type, With_fields, 3);
     if (!state->With_type) return 0;
     state->AsyncWith_type = make_type("AsyncWith", state->stmt_type,
-                                      AsyncWith_fields, 2);
+                                      AsyncWith_fields, 3);
     if (!state->AsyncWith_type) return 0;
     state->Raise_type = make_type("Raise", state->stmt_type, Raise_fields, 2);
     if (!state->Raise_type) return 0;
@@ -1484,10 +1536,13 @@ static int init_types(void)
     if (!state->Continue_type) return 0;
     state->expr_type = make_type("expr", state->AST_type, NULL, 0);
     if (!state->expr_type) return 0;
-    if (!add_attributes(state->expr_type, expr_attributes, 2)) return 0;
+    if (!add_attributes(state->expr_type, expr_attributes, 4)) return 0;
     state->BoolOp_type = make_type("BoolOp", state->expr_type, BoolOp_fields,
                                    2);
     if (!state->BoolOp_type) return 0;
+    state->NamedExpr_type = make_type("NamedExpr", state->expr_type,
+                                      NamedExpr_fields, 2);
+    if (!state->NamedExpr_type) return 0;
     state->BinOp_type = make_type("BinOp", state->expr_type, BinOp_fields, 3);
     if (!state->BinOp_type) return 0;
     state->UnaryOp_type = make_type("UnaryOp", state->expr_type,
@@ -1526,25 +1581,14 @@ static int init_types(void)
     if (!state->Compare_type) return 0;
     state->Call_type = make_type("Call", state->expr_type, Call_fields, 3);
     if (!state->Call_type) return 0;
-    state->Num_type = make_type("Num", state->expr_type, Num_fields, 1);
-    if (!state->Num_type) return 0;
-    state->Str_type = make_type("Str", state->expr_type, Str_fields, 1);
-    if (!state->Str_type) return 0;
     state->FormattedValue_type = make_type("FormattedValue", state->expr_type,
                                            FormattedValue_fields, 3);
     if (!state->FormattedValue_type) return 0;
     state->JoinedStr_type = make_type("JoinedStr", state->expr_type,
                                       JoinedStr_fields, 1);
     if (!state->JoinedStr_type) return 0;
-    state->Bytes_type = make_type("Bytes", state->expr_type, Bytes_fields, 1);
-    if (!state->Bytes_type) return 0;
-    state->NameConstant_type = make_type("NameConstant", state->expr_type,
-                                         NameConstant_fields, 1);
-    if (!state->NameConstant_type) return 0;
-    state->Ellipsis_type = make_type("Ellipsis", state->expr_type, NULL, 0);
-    if (!state->Ellipsis_type) return 0;
     state->Constant_type = make_type("Constant", state->expr_type,
-                                     Constant_fields, 1);
+                                     Constant_fields, 2);
     if (!state->Constant_type) return 0;
     state->Attribute_type = make_type("Attribute", state->expr_type,
                                       Attribute_fields, 3);
@@ -1781,7 +1825,7 @@ static int init_types(void)
                                           NULL, 0);
     if (!state->excepthandler_type) return 0;
     if (!add_attributes(state->excepthandler_type, excepthandler_attributes,
-        2)) return 0;
+        4)) return 0;
     state->ExceptHandler_type = make_type("ExceptHandler",
                                           state->excepthandler_type,
                                           ExceptHandler_fields, 3);
@@ -1790,9 +1834,9 @@ static int init_types(void)
                                       arguments_fields, 7);
     if (!state->arguments_type) return 0;
     if (!add_attributes(state->arguments_type, NULL, 0)) return 0;
-    state->arg_type = make_type("arg", state->AST_type, arg_fields, 2);
+    state->arg_type = make_type("arg", state->AST_type, arg_fields, 3);
     if (!state->arg_type) return 0;
-    if (!add_attributes(state->arg_type, arg_attributes, 2)) return 0;
+    if (!add_attributes(state->arg_type, arg_attributes, 4)) return 0;
     state->keyword_type = make_type("keyword", state->AST_type, keyword_fields,
                                     2);
     if (!state->keyword_type) return 0;
@@ -1804,6 +1848,13 @@ static int init_types(void)
                                      withitem_fields, 2);
     if (!state->withitem_type) return 0;
     if (!add_attributes(state->withitem_type, NULL, 0)) return 0;
+    state->type_ignore_type = make_type("type_ignore", state->AST_type, NULL,
+                                        0);
+    if (!state->type_ignore_type) return 0;
+    if (!add_attributes(state->type_ignore_type, NULL, 0)) return 0;
+    state->TypeIgnore_type = make_type("TypeIgnore", state->type_ignore_type,
+                                       TypeIgnore_fields, 2);
+    if (!state->TypeIgnore_type) return 0;
     state->initialized = 1;
     return 1;
 }
@@ -1827,9 +1878,11 @@ static int obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena);
 static int obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena);
 static int obj2ast_alias(PyObject* obj, alias_ty* out, PyArena* arena);
 static int obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena);
+static int obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena*
+                               arena);
 
 mod_ty
-Module(asdl_seq * body, PyArena *arena)
+Module(asdl_seq * body, asdl_seq * type_ignores, PyArena *arena)
 {
     mod_ty p;
     p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1837,6 +1890,7 @@ Module(asdl_seq * body, PyArena *arena)
         return NULL;
     p->kind = Module_kind;
     p->v.Module.body = body;
+    p->v.Module.type_ignores = type_ignores;
     return p;
 }
 
@@ -1870,6 +1924,24 @@ Expression(expr_ty body, PyArena *arena)
 }
 
 mod_ty
+FunctionType(asdl_seq * argtypes, expr_ty returns, PyArena *arena)
+{
+    mod_ty p;
+    if (!returns) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field returns is required for FunctionType");
+        return NULL;
+    }
+    p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = FunctionType_kind;
+    p->v.FunctionType.argtypes = argtypes;
+    p->v.FunctionType.returns = returns;
+    return p;
+}
+
+mod_ty
 Suite(asdl_seq * body, PyArena *arena)
 {
     mod_ty p;
@@ -1883,8 +1955,8 @@ Suite(asdl_seq * body, PyArena *arena)
 
 stmt_ty
 FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
-            decorator_list, expr_ty returns, int lineno, int col_offset,
-            PyArena *arena)
+            decorator_list, expr_ty returns, string type_comment, int lineno,
+            int col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!name) {
@@ -1906,14 +1978,18 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
     p->v.FunctionDef.body = body;
     p->v.FunctionDef.decorator_list = decorator_list;
     p->v.FunctionDef.returns = returns;
+    p->v.FunctionDef.type_comment = type_comment;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
 AsyncFunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq
-                 * decorator_list, expr_ty returns, int lineno, int col_offset,
+                 * decorator_list, expr_ty returns, string type_comment, int
+                 lineno, int col_offset, int end_lineno, int end_col_offset,
                  PyArena *arena)
 {
     stmt_ty p;
@@ -1936,15 +2012,18 @@ AsyncFunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq
     p->v.AsyncFunctionDef.body = body;
     p->v.AsyncFunctionDef.decorator_list = decorator_list;
     p->v.AsyncFunctionDef.returns = returns;
+    p->v.AsyncFunctionDef.type_comment = type_comment;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
 ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords, asdl_seq *
-         body, asdl_seq * decorator_list, int lineno, int col_offset, PyArena
-         *arena)
+         body, asdl_seq * decorator_list, int lineno, int col_offset, int
+         end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!name) {
@@ -1963,11 +2042,14 @@ ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords, asdl_seq *
     p->v.ClassDef.decorator_list = decorator_list;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-Return(expr_ty value, int lineno, int col_offset, PyArena *arena)
+Return(expr_ty value, int lineno, int col_offset, int end_lineno, int
+       end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1977,11 +2059,14 @@ Return(expr_ty value, int lineno, int col_offset, PyArena *arena)
     p->v.Return.value = value;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-Delete(asdl_seq * targets, int lineno, int col_offset, PyArena *arena)
+Delete(asdl_seq * targets, int lineno, int col_offset, int end_lineno, int
+       end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -1991,12 +2076,14 @@ Delete(asdl_seq * targets, int lineno, int col_offset, PyArena *arena)
     p->v.Delete.targets = targets;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-Assign(asdl_seq * targets, expr_ty value, int lineno, int col_offset, PyArena
-       *arena)
+Assign(asdl_seq * targets, expr_ty value, string type_comment, int lineno, int
+       col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!value) {
@@ -2010,14 +2097,17 @@ Assign(asdl_seq * targets, expr_ty value, int lineno, int col_offset, PyArena
     p->kind = Assign_kind;
     p->v.Assign.targets = targets;
     p->v.Assign.value = value;
+    p->v.Assign.type_comment = type_comment;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
 AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno, int
-          col_offset, PyArena *arena)
+          col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!target) {
@@ -2044,12 +2134,15 @@ AugAssign(expr_ty target, operator_ty op, expr_ty value, int lineno, int
     p->v.AugAssign.value = value;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
 AnnAssign(expr_ty target, expr_ty annotation, expr_ty value, int simple, int
-          lineno, int col_offset, PyArena *arena)
+          lineno, int col_offset, int end_lineno, int end_col_offset, PyArena
+          *arena)
 {
     stmt_ty p;
     if (!target) {
@@ -2072,12 +2165,15 @@ AnnAssign(expr_ty target, expr_ty annotation, expr_ty value, int simple, int
     p->v.AnnAssign.simple = simple;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse, int
-    lineno, int col_offset, PyArena *arena)
+For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse, string
+    type_comment, int lineno, int col_offset, int end_lineno, int
+    end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!target) {
@@ -2098,14 +2194,18 @@ For(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse, int
     p->v.For.iter = iter;
     p->v.For.body = body;
     p->v.For.orelse = orelse;
+    p->v.For.type_comment = type_comment;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-AsyncFor(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse, int
-         lineno, int col_offset, PyArena *arena)
+AsyncFor(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse,
+         string type_comment, int lineno, int col_offset, int end_lineno, int
+         end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!target) {
@@ -2126,14 +2226,17 @@ AsyncFor(expr_ty target, expr_ty iter, asdl_seq * body, asdl_seq * orelse, int
     p->v.AsyncFor.iter = iter;
     p->v.AsyncFor.body = body;
     p->v.AsyncFor.orelse = orelse;
+    p->v.AsyncFor.type_comment = type_comment;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
 While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
-      col_offset, PyArena *arena)
+      col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!test) {
@@ -2150,12 +2253,14 @@ While(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
     p->v.While.orelse = orelse;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
 If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
-   col_offset, PyArena *arena)
+   col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!test) {
@@ -2172,12 +2277,14 @@ If(expr_ty test, asdl_seq * body, asdl_seq * orelse, int lineno, int
     p->v.If.orelse = orelse;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-With(asdl_seq * items, asdl_seq * body, int lineno, int col_offset, PyArena
-     *arena)
+With(asdl_seq * items, asdl_seq * body, string type_comment, int lineno, int
+     col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2186,14 +2293,17 @@ With(asdl_seq * items, asdl_seq * body, int lineno, int col_offset, PyArena
     p->kind = With_kind;
     p->v.With.items = items;
     p->v.With.body = body;
+    p->v.With.type_comment = type_comment;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-AsyncWith(asdl_seq * items, asdl_seq * body, int lineno, int col_offset,
-          PyArena *arena)
+AsyncWith(asdl_seq * items, asdl_seq * body, string type_comment, int lineno,
+          int col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2202,13 +2312,17 @@ AsyncWith(asdl_seq * items, asdl_seq * body, int lineno, int col_offset,
     p->kind = AsyncWith_kind;
     p->v.AsyncWith.items = items;
     p->v.AsyncWith.body = body;
+    p->v.AsyncWith.type_comment = type_comment;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset, PyArena *arena)
+Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset, int end_lineno,
+      int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2219,12 +2333,15 @@ Raise(expr_ty exc, expr_ty cause, int lineno, int col_offset, PyArena *arena)
     p->v.Raise.cause = cause;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
 Try(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse, asdl_seq *
-    finalbody, int lineno, int col_offset, PyArena *arena)
+    finalbody, int lineno, int col_offset, int end_lineno, int end_col_offset,
+    PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2237,11 +2354,14 @@ Try(asdl_seq * body, asdl_seq * handlers, asdl_seq * orelse, asdl_seq *
     p->v.Try.finalbody = finalbody;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-Assert(expr_ty test, expr_ty msg, int lineno, int col_offset, PyArena *arena)
+Assert(expr_ty test, expr_ty msg, int lineno, int col_offset, int end_lineno,
+       int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!test) {
@@ -2257,11 +2377,14 @@ Assert(expr_ty test, expr_ty msg, int lineno, int col_offset, PyArena *arena)
     p->v.Assert.msg = msg;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-Import(asdl_seq * names, int lineno, int col_offset, PyArena *arena)
+Import(asdl_seq * names, int lineno, int col_offset, int end_lineno, int
+       end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2271,12 +2394,14 @@ Import(asdl_seq * names, int lineno, int col_offset, PyArena *arena)
     p->v.Import.names = names;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
 ImportFrom(identifier module, asdl_seq * names, int level, int lineno, int
-           col_offset, PyArena *arena)
+           col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2288,11 +2413,14 @@ ImportFrom(identifier module, asdl_seq * names, int level, int lineno, int
     p->v.ImportFrom.level = level;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-Global(asdl_seq * names, int lineno, int col_offset, PyArena *arena)
+Global(asdl_seq * names, int lineno, int col_offset, int end_lineno, int
+       end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2302,11 +2430,14 @@ Global(asdl_seq * names, int lineno, int col_offset, PyArena *arena)
     p->v.Global.names = names;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-Nonlocal(asdl_seq * names, int lineno, int col_offset, PyArena *arena)
+Nonlocal(asdl_seq * names, int lineno, int col_offset, int end_lineno, int
+         end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2316,11 +2447,14 @@ Nonlocal(asdl_seq * names, int lineno, int col_offset, PyArena *arena)
     p->v.Nonlocal.names = names;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-Expr(expr_ty value, int lineno, int col_offset, PyArena *arena)
+Expr(expr_ty value, int lineno, int col_offset, int end_lineno, int
+     end_col_offset, PyArena *arena)
 {
     stmt_ty p;
     if (!value) {
@@ -2335,11 +2469,14 @@ Expr(expr_ty value, int lineno, int col_offset, PyArena *arena)
     p->v.Expr.value = value;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-Pass(int lineno, int col_offset, PyArena *arena)
+Pass(int lineno, int col_offset, int end_lineno, int end_col_offset, PyArena
+     *arena)
 {
     stmt_ty p;
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2348,11 +2485,14 @@ Pass(int lineno, int col_offset, PyArena *arena)
     p->kind = Pass_kind;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-Break(int lineno, int col_offset, PyArena *arena)
+Break(int lineno, int col_offset, int end_lineno, int end_col_offset, PyArena
+      *arena)
 {
     stmt_ty p;
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2361,11 +2501,14 @@ Break(int lineno, int col_offset, PyArena *arena)
     p->kind = Break_kind;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 stmt_ty
-Continue(int lineno, int col_offset, PyArena *arena)
+Continue(int lineno, int col_offset, int end_lineno, int end_col_offset,
+         PyArena *arena)
 {
     stmt_ty p;
     p = (stmt_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2374,12 +2517,14 @@ Continue(int lineno, int col_offset, PyArena *arena)
     p->kind = Continue_kind;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-BoolOp(boolop_ty op, asdl_seq * values, int lineno, int col_offset, PyArena
-       *arena)
+BoolOp(boolop_ty op, asdl_seq * values, int lineno, int col_offset, int
+       end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!op) {
@@ -2395,12 +2540,42 @@ BoolOp(boolop_ty op, asdl_seq * values, int lineno, int col_offset, PyArena
     p->v.BoolOp.values = values;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
+    return p;
+}
+
+expr_ty
+NamedExpr(expr_ty target, expr_ty value, int lineno, int col_offset, int
+          end_lineno, int end_col_offset, PyArena *arena)
+{
+    expr_ty p;
+    if (!target) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field target is required for NamedExpr");
+        return NULL;
+    }
+    if (!value) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field value is required for NamedExpr");
+        return NULL;
+    }
+    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = NamedExpr_kind;
+    p->v.NamedExpr.target = target;
+    p->v.NamedExpr.value = value;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
 BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, int col_offset,
-      PyArena *arena)
+      int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!left) {
@@ -2427,12 +2602,14 @@ BinOp(expr_ty left, operator_ty op, expr_ty right, int lineno, int col_offset,
     p->v.BinOp.right = right;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-UnaryOp(unaryop_ty op, expr_ty operand, int lineno, int col_offset, PyArena
-        *arena)
+UnaryOp(unaryop_ty op, expr_ty operand, int lineno, int col_offset, int
+        end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!op) {
@@ -2453,12 +2630,14 @@ UnaryOp(unaryop_ty op, expr_ty operand, int lineno, int col_offset, PyArena
     p->v.UnaryOp.operand = operand;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-Lambda(arguments_ty args, expr_ty body, int lineno, int col_offset, PyArena
-       *arena)
+Lambda(arguments_ty args, expr_ty body, int lineno, int col_offset, int
+       end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!args) {
@@ -2479,12 +2658,14 @@ Lambda(arguments_ty args, expr_ty body, int lineno, int col_offset, PyArena
     p->v.Lambda.body = body;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
 IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int col_offset,
-      PyArena *arena)
+      int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!test) {
@@ -2511,12 +2692,14 @@ IfExp(expr_ty test, expr_ty body, expr_ty orelse, int lineno, int col_offset,
     p->v.IfExp.orelse = orelse;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-Dict(asdl_seq * keys, asdl_seq * values, int lineno, int col_offset, PyArena
-     *arena)
+Dict(asdl_seq * keys, asdl_seq * values, int lineno, int col_offset, int
+     end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2527,11 +2710,14 @@ Dict(asdl_seq * keys, asdl_seq * values, int lineno, int col_offset, PyArena
     p->v.Dict.values = values;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-Set(asdl_seq * elts, int lineno, int col_offset, PyArena *arena)
+Set(asdl_seq * elts, int lineno, int col_offset, int end_lineno, int
+    end_col_offset, PyArena *arena)
 {
     expr_ty p;
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2541,12 +2727,14 @@ Set(asdl_seq * elts, int lineno, int col_offset, PyArena *arena)
     p->v.Set.elts = elts;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-ListComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset,
-         PyArena *arena)
+ListComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset, int
+         end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!elt) {
@@ -2562,12 +2750,14 @@ ListComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset,
     p->v.ListComp.generators = generators;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-SetComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset, PyArena
-        *arena)
+SetComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset, int
+        end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!elt) {
@@ -2583,12 +2773,14 @@ SetComp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset, PyArena
     p->v.SetComp.generators = generators;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
 DictComp(expr_ty key, expr_ty value, asdl_seq * generators, int lineno, int
-         col_offset, PyArena *arena)
+         col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!key) {
@@ -2610,12 +2802,14 @@ DictComp(expr_ty key, expr_ty value, asdl_seq * generators, int lineno, int
     p->v.DictComp.generators = generators;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
 GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset,
-             PyArena *arena)
+             int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!elt) {
@@ -2631,11 +2825,14 @@ GeneratorExp(expr_ty elt, asdl_seq * generators, int lineno, int col_offset,
     p->v.GeneratorExp.generators = generators;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-Await(expr_ty value, int lineno, int col_offset, PyArena *arena)
+Await(expr_ty value, int lineno, int col_offset, int end_lineno, int
+      end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2650,11 +2847,14 @@ Await(expr_ty value, int lineno, int col_offset, PyArena *arena)
     p->v.Await.value = value;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-Yield(expr_ty value, int lineno, int col_offset, PyArena *arena)
+Yield(expr_ty value, int lineno, int col_offset, int end_lineno, int
+      end_col_offset, PyArena *arena)
 {
     expr_ty p;
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2664,11 +2864,14 @@ Yield(expr_ty value, int lineno, int col_offset, PyArena *arena)
     p->v.Yield.value = value;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-YieldFrom(expr_ty value, int lineno, int col_offset, PyArena *arena)
+YieldFrom(expr_ty value, int lineno, int col_offset, int end_lineno, int
+          end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2683,12 +2886,14 @@ YieldFrom(expr_ty value, int lineno, int col_offset, PyArena *arena)
     p->v.YieldFrom.value = value;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
 Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators, int lineno,
-        int col_offset, PyArena *arena)
+        int col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!left) {
@@ -2705,12 +2910,14 @@ Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators, int lineno,
     p->v.Compare.comparators = comparators;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
 Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, int lineno, int
-     col_offset, PyArena *arena)
+     col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!func) {
@@ -2727,50 +2934,15 @@ Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, int lineno, int
     p->v.Call.keywords = keywords;
     p->lineno = lineno;
     p->col_offset = col_offset;
-    return p;
-}
-
-expr_ty
-Num(object n, int lineno, int col_offset, PyArena *arena)
-{
-    expr_ty p;
-    if (!n) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field n is required for Num");
-        return NULL;
-    }
-    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = Num_kind;
-    p->v.Num.n = n;
-    p->lineno = lineno;
-    p->col_offset = col_offset;
-    return p;
-}
-
-expr_ty
-Str(string s, int lineno, int col_offset, PyArena *arena)
-{
-    expr_ty p;
-    if (!s) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field s is required for Str");
-        return NULL;
-    }
-    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = Str_kind;
-    p->v.Str.s = s;
-    p->lineno = lineno;
-    p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
 FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int lineno,
-               int col_offset, PyArena *arena)
+               int col_offset, int end_lineno, int end_col_offset, PyArena
+               *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2787,11 +2959,14 @@ FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int lineno,
     p->v.FormattedValue.format_spec = format_spec;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-JoinedStr(asdl_seq * values, int lineno, int col_offset, PyArena *arena)
+JoinedStr(asdl_seq * values, int lineno, int col_offset, int end_lineno, int
+          end_col_offset, PyArena *arena)
 {
     expr_ty p;
     p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2801,62 +2976,14 @@ JoinedStr(asdl_seq * values, int lineno, int col_offset, PyArena *arena)
     p->v.JoinedStr.values = values;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-Bytes(bytes s, int lineno, int col_offset, PyArena *arena)
-{
-    expr_ty p;
-    if (!s) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field s is required for Bytes");
-        return NULL;
-    }
-    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = Bytes_kind;
-    p->v.Bytes.s = s;
-    p->lineno = lineno;
-    p->col_offset = col_offset;
-    return p;
-}
-
-expr_ty
-NameConstant(singleton value, int lineno, int col_offset, PyArena *arena)
-{
-    expr_ty p;
-    if (!value) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field value is required for NameConstant");
-        return NULL;
-    }
-    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = NameConstant_kind;
-    p->v.NameConstant.value = value;
-    p->lineno = lineno;
-    p->col_offset = col_offset;
-    return p;
-}
-
-expr_ty
-Ellipsis(int lineno, int col_offset, PyArena *arena)
-{
-    expr_ty p;
-    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = Ellipsis_kind;
-    p->lineno = lineno;
-    p->col_offset = col_offset;
-    return p;
-}
-
-expr_ty
-Constant(constant value, int lineno, int col_offset, PyArena *arena)
+Constant(constant value, string kind, int lineno, int col_offset, int
+         end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2869,14 +2996,17 @@ Constant(constant value, int lineno, int col_offset, PyArena *arena)
         return NULL;
     p->kind = Constant_kind;
     p->v.Constant.value = value;
+    p->v.Constant.kind = kind;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
 Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno, int
-          col_offset, PyArena *arena)
+          col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2903,12 +3033,14 @@ Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno, int
     p->v.Attribute.ctx = ctx;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
 Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int lineno, int
-          col_offset, PyArena *arena)
+          col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2935,12 +3067,14 @@ Subscript(expr_ty value, slice_ty slice, expr_context_ty ctx, int lineno, int
     p->v.Subscript.ctx = ctx;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-Starred(expr_ty value, expr_context_ty ctx, int lineno, int col_offset, PyArena
-        *arena)
+Starred(expr_ty value, expr_context_ty ctx, int lineno, int col_offset, int
+        end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!value) {
@@ -2961,12 +3095,14 @@ Starred(expr_ty value, expr_context_ty ctx, int lineno, int col_offset, PyArena
     p->v.Starred.ctx = ctx;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-Name(identifier id, expr_context_ty ctx, int lineno, int col_offset, PyArena
-     *arena)
+Name(identifier id, expr_context_ty ctx, int lineno, int col_offset, int
+     end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!id) {
@@ -2987,12 +3123,14 @@ Name(identifier id, expr_context_ty ctx, int lineno, int col_offset, PyArena
     p->v.Name.ctx = ctx;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-List(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, PyArena
-     *arena)
+List(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, int
+     end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!ctx) {
@@ -3008,12 +3146,14 @@ List(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, PyArena
     p->v.List.ctx = ctx;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
 expr_ty
-Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, PyArena
-      *arena)
+Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, int
+      end_lineno, int end_col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!ctx) {
@@ -3029,6 +3169,8 @@ Tuple(asdl_seq * elts, expr_context_ty ctx, int lineno, int col_offset, PyArena
     p->v.Tuple.ctx = ctx;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
@@ -3102,7 +3244,7 @@ comprehension(expr_ty target, expr_ty iter, asdl_seq * ifs, int is_async,
 
 excepthandler_ty
 ExceptHandler(expr_ty type, identifier name, asdl_seq * body, int lineno, int
-              col_offset, PyArena *arena)
+              col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     excepthandler_ty p;
     p = (excepthandler_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -3114,6 +3256,8 @@ ExceptHandler(expr_ty type, identifier name, asdl_seq * body, int lineno, int
     p->v.ExceptHandler.body = body;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
@@ -3137,8 +3281,8 @@ arguments(asdl_seq * posonlyargs, asdl_seq * args, arg_ty vararg, asdl_seq *
 }
 
 arg_ty
-arg(identifier arg, expr_ty annotation, int lineno, int col_offset, PyArena
-    *arena)
+arg(identifier arg, expr_ty annotation, string type_comment, int lineno, int
+    col_offset, int end_lineno, int end_col_offset, PyArena *arena)
 {
     arg_ty p;
     if (!arg) {
@@ -3151,8 +3295,11 @@ arg(identifier arg, expr_ty annotation, int lineno, int col_offset, PyArena
         return NULL;
     p->arg = arg;
     p->annotation = annotation;
+    p->type_comment = type_comment;
     p->lineno = lineno;
     p->col_offset = col_offset;
+    p->end_lineno = end_lineno;
+    p->end_col_offset = end_col_offset;
     return p;
 }
 
@@ -3207,6 +3354,24 @@ withitem(expr_ty context_expr, expr_ty optional_vars, PyArena *arena)
     return p;
 }
 
+type_ignore_ty
+TypeIgnore(int lineno, string tag, PyArena *arena)
+{
+    type_ignore_ty p;
+    if (!tag) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field tag is required for TypeIgnore");
+        return NULL;
+    }
+    p = (type_ignore_ty)PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = TypeIgnore_kind;
+    p->v.TypeIgnore.lineno = lineno;
+    p->v.TypeIgnore.tag = tag;
+    return p;
+}
+
 
 PyObject*
 ast2obj_mod(void* _o)
@@ -3228,6 +3393,12 @@ ast2obj_mod(void* _o)
         if (PyObject_SetAttr(result, astmodulestate_global->body, value) == -1)
             goto failed;
         Py_DECREF(value);
+        value = ast2obj_list(o->v.Module.type_ignores, ast2obj_type_ignore);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->type_ignores,
+            value) == -1)
+            goto failed;
+        Py_DECREF(value);
         break;
     case Interactive_kind:
         tp = (PyTypeObject *)astmodulestate_global->Interactive_type;
@@ -3246,6 +3417,23 @@ ast2obj_mod(void* _o)
         value = ast2obj_expr(o->v.Expression.body);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, astmodulestate_global->body, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case FunctionType_kind:
+        tp = (PyTypeObject *)astmodulestate_global->FunctionType_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_list(o->v.FunctionType.argtypes, ast2obj_expr);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->argtypes, value) ==
+            -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->v.FunctionType.returns);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->returns, value) ==
+            -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -3309,6 +3497,12 @@ ast2obj_stmt(void* _o)
             -1)
             goto failed;
         Py_DECREF(value);
+        value = ast2obj_string(o->v.FunctionDef.type_comment);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->type_comment,
+            value) == -1)
+            goto failed;
+        Py_DECREF(value);
         break;
     case AsyncFunctionDef_kind:
         tp = (PyTypeObject *)astmodulestate_global->AsyncFunctionDef_type;
@@ -3340,6 +3534,12 @@ ast2obj_stmt(void* _o)
         if (!value) goto failed;
         if (PyObject_SetAttr(result, astmodulestate_global->returns, value) ==
             -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_string(o->v.AsyncFunctionDef.type_comment);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->type_comment,
+            value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -3409,6 +3609,12 @@ ast2obj_stmt(void* _o)
         value = ast2obj_expr(o->v.Assign.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, astmodulestate_global->value, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_string(o->v.Assign.type_comment);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->type_comment,
+            value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -3487,6 +3693,12 @@ ast2obj_stmt(void* _o)
             -1)
             goto failed;
         Py_DECREF(value);
+        value = ast2obj_string(o->v.For.type_comment);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->type_comment,
+            value) == -1)
+            goto failed;
+        Py_DECREF(value);
         break;
     case AsyncFor_kind:
         tp = (PyTypeObject *)astmodulestate_global->AsyncFor_type;
@@ -3512,6 +3724,12 @@ ast2obj_stmt(void* _o)
         if (!value) goto failed;
         if (PyObject_SetAttr(result, astmodulestate_global->orelse, value) ==
             -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_string(o->v.AsyncFor.type_comment);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->type_comment,
+            value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -3571,6 +3789,12 @@ ast2obj_stmt(void* _o)
         if (PyObject_SetAttr(result, astmodulestate_global->body, value) == -1)
             goto failed;
         Py_DECREF(value);
+        value = ast2obj_string(o->v.With.type_comment);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->type_comment,
+            value) == -1)
+            goto failed;
+        Py_DECREF(value);
         break;
     case AsyncWith_kind:
         tp = (PyTypeObject *)astmodulestate_global->AsyncWith_type;
@@ -3584,6 +3808,12 @@ ast2obj_stmt(void* _o)
         value = ast2obj_list(o->v.AsyncWith.body, ast2obj_stmt);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, astmodulestate_global->body, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_string(o->v.AsyncWith.type_comment);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->type_comment,
+            value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -3732,6 +3962,17 @@ ast2obj_stmt(void* _o)
     if (PyObject_SetAttr(result, astmodulestate_global->col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
+    value = ast2obj_int(o->end_lineno);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->end_lineno, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->end_col_offset);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->end_col_offset, value)
+        < 0)
+        goto failed;
+    Py_DECREF(value);
     return result;
 failed:
     Py_XDECREF(value);
@@ -3763,6 +4004,22 @@ ast2obj_expr(void* _o)
         if (!value) goto failed;
         if (PyObject_SetAttr(result, astmodulestate_global->values, value) ==
             -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case NamedExpr_kind:
+        tp = (PyTypeObject *)astmodulestate_global->NamedExpr_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_expr(o->v.NamedExpr.target);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->target, value) ==
+            -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->v.NamedExpr.value);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->value, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -4012,26 +4269,6 @@ ast2obj_expr(void* _o)
             goto failed;
         Py_DECREF(value);
         break;
-    case Num_kind:
-        tp = (PyTypeObject *)astmodulestate_global->Num_type;
-        result = PyType_GenericNew(tp, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_object(o->v.Num.n);
-        if (!value) goto failed;
-        if (PyObject_SetAttr(result, astmodulestate_global->n, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
-    case Str_kind:
-        tp = (PyTypeObject *)astmodulestate_global->Str_type;
-        result = PyType_GenericNew(tp, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_string(o->v.Str.s);
-        if (!value) goto failed;
-        if (PyObject_SetAttr(result, astmodulestate_global->s, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
     case FormattedValue_kind:
         tp = (PyTypeObject *)astmodulestate_global->FormattedValue_type;
         result = PyType_GenericNew(tp, NULL, NULL);
@@ -4065,31 +4302,6 @@ ast2obj_expr(void* _o)
             goto failed;
         Py_DECREF(value);
         break;
-    case Bytes_kind:
-        tp = (PyTypeObject *)astmodulestate_global->Bytes_type;
-        result = PyType_GenericNew(tp, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_bytes(o->v.Bytes.s);
-        if (!value) goto failed;
-        if (PyObject_SetAttr(result, astmodulestate_global->s, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
-    case NameConstant_kind:
-        tp = (PyTypeObject *)astmodulestate_global->NameConstant_type;
-        result = PyType_GenericNew(tp, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_singleton(o->v.NameConstant.value);
-        if (!value) goto failed;
-        if (PyObject_SetAttr(result, astmodulestate_global->value, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
-    case Ellipsis_kind:
-        tp = (PyTypeObject *)astmodulestate_global->Ellipsis_type;
-        result = PyType_GenericNew(tp, NULL, NULL);
-        if (!result) goto failed;
-        break;
     case Constant_kind:
         tp = (PyTypeObject *)astmodulestate_global->Constant_type;
         result = PyType_GenericNew(tp, NULL, NULL);
@@ -4097,6 +4309,11 @@ ast2obj_expr(void* _o)
         value = ast2obj_constant(o->v.Constant.value);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, astmodulestate_global->value, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_string(o->v.Constant.kind);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->kind, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -4209,6 +4426,17 @@ ast2obj_expr(void* _o)
     value = ast2obj_int(o->col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, astmodulestate_global->col_offset, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->end_lineno);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->end_lineno, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->end_col_offset);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->end_col_offset, value)
+        < 0)
         goto failed;
     Py_DECREF(value);
     return result;
@@ -4509,6 +4737,17 @@ ast2obj_excepthandler(void* _o)
     if (PyObject_SetAttr(result, astmodulestate_global->col_offset, value) < 0)
         goto failed;
     Py_DECREF(value);
+    value = ast2obj_int(o->end_lineno);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->end_lineno, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->end_col_offset);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->end_col_offset, value)
+        < 0)
+        goto failed;
+    Py_DECREF(value);
     return result;
 failed:
     Py_XDECREF(value);
@@ -4598,6 +4837,12 @@ ast2obj_arg(void* _o)
         -1)
         goto failed;
     Py_DECREF(value);
+    value = ast2obj_string(o->type_comment);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->type_comment, value) ==
+        -1)
+        goto failed;
+    Py_DECREF(value);
     value = ast2obj_int(o->lineno);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, astmodulestate_global->lineno, value) < 0)
@@ -4606,6 +4851,17 @@ ast2obj_arg(void* _o)
     value = ast2obj_int(o->col_offset);
     if (!value) goto failed;
     if (PyObject_SetAttr(result, astmodulestate_global->col_offset, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->end_lineno);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->end_lineno, value) < 0)
+        goto failed;
+    Py_DECREF(value);
+    value = ast2obj_int(o->end_col_offset);
+    if (!value) goto failed;
+    if (PyObject_SetAttr(result, astmodulestate_global->end_col_offset, value)
+        < 0)
         goto failed;
     Py_DECREF(value);
     return result;
@@ -4707,6 +4963,41 @@ failed:
     return NULL;
 }
 
+PyObject*
+ast2obj_type_ignore(void* _o)
+{
+    type_ignore_ty o = (type_ignore_ty)_o;
+    PyObject *result = NULL, *value = NULL;
+    PyTypeObject *tp;
+    if (!o) {
+        Py_RETURN_NONE;
+    }
+
+    switch (o->kind) {
+    case TypeIgnore_kind:
+        tp = (PyTypeObject *)astmodulestate_global->TypeIgnore_type;
+        result = PyType_GenericNew(tp, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_int(o->v.TypeIgnore.lineno);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->lineno, value) ==
+            -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_string(o->v.TypeIgnore.tag);
+        if (!value) goto failed;
+        if (PyObject_SetAttr(result, astmodulestate_global->tag, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    }
+    return result;
+failed:
+    Py_XDECREF(value);
+    Py_XDECREF(result);
+    return NULL;
+}
+
 
 int
 obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
@@ -4727,6 +5018,7 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
     }
     if (isinstance) {
         asdl_seq* body;
+        asdl_seq* type_ignores;
 
         if (_PyObject_LookupAttr(obj, astmodulestate_global->body, &tmp) < 0) {
             return 1;
@@ -4758,7 +5050,38 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = Module(body, arena);
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->type_ignores,
+            &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"type_ignores\" missing from Module");
+            return 1;
+        }
+        else {
+            int res;
+            Py_ssize_t len;
+            Py_ssize_t i;
+            if (!PyList_Check(tmp)) {
+                PyErr_Format(PyExc_TypeError, "Module field \"type_ignores\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                goto failed;
+            }
+            len = PyList_GET_SIZE(tmp);
+            type_ignores = _Py_asdl_seq_new(len, arena);
+            if (type_ignores == NULL) goto failed;
+            for (i = 0; i < len; i++) {
+                type_ignore_ty val;
+                res = obj2ast_type_ignore(PyList_GET_ITEM(tmp, i), &val, arena);
+                if (res != 0) goto failed;
+                if (len != PyList_GET_SIZE(tmp)) {
+                    PyErr_SetString(PyExc_RuntimeError, "Module field \"type_ignores\" changed size during iteration");
+                    goto failed;
+                }
+                asdl_seq_SET(type_ignores, i, val);
+            }
+            Py_CLEAR(tmp);
+        }
+        *out = Module(body, type_ignores, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -4829,6 +5152,64 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
         if (*out == NULL) goto failed;
         return 0;
     }
+    tp = astmodulestate_global->FunctionType_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        asdl_seq* argtypes;
+        expr_ty returns;
+
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->argtypes, &tmp) <
+            0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"argtypes\" missing from FunctionType");
+            return 1;
+        }
+        else {
+            int res;
+            Py_ssize_t len;
+            Py_ssize_t i;
+            if (!PyList_Check(tmp)) {
+                PyErr_Format(PyExc_TypeError, "FunctionType field \"argtypes\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
+                goto failed;
+            }
+            len = PyList_GET_SIZE(tmp);
+            argtypes = _Py_asdl_seq_new(len, arena);
+            if (argtypes == NULL) goto failed;
+            for (i = 0; i < len; i++) {
+                expr_ty val;
+                res = obj2ast_expr(PyList_GET_ITEM(tmp, i), &val, arena);
+                if (res != 0) goto failed;
+                if (len != PyList_GET_SIZE(tmp)) {
+                    PyErr_SetString(PyExc_RuntimeError, "FunctionType field \"argtypes\" changed size during iteration");
+                    goto failed;
+                }
+                asdl_seq_SET(argtypes, i, val);
+            }
+            Py_CLEAR(tmp);
+        }
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->returns, &tmp) <
+            0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"returns\" missing from FunctionType");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &returns, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = FunctionType(argtypes, returns, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
     tp = astmodulestate_global->Suite_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
@@ -4887,6 +5268,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     PyObject *tp;
     int lineno;
     int col_offset;
+    int end_lineno;
+    int end_col_offset;
 
     if (obj == Py_None) {
         *out = NULL;
@@ -4919,6 +5302,34 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->end_lineno, &tmp) < 0)
+        {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_lineno = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &end_lineno, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->end_col_offset, &tmp)
+        < 0) {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_col_offset = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &end_col_offset, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
     tp = astmodulestate_global->FunctionDef_type;
     isinstance = PyObject_IsInstance(obj, tp);
     if (isinstance == -1) {
@@ -4930,6 +5341,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* body;
         asdl_seq* decorator_list;
         expr_ty returns;
+        string type_comment;
 
         if (_PyObject_LookupAttr(obj, astmodulestate_global->name, &tmp) < 0) {
             return 1;
@@ -5032,8 +5444,23 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = FunctionDef(name, args, body, decorator_list, returns, lineno,
-                           col_offset, arena);
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->type_comment,
+            &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            type_comment = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &type_comment, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = FunctionDef(name, args, body, decorator_list, returns,
+                           type_comment, lineno, col_offset, end_lineno,
+                           end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5048,6 +5475,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         asdl_seq* body;
         asdl_seq* decorator_list;
         expr_ty returns;
+        string type_comment;
 
         if (_PyObject_LookupAttr(obj, astmodulestate_global->name, &tmp) < 0) {
             return 1;
@@ -5150,8 +5578,23 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->type_comment,
+            &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            type_comment = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &type_comment, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
         *out = AsyncFunctionDef(name, args, body, decorator_list, returns,
-                                lineno, col_offset, arena);
+                                type_comment, lineno, col_offset, end_lineno,
+                                end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5303,7 +5746,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_CLEAR(tmp);
         }
         *out = ClassDef(name, bases, keywords, body, decorator_list, lineno,
-                        col_offset, arena);
+                        col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5328,7 +5771,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Return(value, lineno, col_offset, arena);
+        *out = Return(value, lineno, col_offset, end_lineno, end_col_offset,
+                      arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5371,7 +5815,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = Delete(targets, lineno, col_offset, arena);
+        *out = Delete(targets, lineno, col_offset, end_lineno, end_col_offset,
+                      arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5383,6 +5828,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     if (isinstance) {
         asdl_seq* targets;
         expr_ty value;
+        string type_comment;
 
         if (_PyObject_LookupAttr(obj, astmodulestate_global->targets, &tmp) <
             0) {
@@ -5428,7 +5874,22 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Assign(targets, value, lineno, col_offset, arena);
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->type_comment,
+            &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            type_comment = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &type_comment, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = Assign(targets, value, type_comment, lineno, col_offset,
+                      end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5482,7 +5943,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = AugAssign(target, op, value, lineno, col_offset, arena);
+        *out = AugAssign(target, op, value, lineno, col_offset, end_lineno,
+                         end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5553,7 +6015,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_CLEAR(tmp);
         }
         *out = AnnAssign(target, annotation, value, simple, lineno, col_offset,
-                         arena);
+                         end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5567,6 +6029,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         expr_ty iter;
         asdl_seq* body;
         asdl_seq* orelse;
+        string type_comment;
 
         if (_PyObject_LookupAttr(obj, astmodulestate_global->target, &tmp) < 0)
             {
@@ -5656,7 +6119,22 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = For(target, iter, body, orelse, lineno, col_offset, arena);
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->type_comment,
+            &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            type_comment = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &type_comment, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = For(target, iter, body, orelse, type_comment, lineno,
+                   col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5670,6 +6148,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         expr_ty iter;
         asdl_seq* body;
         asdl_seq* orelse;
+        string type_comment;
 
         if (_PyObject_LookupAttr(obj, astmodulestate_global->target, &tmp) < 0)
             {
@@ -5759,7 +6238,22 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = AsyncFor(target, iter, body, orelse, lineno, col_offset, arena);
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->type_comment,
+            &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            type_comment = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &type_comment, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = AsyncFor(target, iter, body, orelse, type_comment, lineno,
+                        col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5847,7 +6341,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = While(test, body, orelse, lineno, col_offset, arena);
+        *out = While(test, body, orelse, lineno, col_offset, end_lineno,
+                     end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5935,7 +6430,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = If(test, body, orelse, lineno, col_offset, arena);
+        *out = If(test, body, orelse, lineno, col_offset, end_lineno,
+                  end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5947,6 +6443,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     if (isinstance) {
         asdl_seq* items;
         asdl_seq* body;
+        string type_comment;
 
         if (_PyObject_LookupAttr(obj, astmodulestate_global->items, &tmp) < 0) {
             return 1;
@@ -6008,7 +6505,22 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = With(items, body, lineno, col_offset, arena);
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->type_comment,
+            &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            type_comment = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &type_comment, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = With(items, body, type_comment, lineno, col_offset, end_lineno,
+                    end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6020,6 +6532,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     if (isinstance) {
         asdl_seq* items;
         asdl_seq* body;
+        string type_comment;
 
         if (_PyObject_LookupAttr(obj, astmodulestate_global->items, &tmp) < 0) {
             return 1;
@@ -6081,7 +6594,22 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = AsyncWith(items, body, lineno, col_offset, arena);
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->type_comment,
+            &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            type_comment = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &type_comment, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = AsyncWith(items, body, type_comment, lineno, col_offset,
+                         end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6120,7 +6648,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Raise(exc, cause, lineno, col_offset, arena);
+        *out = Raise(exc, cause, lineno, col_offset, end_lineno,
+                     end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6259,7 +6788,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             Py_CLEAR(tmp);
         }
         *out = Try(body, handlers, orelse, finalbody, lineno, col_offset,
-                   arena);
+                   end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6298,7 +6827,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Assert(test, msg, lineno, col_offset, arena);
+        *out = Assert(test, msg, lineno, col_offset, end_lineno,
+                      end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6340,7 +6870,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = Import(names, lineno, col_offset, arena);
+        *out = Import(names, lineno, col_offset, end_lineno, end_col_offset,
+                      arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6411,7 +6942,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = ImportFrom(module, names, level, lineno, col_offset, arena);
+        *out = ImportFrom(module, names, level, lineno, col_offset, end_lineno,
+                          end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6453,7 +6985,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = Global(names, lineno, col_offset, arena);
+        *out = Global(names, lineno, col_offset, end_lineno, end_col_offset,
+                      arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6495,7 +7028,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = Nonlocal(names, lineno, col_offset, arena);
+        *out = Nonlocal(names, lineno, col_offset, end_lineno, end_col_offset,
+                        arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6520,7 +7054,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Expr(value, lineno, col_offset, arena);
+        *out = Expr(value, lineno, col_offset, end_lineno, end_col_offset,
+                    arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6531,7 +7066,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     }
     if (isinstance) {
 
-        *out = Pass(lineno, col_offset, arena);
+        *out = Pass(lineno, col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6542,7 +7077,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     }
     if (isinstance) {
 
-        *out = Break(lineno, col_offset, arena);
+        *out = Break(lineno, col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6553,7 +7088,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
     }
     if (isinstance) {
 
-        *out = Continue(lineno, col_offset, arena);
+        *out = Continue(lineno, col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6573,6 +7108,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     PyObject *tp;
     int lineno;
     int col_offset;
+    int end_lineno;
+    int end_col_offset;
 
     if (obj == Py_None) {
         *out = NULL;
@@ -6602,6 +7139,34 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     else {
         int res;
         res = obj2ast_int(tmp, &col_offset, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->end_lineno, &tmp) < 0)
+        {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_lineno = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &end_lineno, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->end_col_offset, &tmp)
+        < 0) {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_col_offset = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &end_col_offset, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -6658,7 +7223,49 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = BoolOp(op, values, lineno, col_offset, arena);
+        *out = BoolOp(op, values, lineno, col_offset, end_lineno,
+                      end_col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
+    tp = astmodulestate_global->NamedExpr_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        expr_ty target;
+        expr_ty value;
+
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->target, &tmp) < 0)
+            {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"target\" missing from NamedExpr");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &target, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->value, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from NamedExpr");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_expr(tmp, &value, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = NamedExpr(target, value, lineno, col_offset, end_lineno,
+                         end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6711,7 +7318,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = BinOp(left, op, right, lineno, col_offset, arena);
+        *out = BinOp(left, op, right, lineno, col_offset, end_lineno,
+                     end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6751,7 +7359,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = UnaryOp(op, operand, lineno, col_offset, arena);
+        *out = UnaryOp(op, operand, lineno, col_offset, end_lineno,
+                       end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6790,7 +7399,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Lambda(args, body, lineno, col_offset, arena);
+        *out = Lambda(args, body, lineno, col_offset, end_lineno,
+                      end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6844,7 +7454,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = IfExp(test, body, orelse, lineno, col_offset, arena);
+        *out = IfExp(test, body, orelse, lineno, col_offset, end_lineno,
+                     end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6918,7 +7529,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = Dict(keys, values, lineno, col_offset, arena);
+        *out = Dict(keys, values, lineno, col_offset, end_lineno,
+                    end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6960,7 +7572,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = Set(elts, lineno, col_offset, arena);
+        *out = Set(elts, lineno, col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7017,7 +7629,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = ListComp(elt, generators, lineno, col_offset, arena);
+        *out = ListComp(elt, generators, lineno, col_offset, end_lineno,
+                        end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7074,7 +7687,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = SetComp(elt, generators, lineno, col_offset, arena);
+        *out = SetComp(elt, generators, lineno, col_offset, end_lineno,
+                       end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7145,7 +7759,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = DictComp(key, value, generators, lineno, col_offset, arena);
+        *out = DictComp(key, value, generators, lineno, col_offset, end_lineno,
+                        end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7202,7 +7817,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = GeneratorExp(elt, generators, lineno, col_offset, arena);
+        *out = GeneratorExp(elt, generators, lineno, col_offset, end_lineno,
+                            end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7227,7 +7843,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Await(value, lineno, col_offset, arena);
+        *out = Await(value, lineno, col_offset, end_lineno, end_col_offset,
+                     arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7252,7 +7869,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Yield(value, lineno, col_offset, arena);
+        *out = Yield(value, lineno, col_offset, end_lineno, end_col_offset,
+                     arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7277,7 +7895,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = YieldFrom(value, lineno, col_offset, arena);
+        *out = YieldFrom(value, lineno, col_offset, end_lineno, end_col_offset,
+                         arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7365,7 +7984,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = Compare(left, ops, comparators, lineno, col_offset, arena);
+        *out = Compare(left, ops, comparators, lineno, col_offset, end_lineno,
+                       end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7453,57 +8073,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = Call(func, args, keywords, lineno, col_offset, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    tp = astmodulestate_global->Num_type;
-    isinstance = PyObject_IsInstance(obj, tp);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        object n;
-
-        if (_PyObject_LookupAttr(obj, astmodulestate_global->n, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"n\" missing from Num");
-            return 1;
-        }
-        else {
-            int res;
-            res = obj2ast_object(tmp, &n, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = Num(n, lineno, col_offset, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    tp = astmodulestate_global->Str_type;
-    isinstance = PyObject_IsInstance(obj, tp);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        string s;
-
-        if (_PyObject_LookupAttr(obj, astmodulestate_global->s, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"s\" missing from Str");
-            return 1;
-        }
-        else {
-            int res;
-            res = obj2ast_string(tmp, &s, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = Str(s, lineno, col_offset, arena);
+        *out = Call(func, args, keywords, lineno, col_offset, end_lineno,
+                    end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7559,7 +8130,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             Py_CLEAR(tmp);
         }
         *out = FormattedValue(value, conversion, format_spec, lineno,
-                              col_offset, arena);
+                              col_offset, end_lineno, end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7602,68 +8173,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = JoinedStr(values, lineno, col_offset, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    tp = astmodulestate_global->Bytes_type;
-    isinstance = PyObject_IsInstance(obj, tp);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        bytes s;
-
-        if (_PyObject_LookupAttr(obj, astmodulestate_global->s, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"s\" missing from Bytes");
-            return 1;
-        }
-        else {
-            int res;
-            res = obj2ast_bytes(tmp, &s, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = Bytes(s, lineno, col_offset, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    tp = astmodulestate_global->NameConstant_type;
-    isinstance = PyObject_IsInstance(obj, tp);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        singleton value;
-
-        if (_PyObject_LookupAttr(obj, astmodulestate_global->value, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from NameConstant");
-            return 1;
-        }
-        else {
-            int res;
-            res = obj2ast_singleton(tmp, &value, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        }
-        *out = NameConstant(value, lineno, col_offset, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    tp = astmodulestate_global->Ellipsis_type;
-    isinstance = PyObject_IsInstance(obj, tp);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-
-        *out = Ellipsis(lineno, col_offset, arena);
+        *out = JoinedStr(values, lineno, col_offset, end_lineno,
+                         end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7674,6 +8185,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
     }
     if (isinstance) {
         constant value;
+        string kind;
 
         if (_PyObject_LookupAttr(obj, astmodulestate_global->value, &tmp) < 0) {
             return 1;
@@ -7688,7 +8200,21 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Constant(value, lineno, col_offset, arena);
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->kind, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL || tmp == Py_None) {
+            Py_CLEAR(tmp);
+            kind = NULL;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &kind, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = Constant(value, kind, lineno, col_offset, end_lineno,
+                        end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7741,7 +8267,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Attribute(value, attr, ctx, lineno, col_offset, arena);
+        *out = Attribute(value, attr, ctx, lineno, col_offset, end_lineno,
+                         end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7794,7 +8321,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Subscript(value, slice, ctx, lineno, col_offset, arena);
+        *out = Subscript(value, slice, ctx, lineno, col_offset, end_lineno,
+                         end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7833,7 +8361,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Starred(value, ctx, lineno, col_offset, arena);
+        *out = Starred(value, ctx, lineno, col_offset, end_lineno,
+                       end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7872,7 +8401,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Name(id, ctx, lineno, col_offset, arena);
+        *out = Name(id, ctx, lineno, col_offset, end_lineno, end_col_offset,
+                    arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7928,7 +8458,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = List(elts, ctx, lineno, col_offset, arena);
+        *out = List(elts, ctx, lineno, col_offset, end_lineno, end_col_offset,
+                    arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -7984,7 +8515,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             if (res != 0) goto failed;
             Py_CLEAR(tmp);
         }
-        *out = Tuple(elts, ctx, lineno, col_offset, arena);
+        *out = Tuple(elts, ctx, lineno, col_offset, end_lineno, end_col_offset,
+                     arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8558,6 +9090,8 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
     PyObject *tp;
     int lineno;
     int col_offset;
+    int end_lineno;
+    int end_col_offset;
 
     if (obj == Py_None) {
         *out = NULL;
@@ -8587,6 +9121,34 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
     else {
         int res;
         res = obj2ast_int(tmp, &col_offset, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->end_lineno, &tmp) < 0)
+        {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_lineno = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &end_lineno, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->end_col_offset, &tmp)
+        < 0) {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_col_offset = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &end_col_offset, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -8656,7 +9218,8 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
             }
             Py_CLEAR(tmp);
         }
-        *out = ExceptHandler(type, name, body, lineno, col_offset, arena);
+        *out = ExceptHandler(type, name, body, lineno, col_offset, end_lineno,
+                             end_col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -8872,8 +9435,11 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
     PyObject* tmp = NULL;
     identifier arg;
     expr_ty annotation;
+    string type_comment;
     int lineno;
     int col_offset;
+    int end_lineno;
+    int end_col_offset;
 
     if (_PyObject_LookupAttr(obj, astmodulestate_global->arg, &tmp) < 0) {
         return 1;
@@ -8899,6 +9465,20 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
     else {
         int res;
         res = obj2ast_expr(tmp, &annotation, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->type_comment, &tmp) <
+        0) {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        type_comment = NULL;
+    }
+    else {
+        int res;
+        res = obj2ast_string(tmp, &type_comment, arena);
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
@@ -8929,7 +9509,36 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     }
-    *out = arg(arg, annotation, lineno, col_offset, arena);
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->end_lineno, &tmp) < 0)
+        {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_lineno = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &end_lineno, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    if (_PyObject_LookupAttr(obj, astmodulestate_global->end_col_offset, &tmp)
+        < 0) {
+        return 1;
+    }
+    if (tmp == NULL || tmp == Py_None) {
+        Py_CLEAR(tmp);
+        end_col_offset = 0;
+    }
+    else {
+        int res;
+        res = obj2ast_int(tmp, &end_col_offset, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    }
+    *out = arg(arg, annotation, type_comment, lineno, col_offset, end_lineno,
+               end_col_offset, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
@@ -9058,6 +9667,65 @@ failed:
     return 1;
 }
 
+int
+obj2ast_type_ignore(PyObject* obj, type_ignore_ty* out, PyArena* arena)
+{
+    int isinstance;
+
+    PyObject *tmp = NULL;
+    PyObject *tp;
+
+    if (obj == Py_None) {
+        *out = NULL;
+        return 0;
+    }
+    tp = astmodulestate_global->TypeIgnore_type;
+    isinstance = PyObject_IsInstance(obj, tp);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        int lineno;
+        string tag;
+
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->lineno, &tmp) < 0)
+            {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from TypeIgnore");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_int(tmp, &lineno, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        if (_PyObject_LookupAttr(obj, astmodulestate_global->tag, &tmp) < 0) {
+            return 1;
+        }
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"tag\" missing from TypeIgnore");
+            return 1;
+        }
+        else {
+            int res;
+            res = obj2ast_string(tmp, &tag, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        }
+        *out = TypeIgnore(lineno, tag, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
+
+    PyErr_Format(PyExc_TypeError, "expected some sort of type_ignore, but got %R", obj);
+    failed:
+    Py_XDECREF(tmp);
+    return 1;
+}
+
 
 PyMODINIT_FUNC
 PyInit__ast(void)
@@ -9069,7 +9737,11 @@ PyInit__ast(void)
     Py_INCREF(astmodulestate(m)->AST_type);
     if (PyModule_AddObject(m, "AST", astmodulestate_global->AST_type) < 0)
         return NULL;
+    if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0)
+        return NULL;
     if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)
+        return NULL;
+    if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)
         return NULL;
     if (PyModule_AddObject(m, "mod", astmodulestate_global->mod_type) < 0)
         return NULL;
@@ -9083,6 +9755,9 @@ PyInit__ast(void)
     if (PyModule_AddObject(m, "Expression",
         astmodulestate_global->Expression_type) < 0) return NULL;
     Py_INCREF(astmodulestate(m)->Expression_type);
+    if (PyModule_AddObject(m, "FunctionType",
+        astmodulestate_global->FunctionType_type) < 0) return NULL;
+    Py_INCREF(astmodulestate(m)->FunctionType_type);
     if (PyModule_AddObject(m, "Suite", astmodulestate_global->Suite_type) < 0)
         return NULL;
     Py_INCREF(astmodulestate(m)->Suite_type);
@@ -9170,6 +9845,9 @@ PyInit__ast(void)
     if (PyModule_AddObject(m, "BoolOp", astmodulestate_global->BoolOp_type) <
         0) return NULL;
     Py_INCREF(astmodulestate(m)->BoolOp_type);
+    if (PyModule_AddObject(m, "NamedExpr",
+        astmodulestate_global->NamedExpr_type) < 0) return NULL;
+    Py_INCREF(astmodulestate(m)->NamedExpr_type);
     if (PyModule_AddObject(m, "BinOp", astmodulestate_global->BinOp_type) < 0)
         return NULL;
     Py_INCREF(astmodulestate(m)->BinOp_type);
@@ -9215,27 +9893,12 @@ PyInit__ast(void)
     if (PyModule_AddObject(m, "Call", astmodulestate_global->Call_type) < 0)
         return NULL;
     Py_INCREF(astmodulestate(m)->Call_type);
-    if (PyModule_AddObject(m, "Num", astmodulestate_global->Num_type) < 0)
-        return NULL;
-    Py_INCREF(astmodulestate(m)->Num_type);
-    if (PyModule_AddObject(m, "Str", astmodulestate_global->Str_type) < 0)
-        return NULL;
-    Py_INCREF(astmodulestate(m)->Str_type);
     if (PyModule_AddObject(m, "FormattedValue",
         astmodulestate_global->FormattedValue_type) < 0) return NULL;
     Py_INCREF(astmodulestate(m)->FormattedValue_type);
     if (PyModule_AddObject(m, "JoinedStr",
         astmodulestate_global->JoinedStr_type) < 0) return NULL;
     Py_INCREF(astmodulestate(m)->JoinedStr_type);
-    if (PyModule_AddObject(m, "Bytes", astmodulestate_global->Bytes_type) < 0)
-        return NULL;
-    Py_INCREF(astmodulestate(m)->Bytes_type);
-    if (PyModule_AddObject(m, "NameConstant",
-        astmodulestate_global->NameConstant_type) < 0) return NULL;
-    Py_INCREF(astmodulestate(m)->NameConstant_type);
-    if (PyModule_AddObject(m, "Ellipsis", astmodulestate_global->Ellipsis_type)
-        < 0) return NULL;
-    Py_INCREF(astmodulestate(m)->Ellipsis_type);
     if (PyModule_AddObject(m, "Constant", astmodulestate_global->Constant_type)
         < 0) return NULL;
     Py_INCREF(astmodulestate(m)->Constant_type);
@@ -9413,6 +10076,12 @@ PyInit__ast(void)
     if (PyModule_AddObject(m, "withitem", astmodulestate_global->withitem_type)
         < 0) return NULL;
     Py_INCREF(astmodulestate(m)->withitem_type);
+    if (PyModule_AddObject(m, "type_ignore",
+        astmodulestate_global->type_ignore_type) < 0) return NULL;
+    Py_INCREF(astmodulestate(m)->type_ignore_type);
+    if (PyModule_AddObject(m, "TypeIgnore",
+        astmodulestate_global->TypeIgnore_type) < 0) return NULL;
+    Py_INCREF(astmodulestate(m)->TypeIgnore_type);
     return m;
 }
 
@@ -9427,10 +10096,13 @@ PyObject* PyAST_mod2obj(mod_ty t)
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 {
-    mod_ty res;
     PyObject *req_type[3];
     char *req_name[] = {"Module", "Expression", "Interactive"};
     int isinstance;
+
+    if (PySys_Audit("compile", "OO", ast, Py_None) < 0) {
+        return NULL;
+    }
 
     req_type[0] = astmodulestate_global->Module_type;
     req_type[1] = astmodulestate_global->Expression_type;
@@ -9449,6 +10121,8 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
                      req_name[mode], _PyType_Name(Py_TYPE(ast)));
         return NULL;
     }
+
+    mod_ty res = NULL;
     if (obj2ast_mod(ast, &res, arena) != 0)
         return NULL;
     else
@@ -9461,5 +10135,4 @@ int PyAST_Check(PyObject* obj)
         return -1;
     return PyObject_IsInstance(obj, astmodulestate_global->AST_type);
 }
-
 

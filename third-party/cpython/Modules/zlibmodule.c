@@ -151,7 +151,7 @@ arrange_output_buffer_with_maximum(z_stream *zst,
                                    Py_ssize_t max_length)
 {
     Py_ssize_t occupied;
-    
+
     if (*buffer_start == NULL) {
         *buffer_start = _PyBytesWriter_Alloc(writer, length);
         if (*buffer_start == NULL)
@@ -301,9 +301,7 @@ class ssize_t_converter(CConverter):
 static int
 ssize_t_converter(PyObject *obj, void *ptr)
 {
-    Py_ssize_t val;
-
-    val = PyNumber_AsSsize_t(obj, PyExc_OverflowError);
+    Py_ssize_t val = PyNumber_AsSsize_t(obj, PyExc_OverflowError);
     if (val == -1 && PyErr_Occurred()) {
         return 0;
     }
@@ -612,13 +610,13 @@ zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
 static void
 Dealloc(compobject *self)
 {
-    PyObject *type = (PyObject *)Py_TYPE(self);
+    PyTypeObject *tp = Py_TYPE(self);
     PyThread_free_lock(self->lock);
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
     Py_XDECREF(self->zdict);
     PyObject_Del(self);
-    Py_DECREF(type);
+    Py_DECREF(tp);
 }
 
 static void
@@ -1004,6 +1002,32 @@ error:
 }
 
 /*[clinic input]
+zlib.Compress.__copy__
+[clinic start generated code]*/
+
+static PyObject *
+zlib_Compress___copy___impl(compobject *self)
+/*[clinic end generated code: output=1875e6791975442e input=be97a05a788dfd83]*/
+{
+    return zlib_Compress_copy_impl(self);
+}
+
+/*[clinic input]
+zlib.Compress.__deepcopy__
+
+    memo: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+zlib_Compress___deepcopy__(compobject *self, PyObject *memo)
+/*[clinic end generated code: output=f47a2213282c9eb0 input=a9a8b0b40d83388e]*/
+{
+    return zlib_Compress_copy_impl(self);
+}
+
+/*[clinic input]
 zlib.Decompress.copy
 
 Return a copy of the decompression object.
@@ -1058,6 +1082,33 @@ error:
     Py_XDECREF(retval);
     return NULL;
 }
+
+/*[clinic input]
+zlib.Decompress.__copy__
+[clinic start generated code]*/
+
+static PyObject *
+zlib_Decompress___copy___impl(compobject *self)
+/*[clinic end generated code: output=80bae8bc43498ad4 input=efcb98b5472c13d2]*/
+{
+    return zlib_Decompress_copy_impl(self);
+}
+
+/*[clinic input]
+zlib.Decompress.__deepcopy__
+
+    memo: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+zlib_Decompress___deepcopy__(compobject *self, PyObject *memo)
+/*[clinic end generated code: output=1f77286ab490124b input=6e99bd0ac4b9cd8b]*/
+{
+    return zlib_Decompress_copy_impl(self);
+}
+
 #endif
 
 /*[clinic input]
@@ -1160,6 +1211,8 @@ static PyMethodDef comp_methods[] =
     ZLIB_COMPRESS_COMPRESS_METHODDEF
     ZLIB_COMPRESS_FLUSH_METHODDEF
     ZLIB_COMPRESS_COPY_METHODDEF
+    ZLIB_COMPRESS___COPY___METHODDEF
+    ZLIB_COMPRESS___DEEPCOPY___METHODDEF
     {NULL, NULL}
 };
 
@@ -1168,6 +1221,8 @@ static PyMethodDef Decomp_methods[] =
     ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF
     ZLIB_DECOMPRESS_FLUSH_METHODDEF
     ZLIB_DECOMPRESS_COPY_METHODDEF
+    ZLIB_DECOMPRESS___COPY___METHODDEF
+    ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     {NULL, NULL}
 };
 

@@ -89,6 +89,7 @@ multiprocessing_recv(PyObject *self, PyObject *args)
 
     if (nread < 0) {
         PyMem_Free(buf);
+        Py_DECREF(buf);
         return PyErr_SetExcFromWindowsErr(PyExc_OSError, WSAGetLastError());
     }
     result = PyBytes_FromStringAndSize(buf, nread);
@@ -189,7 +190,6 @@ PyInit__multiprocessing(void)
         PyObject_SetAttrString(_PyMp_SemLockType, "SEM_VALUE_MAX",
                                py_sem_value_max);
     }
-    Py_INCREF(_PyMp_SemLockType);
     PyModule_AddObject(module, "SemLock", _PyMp_SemLockType);
 #endif
 

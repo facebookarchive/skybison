@@ -5,7 +5,7 @@
 #ifndef EXPAT_CONFIG_H
 #define EXPAT_CONFIG_H
 
-#include "pyconfig.h"
+#include <pyconfig.h>
 #ifdef WORDS_BIGENDIAN
 #define BYTEORDER 4321
 #else

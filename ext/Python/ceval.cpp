@@ -125,10 +125,6 @@ PY_EXPORT void PyEval_InitThreads() {
   // TODO(T66337218): Implement this when there is actual threading support.
 }
 
-PY_EXPORT void PyEval_ReInitThreads() {
-  // TODO(T87097565): Implement instead of making it a noop
-}
-
 PY_EXPORT void PyEval_ReleaseLock() { UNIMPLEMENTED("PyEval_ReleaseLock"); }
 
 PY_EXPORT void PyEval_ReleaseThread(PyThreadState* /* e */) {
@@ -244,6 +240,10 @@ PY_EXPORT PyObject* PyEval_CallObjectWithKeywords(PyObject* callable,
 PY_EXPORT PyObject* _PyEval_EvalFrameDefault(PyFrameObject* /* f */,
                                              int /* g */) {
   UNIMPLEMENTED("_PyEval_EvalFrameDefault");
+}
+
+PY_EXPORT void _PyEval_ReInitThreads(_PyRuntimeState*) {
+  // TODO(T87097565): Implement instead of making it a noop
 }
 
 }  // namespace py

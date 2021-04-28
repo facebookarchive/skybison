@@ -18,7 +18,7 @@ authentication, redirections, cookies and more.
 
 .. seealso::
 
-    The `Requests package <http://docs.python-requests.org/>`_
+    The `Requests package <https://requests.readthedocs.io/en/master/>`_
     is recommended for a higher-level HTTP client interface.
 
 
@@ -95,6 +95,12 @@ The :mod:`urllib.request` module defines the following functions:
    parameter to ``urllib.urlopen``, can be obtained by using
    :class:`ProxyHandler` objects.
 
+   .. audit-event:: urllib.Request fullurl,data,headers,method urllib.request.urlopen
+
+      The default opener raises an :ref:`auditing event <auditing>`
+      ``urllib.Request`` with arguments ``fullurl``, ``data``, ``headers``,
+      ``method`` taken from the request object.
+
    .. versionchanged:: 3.2
       *cafile* and *capath* were added.
 
@@ -117,6 +123,7 @@ The :mod:`urllib.request` module defines the following functions:
        Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
        :func:`ssl.create_default_context` select the system's trusted CA
        certificates for you.
+
 
 .. function:: install_opener(opener)
 
@@ -192,8 +199,8 @@ The following classes are provided:
    *data* must be an object specifying additional data to send to the
    server, or ``None`` if no such data is needed.  Currently HTTP
    requests are the only ones that use *data*.  The supported object
-   types include bytes, file-like objects, and iterables.  If no
-   ``Content-Length`` nor ``Transfer-Encoding`` header field
+   types include bytes, file-like objects, and iterables of bytes-like objects.
+   If no ``Content-Length`` nor ``Transfer-Encoding`` header field
    has been provided, :class:`HTTPHandler` will set these headers according
    to the type of *data*.  ``Content-Length`` will be used to send
    bytes objects, while ``Transfer-Encoding: chunked`` as specified in
@@ -220,7 +227,7 @@ The following classes are provided:
    is not None, ``Content-Type: application/x-www-form-urlencoded`` will
    be added as a default.
 
-   The final two arguments are only of interest for correct handling
+   The next two arguments are only of interest for correct handling
    of third-party HTTP cookies:
 
    *origin_req_host* should be the request-host of the origin

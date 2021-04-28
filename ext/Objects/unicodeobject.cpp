@@ -1202,11 +1202,11 @@ PY_EXPORT PyObject* PyUnicode_DecodeLocale(const char* str,
 PY_EXPORT PyObject* PyUnicode_DecodeLocaleAndSize(const char* str,
                                                   Py_ssize_t len,
                                                   const char* errors) {
-  int surrogateescape;
+  _Py_error_handler surrogateescape;
   if (errors == nullptr || std::strcmp(errors, "strict") == 0) {
-    surrogateescape = 0;
+    surrogateescape = _Py_ERROR_STRICT;
   } else if (std::strcmp(errors, "surrogateescape") == 0) {
-    surrogateescape = 1;
+    surrogateescape = _Py_ERROR_SURROGATEESCAPE;
   } else {
     Thread::current()->raiseWithFmt(
         LayoutId::kValueError,
@@ -1416,11 +1416,11 @@ PY_EXPORT PyObject* PyUnicode_EncodeCodePage(int /* e */, PyObject* /* e */,
 
 PY_EXPORT PyObject* PyUnicode_EncodeLocale(PyObject* unicode,
                                            const char* errors) {
-  int surrogateescape;
+  _Py_error_handler surrogateescape;
   if (errors == nullptr || std::strcmp(errors, "strict") == 0) {
-    surrogateescape = 0;
+    surrogateescape = _Py_ERROR_STRICT;
   } else if (std::strcmp(errors, "surrogateescape") == 0) {
-    surrogateescape = 1;
+    surrogateescape = _Py_ERROR_SURROGATEESCAPE;
   } else {
     Thread::current()->raiseWithFmt(
         LayoutId::kValueError,
@@ -2438,7 +2438,8 @@ PY_EXPORT PyObject* _PyUnicode_AsUTF8String(PyObject* unicode,
 }
 
 PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* c_str,
-                                                  Py_ssize_t size) {
+                                                  Py_ssize_t size,
+                                                  size_t* wlen) {
   DCHECK(c_str != nullptr, "c_str cannot be null");
   wchar_t* wc_str =
       static_cast<wchar_t*>(PyMem_RawMalloc((size + 1) * sizeof(wchar_t)));
@@ -2453,13 +2454,16 @@ PY_EXPORT wchar_t* _Py_DecodeUTF8_surrogateescape(const char* c_str,
     wc_str[i] = static_cast<wchar_t>(ch);
   }
   wc_str[size] = '\0';
+  if (wlen != nullptr) {
+    *wlen = size;
+  }
   return wc_str;
 }
 
 PY_EXPORT int _Py_DecodeUTF8Ex(const char* c_str, Py_ssize_t size,
                                wchar_t** result, size_t* wlen,
                                const char** /* reason */,
-                               int /* surrogateescape */) {
+                               _Py_error_handler /* surrogateescape */) {
   wchar_t* wc_str =
       static_cast<wchar_t*>(PyMem_RawMalloc((size + 1) * sizeof(*wc_str)));
   if (wc_str == nullptr) {
@@ -2495,10 +2499,25 @@ PY_EXPORT int _Py_DecodeUTF8Ex(const char* c_str, Py_ssize_t size,
 // On memory allocation failure, return -1.
 PY_EXPORT int _Py_EncodeUTF8Ex(const wchar_t* text, char** str,
                                size_t* error_pos, const char** reason,
-                               int raw_malloc, int surrogateescape) {
+                               int raw_malloc, _Py_error_handler errors) {
   const Py_ssize_t max_char_size = 4;
   Py_ssize_t len = std::wcslen(text);
   DCHECK(len >= 0, "len must be non-negative");
+
+  bool surrogateescape = false;
+  bool surrogatepass = false;
+  switch (errors) {
+    case _Py_ERROR_STRICT:
+      break;
+    case _Py_ERROR_SURROGATEESCAPE:
+      surrogateescape = true;
+      break;
+    case _Py_ERROR_SURROGATEPASS:
+      surrogatepass = true;
+      break;
+    default:
+      return -3;
+  }
 
   if (len > PY_SSIZE_T_MAX / max_char_size - 1) {
     return -1;
@@ -2525,7 +2544,7 @@ PY_EXPORT int _Py_EncodeUTF8Ex(const wchar_t* text, char** str,
       // Encode Latin-1
       *p++ = (char)(0xc0 | (ch >> 6));
       *p++ = (char)(0x80 | (ch & 0x3f));
-    } else if (Py_UNICODE_IS_SURROGATE(ch)) {
+    } else if (Py_UNICODE_IS_SURROGATE(ch) && !surrogatepass) {
       // surrogateescape error handler
       if (!surrogateescape || !(0xDC80 <= ch && ch <= 0xDCFF)) {
         if (error_pos != nullptr) {

@@ -142,7 +142,6 @@ typedef struct {
     PyThread_type_lock lock;
 } SHA3object;
 
-
 typedef struct {
     PyObject *SHA3_224type;
     PyObject *SHA3_256type;
@@ -422,29 +421,29 @@ SHA3_get_block_size(SHA3object *self, void *closure)
 static PyObject *
 SHA3_get_name(SHA3object *self, void *closure)
 {
-    PyObject *type = (PyObject *)Py_TYPE(self);
+    PyTypeObject *type = Py_TYPE(self);
     _SHA3modulestate *state = _SHA3modulestate_global;
-    if (type == state->SHA3_224type) {
+    if (type == (PyTypeObject *)state->SHA3_224type) {
         return PyUnicode_FromString("sha3_224");
-    } else if (type == state->SHA3_256type) {
+    } else if (type == (PyTypeObject *)state->SHA3_256type) {
         return PyUnicode_FromString("sha3_256");
-    } else if (type == state->SHA3_384type) {
+    } else if (type == (PyTypeObject *)state->SHA3_384type) {
         return PyUnicode_FromString("sha3_384");
-    } else if (type == state->SHA3_512type) {
+    } else if (type == (PyTypeObject *)state->SHA3_512type) {
         return PyUnicode_FromString("sha3_512");
 #ifdef PY_WITH_KECCAK
-    } else if (type == state->Keccak_224type) {
+    } else if (type == (PyTypeObject *)state->Keccak_224type) {
         return PyUnicode_FromString("keccak_224");
-    } else if (type == state->Keccak_256type) {
+    } else if (type == (PyTypeObject *)state->Keccak_256type) {
         return PyUnicode_FromString("keccak_256");
-    } else if (type == state->Keccak_384type) {
+    } else if (type == (PyTypeObject *)state->Keccak_384type) {
         return PyUnicode_FromString("keccak_384");
-    } else if (type == state->Keccak_512type) {
+    } else if (type == (PyTypeObject *)state->Keccak_512type) {
         return PyUnicode_FromString("keccak_512");
 #endif
-    } else if (type == state->SHAKE128type) {
+    } else if (type == (PyTypeObject *)state->SHAKE128type) {
         return PyUnicode_FromString("shake_128");
-    } else if (type == state->SHAKE256type) {
+    } else if (type == (PyTypeObject *)state->SHAKE256type) {
         return PyUnicode_FromString("shake_256");
     } else {
         PyErr_BadInternalCall();
@@ -502,7 +501,7 @@ Return a new SHA3 hash object with a hashbit length of 28 bytes.");
 
 static PyType_Slot SHA3_224type_slots[] = {
     {Py_tp_dealloc, SHA3_dealloc},
-    {Py_tp_doc, sha3_224__doc__},
+    {Py_tp_doc, (void *) sha3_224__doc__},
     {Py_tp_methods, SHA3_methods},
     {Py_tp_getset, SHA3_getseters},
     {Py_tp_new, py_sha3_new},
@@ -514,7 +513,7 @@ static PyType_Spec SHA3_224type_spec = {
     sizeof(SHA3object),
     0,
     Py_TPFLAGS_DEFAULT,
-    SHA3_224type_slots 
+    SHA3_224type_slots
 };
 
 PyDoc_STRVAR(sha3_256__doc__,
@@ -524,7 +523,7 @@ Return a new SHA3 hash object with a hashbit length of 32 bytes.");
 
 static PyType_Slot SHA3_256type_slots[] = {
     {Py_tp_dealloc, SHA3_dealloc},
-    {Py_tp_doc, sha3_256__doc__},
+    {Py_tp_doc, (void *) sha3_256__doc__},
     {Py_tp_methods, SHA3_methods},
     {Py_tp_getset, SHA3_getseters},
     {Py_tp_new, py_sha3_new},
@@ -536,7 +535,7 @@ static PyType_Spec SHA3_256type_spec = {
     sizeof(SHA3object),
     0,
     Py_TPFLAGS_DEFAULT,
-    SHA3_256type_slots 
+    SHA3_256type_slots
 };
 
 PyDoc_STRVAR(sha3_384__doc__,
@@ -544,10 +543,9 @@ PyDoc_STRVAR(sha3_384__doc__,
 \n\
 Return a new SHA3 hash object with a hashbit length of 48 bytes.");
 
-
 static PyType_Slot SHA3_384type_slots[] = {
     {Py_tp_dealloc, SHA3_dealloc},
-    {Py_tp_doc, sha3_384__doc__},
+    {Py_tp_doc, (void *) sha3_384__doc__},
     {Py_tp_methods, SHA3_methods},
     {Py_tp_getset, SHA3_getseters},
     {Py_tp_new, py_sha3_new},
@@ -559,7 +557,7 @@ static PyType_Spec SHA3_384type_spec = {
     sizeof(SHA3object),
     0,
     Py_TPFLAGS_DEFAULT,
-    SHA3_384type_slots 
+    SHA3_384type_slots
 };
 
 PyDoc_STRVAR(sha3_512__doc__,
@@ -569,7 +567,7 @@ Return a new SHA3 hash object with a hashbit length of 64 bytes.");
 
 static PyType_Slot SHA3_512type_slots[] = {
     {Py_tp_dealloc, SHA3_dealloc},
-    {Py_tp_doc, sha3_512__doc__},
+    {Py_tp_doc, (void *) sha3_512__doc__},
     {Py_tp_methods, SHA3_methods},
     {Py_tp_getset, SHA3_getseters},
     {Py_tp_new, py_sha3_new},
@@ -581,7 +579,7 @@ static PyType_Spec SHA3_512type_spec = {
     sizeof(SHA3object),
     0,
     Py_TPFLAGS_DEFAULT,
-    SHA3_512type_slots 
+    SHA3_512type_slots
 };
 
 #ifdef PY_WITH_KECCAK
@@ -592,7 +590,7 @@ Return a new Keccak hash object with a hashbit length of 28 bytes.");
 
 static PyType_Slot Keccak_224type_slots[] = {
     {Py_tp_dealloc, SHA3_dealloc},
-    {Py_tp_doc, keccak_224__doc__},
+    {Py_tp_doc, (void *) keccak_224__doc__},
     {Py_tp_methods, SHA3_methods},
     {Py_tp_getset, SHA3_getseters},
     {Py_tp_new, py_sha3_new},
@@ -614,7 +612,7 @@ Return a new Keccak hash object with a hashbit length of 32 bytes.");
 
 static PyType_Slot Keccak_256type_slots[] = {
     {Py_tp_dealloc, SHA3_dealloc},
-    {Py_tp_doc, keccak_256__doc__},
+    {Py_tp_doc, (void *) keccak_256__doc__},
     {Py_tp_methods, SHA3_methods},
     {Py_tp_getset, SHA3_getseters},
     {Py_tp_new, py_sha3_new},
@@ -636,7 +634,7 @@ Return a new Keccak hash object with a hashbit length of 48 bytes.");
 
 static PyType_Slot Keccak_384type_slots[] = {
     {Py_tp_dealloc, SHA3_dealloc},
-    {Py_tp_doc, keccak_384__doc__},
+    {Py_tp_doc, (void *) keccak_384__doc__},
     {Py_tp_methods, SHA3_methods},
     {Py_tp_getset, SHA3_getseters},
     {Py_tp_new, py_sha3_new},
@@ -658,7 +656,7 @@ Return a new Keccak hash object with a hashbit length of 64 bytes.");
 
 static PyType_Slot Keccak_512type_slots[] = {
     {Py_tp_dealloc, SHA3_dealloc},
-    {Py_tp_doc, keccak_512__doc__},
+    {Py_tp_doc, (void *) keccak_512__doc__},
     {Py_tp_methods, SHA3_methods},
     {Py_tp_getset, SHA3_getseters},
     {Py_tp_new, py_sha3_new},
@@ -676,18 +674,13 @@ static PyType_Spec Keccak_512type_spec = {
 
 
 static PyObject *
-_SHAKE_digest(SHA3object *self, PyObject *digestlen_obj, int hex)
+_SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
 {
-    unsigned long digestlen;
     unsigned char *digest = NULL;
     SHA3_state temp;
     int res;
     PyObject *result = NULL;
 
-    digestlen = PyLong_AsUnsignedLong(digestlen_obj);
-    if (digestlen == (unsigned long) -1 && PyErr_Occurred()) {
-        return NULL;
-    }
     if (digestlen >= (1 << 29)) {
         PyErr_SetString(PyExc_ValueError, "length is too large");
         return NULL;
@@ -731,15 +724,15 @@ _SHAKE_digest(SHA3object *self, PyObject *digestlen_obj, int hex)
 /*[clinic input]
 _sha3.shake_128.digest
 
-    length: object
+    length: unsigned_long
     /
 
 Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
-_sha3_shake_128_digest(SHA3object *self, PyObject *length)
-/*[clinic end generated code: output=eaa80b6299142396 input=c579eb109f6227d2]*/
+_sha3_shake_128_digest_impl(SHA3object *self, unsigned long length)
+/*[clinic end generated code: output=2313605e2f87bb8f input=418ef6a36d2e6082]*/
 {
     return _SHAKE_digest(self, length, 0);
 }
@@ -748,15 +741,15 @@ _sha3_shake_128_digest(SHA3object *self, PyObject *length)
 /*[clinic input]
 _sha3.shake_128.hexdigest
 
-    length: object
+    length: unsigned_long
     /
 
 Return the digest value as a string of hexadecimal digits.
 [clinic start generated code]*/
 
 static PyObject *
-_sha3_shake_128_hexdigest(SHA3object *self, PyObject *length)
-/*[clinic end generated code: output=4752f90e53c8bf2a input=a82694ea83865f5a]*/
+_sha3_shake_128_hexdigest_impl(SHA3object *self, unsigned long length)
+/*[clinic end generated code: output=bf8e2f1e490944a8 input=69fb29b0926ae321]*/
 {
     return _SHAKE_digest(self, length, 1);
 }
@@ -777,7 +770,7 @@ Return a new SHAKE hash object.");
 
 static PyType_Slot SHAKE128type_slots[] = {
     {Py_tp_dealloc, SHA3_dealloc},
-    {Py_tp_doc, shake_128__doc__},
+    {Py_tp_doc, (void *) shake_128__doc__},
     {Py_tp_methods, SHAKE_methods},
     {Py_tp_getset, SHA3_getseters},
     {Py_tp_new, py_sha3_new},
@@ -799,7 +792,7 @@ Return a new SHAKE hash object.");
 
 static PyType_Slot SHAKE256type_slots[] = {
     {Py_tp_dealloc, SHA3_dealloc},
-    {Py_tp_doc, shake_256__doc__},
+    {Py_tp_doc, (void *) shake_256__doc__},
     {Py_tp_methods, SHAKE_methods},
     {Py_tp_getset, SHA3_getseters},
     {Py_tp_new, py_sha3_new},
@@ -868,7 +861,8 @@ static struct PyModuleDef _SHA3module = {
 PyMODINIT_FUNC
 PyInit__sha3(void)
 {
-    PyObject *m = PyState_FindModule(&_SHA3module);
+    PyObject *m;
+    m = PyState_FindModule(&_SHA3module);
     if (m != NULL) {
         Py_INCREF(m);
         return m;
@@ -917,7 +911,6 @@ PyInit__sha3(void)
     if (PyModule_AddObject(m, "sha3_512", SHA3_512) < 0) {
         goto error;
     }
-
 #ifdef PY_WITH_KECCAK
     PyObject *Keccak_224 = PyType_FromSpec(&Keccak_224type_spec);
     if (Keccak_224 == NULL) {
@@ -968,7 +961,7 @@ PyInit__sha3(void)
     if (PyModule_AddObject(m, "shake_128", SHAKE128) < 0) {
         goto error;
     }
-    
+
     PyObject *SHAKE256 = PyType_FromSpec(&SHAKE256type_spec);
     if (SHAKE256 == NULL) {
         goto error;

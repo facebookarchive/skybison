@@ -68,15 +68,15 @@ or on combining URL components into a URL string.
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
 
-       >>> from urllib.parse import urlparse
-       >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
-       ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
+      >>> from urllib.parse import urlparse
+      >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
+      ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
                   params='', query='', fragment='')
-       >>> urlparse('www.cwi.nl/%7Eguido/Python.html')
-       ParseResult(scheme='', netloc='', path='www.cwi.nl/%7Eguido/Python.html',
+      >>> urlparse('www.cwi.nl/%7Eguido/Python.html')
+      ParseResult(scheme='', netloc='', path='www.cwi.nl/%7Eguido/Python.html',
                   params='', query='', fragment='')
-       >>> urlparse('help/Python.html')
-       ParseResult(scheme='', netloc='', path='help/Python.html', params='',
+      >>> urlparse('help/Python.html')
+      ParseResult(scheme='', netloc='', path='help/Python.html', params='',
                   query='', fragment='')
 
    The *scheme* argument gives the default addressing scheme, to be
@@ -138,14 +138,14 @@ or on combining URL components into a URL string.
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
 
-       >>> from urllib.parse import urlparse
-       >>> u = urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
-       >>> u
-       ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                   params='', query='', fragment='')
-       >>> u._replace(scheme='http')
-       ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
-                   params='', query='', fragment='')
+      >>> from urllib.parse import urlparse
+      >>> u = urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
+      >>> u
+      ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
+                  params='', query='', fragment='')
+      >>> u._replace(scheme='http')
+      ParseResult(scheme='http', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
+                  params='', query='', fragment='')
 
 
    .. versionchanged:: 3.2
@@ -160,7 +160,7 @@ or on combining URL components into a URL string.
       Out-of-range port numbers now raise :exc:`ValueError`, instead of
       returning :const:`None`.
 
-   .. versionchanged:: 3.7.3
+   .. versionchanged:: 3.8
       Characters that affect netloc parsing under NFKC normalization will
       now raise :exc:`ValueError`.
 
@@ -194,10 +194,11 @@ or on combining URL components into a URL string.
    parameter set to ``True``) to convert such dictionaries into query
    strings.
 
+
    .. versionchanged:: 3.2
       Add *encoding* and *errors* parameters.
 
-   .. versionchanged:: 3.7.2
+   .. versionchanged:: 3.8
       Added *max_num_fields* parameter.
 
 
@@ -231,8 +232,9 @@ or on combining URL components into a URL string.
    .. versionchanged:: 3.2
       Add *encoding* and *errors* parameters.
 
-   .. versionchanged:: 3.7.2
+   .. versionchanged:: 3.8
       Added *max_num_fields* parameter.
+
 
 .. function:: urlunparse(parts)
 
@@ -296,7 +298,7 @@ or on combining URL components into a URL string.
       Out-of-range port numbers now raise :exc:`ValueError`, instead of
       returning :const:`None`.
 
-   .. versionchanged:: 3.7.3
+   .. versionchanged:: 3.8
       Characters that affect netloc parsing under NFKC normalization will
       now raise :exc:`ValueError`.
 
@@ -367,6 +369,13 @@ or on combining URL components into a URL string.
 
    .. versionchanged:: 3.2
       Result is a structured object rather than a simple 2-tuple.
+
+.. function:: unwrap(url)
+
+   Extract the url from a wrapped URL (that is, a string formatted as
+   ``<URL:scheme://host/path>``, ``<scheme://host/path>``, ``URL:scheme://host/path``
+   or ``scheme://host/path``). If *url* is not a wrapped URL, it is returned
+   without changes.
 
 .. _parsing-ascii-encoded-bytes:
 
@@ -520,7 +529,7 @@ task isn't already covered by the URL parsing functions above.
 
    .. versionchanged:: 3.7
       Moved from :rfc:`2396` to :rfc:`3986` for quoting URL strings. "~" is now
-      included in the set of reserved characters.
+      included in the set of unreserved characters.
 
    The optional *encoding* and *errors* parameters specify how to deal with
    non-ASCII characters, as accepted by the :meth:`str.encode` method.

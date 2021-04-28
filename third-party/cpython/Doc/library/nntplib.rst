@@ -20,7 +20,7 @@ as well as the older :rfc:`977` and :rfc:`2980`.
 Here are two small examples of how it can be used.  To list some statistics
 about a newsgroup and print the subjects of the last 10 articles::
 
-   >>> s = nntplib.NNTP('news.gmane.org')
+   >>> s = nntplib.NNTP('news.gmane.io')
    >>> resp, count, first, last, name = s.group('gmane.comp.python.committers')
    >>> print('Group', name, 'has', count, 'articles, range', first, 'to', last)
    Group gmane.comp.python.committers has 1096 articles, range 1 to 1096
@@ -44,7 +44,7 @@ about a newsgroup and print the subjects of the last 10 articles::
 To post an article from a binary file (this assumes that the article has valid
 headers, and that you have right to post on the particular newsgroup)::
 
-   >>> s = nntplib.NNTP('news.gmane.org')
+   >>> s = nntplib.NNTP('news.gmane.io')
    >>> f = open('article.txt', 'rb')
    >>> s.post(f)
    '240 Article posted successfully.'
@@ -73,12 +73,19 @@ The module itself defines the following classes:
    connection when done, e.g.:
 
     >>> from nntplib import NNTP
-    >>> with NNTP('news.gmane.org') as n:
+    >>> with NNTP('news.gmane.io') as n:
     ...     n.group('gmane.comp.python.committers')
     ... # doctest: +SKIP
     ('211 1755 1 1755 gmane.comp.python.committers', 1755, 1, 1755, 'gmane.comp.python.committers')
     >>>
 
+   .. audit-event:: nntplib.connect self,host,port nntplib.NNTP
+
+   .. audit-event:: nntplib.putline self,line nntplib.NNTP
+
+      All commands will raise an :ref:`auditing event <auditing>`
+      ``nntplib.putline`` with arguments ``self`` and ``line``,
+      where ``line`` is the bytes about to be sent to the remote host.
 
    .. versionchanged:: 3.2
       *usenetrc* is now ``False`` by default.
@@ -99,6 +106,14 @@ The module itself defines the following classes:
    Note that SSL-on-563 is discouraged per :rfc:`4642`, in favor of
    STARTTLS as described below.  However, some servers only support the
    former.
+
+   .. audit-event:: nntplib.connect self,host,port nntplib.NNTP_SSL
+
+   .. audit-event:: nntplib.putline self,line nntplib.NNTP_SSL
+
+      All commands will raise an :ref:`auditing event <auditing>`
+      ``nntplib.putline`` with arguments ``self`` and ``line``,
+      where ``line`` is the bytes about to be sent to the remote host.
 
    .. versionadded:: 3.2
 
@@ -210,7 +225,7 @@ tuples or objects that the method normally returns will be empty.
    of values. On legacy servers which don't understand the ``CAPABILITIES``
    command, an empty dictionary is returned instead.
 
-      >>> s = NNTP('news.gmane.org')
+      >>> s = NNTP('news.gmane.io')
       >>> 'POST' in s.getcapabilities()
       True
 

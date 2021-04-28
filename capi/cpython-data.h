@@ -150,6 +150,7 @@ extern "C" {
 #define _PyLong_Zero _PyLong_Zero_Ptr()
 #define _PyNone_Type (*_PyNone_Type_Ptr())
 #define _PyNotImplemented_Type (*_PyNotImplemented_Type_Ptr())
+#define _PyRuntime (*_PyRuntime_Ptr())
 
 #define PYTHON_ABI_STRING "3"
 #define PYTHON_ABI_VERSION 3
@@ -157,8 +158,8 @@ extern "C" {
 #define PYTHON_API_VERSION 1013
 
 #define PY_MAJOR_VERSION 3
-#define PY_MICRO_VERSION 4
-#define PY_MINOR_VERSION 7
+#define PY_MICRO_VERSION 5
+#define PY_MINOR_VERSION 8
 #define PY_RELEASE_LEVEL PY_RELEASE_LEVEL_FINAL
 #define PY_RELEASE_LEVEL_ALPHA 0xA
 #define PY_RELEASE_LEVEL_BETA 0xB
@@ -420,6 +421,8 @@ PyAPI_DATA(const char*) Py_hexdigits;
 #define FUTURE_GENERATOR_STOP "generator_stop"
 #define FUTURE_ANNOTATIONS "annotations"
 
+#define MAX_CO_EXTRA_USERS 255
+
 #define PY_INVALID_STACK_EFFECT INT_MAX
 
 /* Compiler Flags */
@@ -454,6 +457,8 @@ PyAPI_DATA(const char*) Py_hexdigits;
 #define Py_HASH_EXTERNAL 0
 #define Py_HASH_SIPHASH24 1
 #define Py_HASH_FNV 2
+
+#define PY_STDIOTEXTMODE "b"
 
 #define Py_UNICODE_REPLACEMENT_CHARACTER ((Py_UCS4)0xFFFD)
 

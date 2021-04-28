@@ -286,8 +286,7 @@ PY_EXPORT int Py_BytesMain(int argc, char** argv) {
   }
   PyMem_RawFree(wargv);
 
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
 
   int returncode;
   if (command != nullptr) {

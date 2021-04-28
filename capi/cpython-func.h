@@ -155,6 +155,7 @@ PyAPI_FUNC_DECL(PyObject* _PyLong_One_Ptr(void));
 PyAPI_FUNC_DECL(PyObject* _PyLong_Zero_Ptr(void));
 PyAPI_FUNC_DECL(PyTypeObject* _PyNone_Type_Ptr(void));
 PyAPI_FUNC_DECL(PyTypeObject* _PyNotImplemented_Type_Ptr(void));
+PyAPI_FUNC_DECL(_PyRuntimeState* _PyRuntime_Ptr(void));
 
 /* Macro helpers */
 PyAPI_FUNC_DECL(int PyBool_Check_Func(PyObject*));
@@ -165,8 +166,6 @@ PyAPI_FUNC_DECL(int PyBytes_Check_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyCFunction_Check_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyCapsule_CheckExact_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyCode_Check_Func(PyObject*));
-PyAPI_FUNC_DECL(PyObject* PyCode_GetFreevars_Func(PyObject*));
-PyAPI_FUNC_DECL(PyObject* PyCode_GetName_Func(PyObject*));
 PyAPI_FUNC_DECL(Py_ssize_t PyCode_GetNumFree_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyComplex_CheckExact_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyComplex_Check_Func(PyObject*));
@@ -469,7 +468,6 @@ PyAPI_FUNC_DECL(PyObject* PyEval_GetGlobals(void));
 PyAPI_FUNC_DECL(PyObject* PyEval_GetLocals(void));
 PyAPI_FUNC_DECL(void PyEval_InitThreads(void));
 PyAPI_FUNC_DECL(int PyEval_MergeCompilerFlags(PyCompilerFlags*));
-PyAPI_FUNC_DECL(void PyEval_ReInitThreads(void));
 PyAPI_FUNC_DECL(void PyEval_ReleaseLock(void));
 PyAPI_FUNC_DECL(void PyEval_ReleaseThread(PyThreadState*));
 PyAPI_FUNC_DECL(void PyEval_RestoreThread(PyThreadState*));
@@ -895,6 +893,9 @@ PyAPI_FUNC_DECL(void PyThread_release_lock(PyThread_type_lock));
 PyAPI_FUNC_DECL(int PyThread_set_key_value(int, void*));
 PyAPI_FUNC_DECL(int PyThread_set_stacksize(size_t));
 PyAPI_FUNC_DECL(long PyThread_start_new_thread(void (*)(void*), void*));
+PyAPI_FUNC_DECL(int PyToken_OneChar(int));
+PyAPI_FUNC_DECL(int PyToken_TwoChars(int, int));
+PyAPI_FUNC_DECL(int PyToken_ThreeChars(int, int, int));
 PyAPI_FUNC_DECL(int PyTraceBack_Here(PyFrameObject*));
 PyAPI_FUNC_DECL(int PyTraceBack_Print(PyObject*, PyObject*));
 PyAPI_FUNC_DECL(PyObject* PyTuple_GetItem(PyObject*, Py_ssize_t));
@@ -1215,16 +1216,18 @@ PyAPI_FUNC_DECL(void _PyErr_BadInternalCall(const char*, int));
 PyAPI_FUNC_DECL(void _PyErr_ChainExceptions(PyObject*, PyObject*, PyObject*));
 PyAPI_FUNC_DECL(PyObject* _PyErr_FormatFromCause(PyObject*, const char*, ...));
 PyAPI_FUNC_DECL(PyObject* _PyEval_EvalFrameDefault(PyFrameObject*, int));
+PyAPI_FUNC_DECL(void _PyEval_ReInitThreads(_PyRuntimeState*));
 PyAPI_FUNC_DECL(int _PyFloat_Pack2(double x, unsigned char* p, int le));
 PyAPI_FUNC_DECL(int _PyFloat_Pack4(double x, unsigned char* p, int le));
 PyAPI_FUNC_DECL(int _PyFloat_Pack8(double x, unsigned char* p, int le));
 PyAPI_FUNC_DECL(double _PyFloat_Unpack2(const unsigned char* p, int le));
 PyAPI_FUNC_DECL(double _PyFloat_Unpack4(const unsigned char* p, int le));
 PyAPI_FUNC_DECL(double _PyFloat_Unpack8(const unsigned char* p, int le));
-PyAPI_FUNC_DECL(void _PyGILState_Reinit(void));
+PyAPI_FUNC_DECL(void _PyGILState_Reinit(_PyRuntimeState*));
 PyAPI_FUNC_DECL(void _PyImport_AcquireLock(void));
 PyAPI_FUNC_DECL(void _PyImport_ReInitLock(void));
 PyAPI_FUNC_DECL(int _PyImport_ReleaseLock(void));
+PyAPI_FUNC_DECL(void _PyInterpreterState_DeleteExceptMain(_PyRuntimeState*));
 PyAPI_FUNC_DECL(PyInterpreterState* _PyInterpreterState_Get(void));
 PyAPI_FUNC_DECL(int _PyLong_AsByteArray(PyLongObject*, unsigned char*, size_t,
                                         int, int));
@@ -1250,6 +1253,7 @@ PyAPI_FUNC_DECL(int _PyLong_UnsignedShort_Converter(PyObject*, void*));
 PyAPI_FUNC_DECL(char* _PyMem_RawStrdup(const char*));
 PyAPI_FUNC_DECL(char* _PyMem_Strdup(const char*));
 PyAPI_FUNC_DECL(PyObject* _PyNamespace_New(PyObject* kwds));
+PyAPI_FUNC_DECL(int _PyOS_InterruptOccurred(PyThreadState*));
 PyAPI_FUNC_DECL(int _PyOS_URandom(void*, Py_ssize_t));
 PyAPI_FUNC_DECL(int _PyOS_URandomNonblock(void*, Py_ssize_t));
 PyAPI_FUNC_DECL(PyObject* _PyObject_CallMethod_SizeT(PyObject*, const char*,
@@ -1276,6 +1280,7 @@ PyAPI_FUNC_DECL(PyObject* _PyObject_New(PyTypeObject*));
 PyAPI_FUNC_DECL(PyVarObject* _PyObject_NewVar(PyTypeObject*, Py_ssize_t));
 PyAPI_FUNC_DECL(int _PyObject_SetAttrId(PyObject*, struct _Py_Identifier*,
                                         PyObject*));
+PyAPI_FUNC_DECL(void _PyRuntimeState_ReInitThreads(_PyRuntimeState*));
 PyAPI_FUNC_DECL(char* const* _PySequence_BytesToCharpArray(PyObject*));
 PyAPI_FUNC_DECL(int _PySet_NextEntry(PyObject* pyset, Py_ssize_t* ppos,
                                      PyObject** pkey, Py_hash_t* phash));
@@ -1285,7 +1290,7 @@ PyAPI_FUNC_DECL(void _PyState_ClearModules(void));
 PyAPI_FUNC_DECL(size_t _PySys_GetSizeOf(PyObject*));
 PyAPI_FUNC_DECL(PyThreadState* _PyThreadState_GET_Func(void));
 PyAPI_FUNC_DECL(int _PyThreadState_GetRecursionDepth(PyThreadState*));
-PyAPI_FUNC_DECL(void _PyThreadState_Init(PyThreadState*));
+PyAPI_FUNC_DECL(void _PyThreadState_Init(_PyRuntimeState*, PyThreadState*));
 PyAPI_FUNC_DECL(PyThreadState* _PyThreadState_Prealloc(PyInterpreterState*));
 PyAPI_FUNC_DECL(_PyTime_t _PyTime_AsMicroseconds(_PyTime_t, _PyTime_round_t));
 PyAPI_FUNC_DECL(_PyTime_t _PyTime_AsMilliseconds(_PyTime_t, _PyTime_round_t));
@@ -1388,34 +1393,33 @@ PyAPI_FUNC_DECL(Py_UCS4 _PyUnicode_ToUppercase(Py_UCS4));
 PyAPI_FUNC_DECL(PyObject* _Py_BuildValue_SizeT(const char*, ...));
 PyAPI_FUNC_DECL(int _Py_CheckRecursiveCall(const char*));
 PyAPI_FUNC_DECL(void _Py_Dealloc(PyObject*));
-PyAPI_FUNC_DECL(int _Py_DecodeLocaleEx(const char* arg, wchar_t** wstr,
-                                       size_t* wlen, const char** reason,
-                                       int current_locale,
-                                       int surrogateescape));
-PyAPI_FUNC_DECL(wchar_t* _Py_DecodeUTF8_surrogateescape(const char*,
-                                                        Py_ssize_t));
-PyAPI_FUNC_DECL(int _Py_DecodeUTF8Ex(const char* c_str, Py_ssize_t size,
-                                     wchar_t** result, size_t* wlen,
-                                     const char** reason, int surrogateescape));
-PyAPI_FUNC_DECL(int _Py_EncodeLocaleEx(const wchar_t* text, char** str,
-                                       size_t* error_pos, const char** reason,
-                                       int current_locale,
-                                       int surrogateescape));
-PyAPI_FUNC_DECL(int _Py_EncodeUTF8Ex(const wchar_t* text, char** str,
-                                     size_t* error_pos, const char** reason,
-                                     int raw_malloc, int surrogateescape));
+PyAPI_FUNC_DECL(int _Py_DecodeLocaleEx(const char*, wchar_t**, size_t*,
+                                       const char**, int, _Py_error_handler));
+PyAPI_FUNC_DECL(int _Py_DecodeUTF8Ex(const char*, Py_ssize_t, wchar_t**,
+                                     size_t*, const char**, _Py_error_handler));
+PyAPI_FUNC_DECL(wchar_t* _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t,
+                                                        size_t*));
+PyAPI_FUNC_DECL(int _Py_EncodeLocaleEx(const wchar_t*, char**, size_t*,
+                                       const char**, int, _Py_error_handler));
+PyAPI_FUNC_DECL(int _Py_EncodeUTF8Ex(const wchar_t*, char**, size_t*,
+                                     const char**, int, _Py_error_handler));
 PyAPI_FUNC_DECL(void _Py_FreeCharPArray(char* const array[]));
-PyAPI_FUNC_DECL(int _Py_GetLocaleconvNumeric(PyObject**, PyObject**,
-                                             const char**));
+PyAPI_FUNC_DECL(int _Py_GetLocaleconvNumeric(struct lconv*, PyObject**,
+                                             PyObject**));
 PyAPI_FUNC_DECL(Py_hash_t _Py_HashBytes(const void*, Py_ssize_t));
 PyAPI_FUNC_DECL(Py_hash_t _Py_HashDouble(double));
 PyAPI_FUNC_DECL(Py_hash_t _Py_HashPointer(void*));
+PyAPI_FUNC_DECL(int _Py_IsFinalizing(void));
 PyAPI_FUNC_DECL(PyObject* _Py_Mangle(PyObject*, PyObject*));
 PyAPI_FUNC_DECL(void _Py_NewReference(PyObject*));
 PyAPI_FUNC_DECL(void _Py_PyAtExit(void (*func)(PyObject*), PyObject*));
 PyAPI_FUNC_DECL(void _Py_RestoreSignals(void));
 PyAPI_FUNC_DECL(char* _Py_SetLocaleFromEnv(int));
-PyAPI_FUNC_DECL(int _Py_IsFinalizing(void));
+PyAPI_FUNC_DECL(const char* _Py_SourceAsString(PyObject*, const char*,
+                                               const char*, PyCompilerFlags*,
+                                               PyObject**));
+PyAPI_FUNC_DECL(struct symtable* _Py_SymtableStringObjectFlags(
+    const char*, PyObject*, int, PyCompilerFlags*));
 PyAPI_FUNC_DECL(PyObject* _Py_VaBuildValue_SizeT(const char*, va_list));
 PyAPI_FUNC_DECL(double _Py_c_abs(Py_complex));
 PyAPI_FUNC_DECL(Py_complex _Py_c_diff(Py_complex, Py_complex));
@@ -1486,8 +1490,6 @@ PyAPI_FUNC_DECL(Py_ssize_t _Py_write_noraise(int, const void*, size_t));
 #define PyCFunction_Check(op) (PyCFunction_Check_Func((PyObject*)(op)))
 #define PyCode_Check(op) (PyCode_Check_Func((PyObject*)(op)))
 #define PyCode_GetNumFree(op) PyCode_GetNumFree_Func((PyObject*)op)
-#define PyCode_GetName(op) PyCode_GetName_Func(op)
-#define PyCode_GetFreevars(op) PyCode_GetFreevars_Func(op)
 #define PyComplex_Check(op) (PyComplex_Check_Func((PyObject*)(op)))
 #define PyComplex_CheckExact(op) (PyComplex_CheckExact_Func((PyObject*)(op)))
 #define PyDict_Check(op) (PyDict_Check_Func((PyObject*)(op)))

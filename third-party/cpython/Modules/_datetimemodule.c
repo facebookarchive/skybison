@@ -2,7 +2,13 @@
  *  http://www.zope.org/Members/fdrake/DateTimeWiki/FrontPage
  */
 
+/* bpo-35081: Defining this prevents including the C API capsule;
+ * internal versions of the  Py*_Check macros which do not require
+ * the capsule are defined below */
+#define _PY_DATETIME_IMPL
+
 #include "Python.h"
+#include "datetime.h"
 #include "structmember.h"
 
 #include <time.h>
@@ -11,20 +17,29 @@
 #  include <winsock2.h>         /* struct timeval */
 #endif
 
-/* Differentiate between building the core module and building extension
- * modules.
- */
-#ifndef Py_BUILD_CORE
-#define Py_BUILD_CORE
-#endif
-#include "datetime.h"
-#undef Py_BUILD_CORE
+#define PyDate_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.DateType))
+#define PyDate_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.DateType))
+
+#define PyDateTime_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.DateTimeType))
+#define PyDateTime_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.DateTimeType))
+
+#define PyTime_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.TimeType))
+#define PyTime_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.TimeType))
+
+#define PyDelta_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.DeltaType))
+#define PyDelta_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.DeltaType))
+
+#define PyTZInfo_Check(op) PyObject_TypeCheck(op, datetime_global(CAPI.TZInfoType))
+#define PyTZInfo_CheckExact(op) (Py_TYPE(op) == datetime_global(CAPI.TZInfoType))
+
+#define PyTimezone_Check(op) PyObject_TypeCheck(op, datetime_global(TimeZoneType))
 
 /*[clinic input]
 module datetime
 class datetime.datetime "PyDateTime_DateTime *" "datetime_global(CAPI.DateTimeType)"
+class datetime.date "PyDateTime_Date *" "datetime_global(CAPI.DateType)"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b192e7da786a92c2]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=3d522cb2ad7afafa]*/
 
 #include "clinic/_datetimemodule.c.h"
 
@@ -1075,7 +1090,9 @@ new_timezone(PyObject *offset, PyObject *name)
         Py_INCREF(result);
         return result;
     }
-    if ((GET_TD_DAYS(offset) == -1 && GET_TD_SECONDS(offset) == 0) ||
+    if ((GET_TD_DAYS(offset) == -1 &&
+            GET_TD_SECONDS(offset) == 0 &&
+            GET_TD_MICROSECONDS(offset) < 1) ||
         GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
         PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                      " strictly between -timedelta(hours=24) and"
@@ -1145,7 +1162,9 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
     if (offset == Py_None || offset == NULL)
         return offset;
     if (PyDelta_Check(offset)) {
-        if ((GET_TD_DAYS(offset) == -1 && GET_TD_SECONDS(offset) == 0) ||
+        if ((GET_TD_DAYS(offset) == -1 &&
+                GET_TD_SECONDS(offset) == 0 &&
+                GET_TD_MICROSECONDS(offset) < 1) ||
             GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
             Py_DECREF(offset);
             PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
@@ -1675,8 +1694,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
  * Miscellaneous helpers.
  */
 
-/* For various reasons, we need to use tp_richcompare instead of tp_reserved.
- * The comparisons here all most naturally compute a cmp()-like result.
+/* The comparisons here all most naturally compute a cmp()-like result.
  * This little helper turns that into a bool result for rich comparisons.
  */
 static PyObject *
@@ -2583,7 +2601,7 @@ delta_getstate(PyDateTime_Delta *self)
 }
 
 static PyObject *
-delta_total_seconds(PyObject *self)
+delta_total_seconds(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *total_seconds;
     PyObject *total_microseconds;
@@ -2599,7 +2617,7 @@ delta_total_seconds(PyObject *self)
 }
 
 static PyObject *
-delta_reduce(PyDateTime_Delta* self)
+delta_reduce(PyDateTime_Delta* self, PyObject *Py_UNUSED(ignored))
 {
     return Py_BuildValue("ON", Py_TYPE(self), delta_getstate(self));
 }
@@ -2620,7 +2638,7 @@ static PyMemberDef delta_members[] = {
 };
 
 static PyMethodDef delta_methods[] = {
-    {"total_seconds", (PyCFunction)delta_total_seconds, METH_NOARGS,
+    {"total_seconds", delta_total_seconds, METH_NOARGS,
      PyDoc_STR("Total seconds in the duration.")},
 
     {"__reduce__", (PyCFunction)delta_reduce, METH_NOARGS,
@@ -2648,7 +2666,7 @@ static PyType_Slot delta_slots[] = {
     {Py_nb_remainder, delta_remainder},
     {Py_nb_subtract, delta_subtract},
     {Py_nb_true_divide, delta_truedivide},
-    {Py_tp_doc, delta_doc},
+    {Py_tp_doc, (void *)delta_doc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_hash, delta_hash},
     {Py_tp_methods, delta_methods},
@@ -2767,9 +2785,8 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     return self;
 }
 
-/* Return new date from localtime(t). */
 static PyObject *
-date_local_from_object(PyObject *cls, PyObject *obj)
+date_fromtimestamp(PyObject *cls, PyObject *obj)
 {
     struct tm tm;
     time_t t;
@@ -2813,18 +2830,42 @@ date_today(PyObject *cls, PyObject *dummy)
     return result;
 }
 
-/* Return new date from given timestamp (Python timestamp -- a double). */
+/*[clinic input]
+@classmethod
+datetime.date.fromtimestamp
+
+    timestamp: object
+    /
+
+Create a date from a POSIX timestamp.
+
+The timestamp is a number, e.g. created via time.time(), that is interpreted
+as local time.
+[clinic start generated code]*/
+
 static PyObject *
-date_fromtimestamp(PyObject *cls, PyObject *args)
+datetime_date_fromtimestamp(PyTypeObject *type, PyObject *timestamp)
+/*[clinic end generated code: output=fd045fda58168869 input=eabb3fe7f40491fe]*/
+{
+    return date_fromtimestamp((PyObject *) type, timestamp);
+}
+
+/* bpo-36025: This is a wrapper for API compatibility with the public C API,
+ * which expects a function that takes an *args tuple, whereas the argument
+ * clinic generates code that takes METH_O.
+ */
+static PyObject *
+datetime_date_fromtimestamp_capi(PyObject *cls, PyObject *args)
 {
     PyObject *timestamp;
     PyObject *result = NULL;
 
-    if (PyArg_ParseTuple(args, "O:fromtimestamp", &timestamp))
-        result = date_local_from_object(cls, timestamp);
+    if (PyArg_UnpackTuple(args, "fromtimestamp", 1, 1, &timestamp)) {
+        result = date_fromtimestamp(cls, timestamp);
+    }
+
     return result;
 }
-
 
 /* Return new date from proleptic Gregorian ordinal.  Raises ValueError if
  * the ordinal is out of range.
@@ -2891,6 +2932,67 @@ invalid_string_error:
     return NULL;
 }
 
+
+static PyObject *
+date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
+{
+    static char *keywords[] = {
+        "year", "week", "day", NULL
+    };
+
+    int year, week, day;
+    if (PyArg_ParseTupleAndKeywords(args, kw, "iii:fromisocalendar",
+                keywords,
+                &year, &week, &day) == 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_Format(PyExc_ValueError,
+                    "ISO calendar component out of range");
+
+        }
+        return NULL;
+    }
+
+    // Year is bounded to 0 < year < 10000 because 9999-12-31 is (9999, 52, 5)
+    if (year < MINYEAR || year > MAXYEAR) {
+        PyErr_Format(PyExc_ValueError, "Year is out of range: %d", year);
+        return NULL;
+    }
+
+    if (week <= 0 || week >= 53) {
+        int out_of_range = 1;
+        if (week == 53) {
+            // ISO years have 53 weeks in it on years starting with a Thursday
+            // and on leap years starting on Wednesday
+            int first_weekday = weekday(year, 1, 1);
+            if (first_weekday == 3 || (first_weekday == 2 && is_leap(year))) {
+                out_of_range = 0;
+            }
+        }
+
+        if (out_of_range) {
+            PyErr_Format(PyExc_ValueError, "Invalid week: %d", week);
+            return NULL;
+        }
+    }
+
+    if (day <= 0 || day >= 8) {
+        PyErr_Format(PyExc_ValueError, "Invalid day: %d (range is [1, 7])",
+                     day);
+        return NULL;
+    }
+
+    // Convert (Y, W, D) to (Y, M, D) in-place
+    int day_1 = iso_week1_monday(year);
+
+    int month = week;
+    int day_offset = (month - 1)*7 + day - 1;
+
+    ord_to_ymd(day_1 + day_offset, &year, &month, &day);
+
+    return new_date_subclass_ex(year, month, day, cls);
+}
+
+
 /*
  * Date arithmetic.
  */
@@ -2909,7 +3011,8 @@ add_date_timedelta(PyDateTime_Date *date, PyDateTime_Delta *delta, int negate)
     int day = GET_DAY(date) + (negate ? -deltadays : deltadays);
 
     if (normalize_date(&year, &month, &day) >= 0)
-        result = new_date(year, month, day);
+        result = new_date_subclass_ex(year, month, day,
+                                      (PyObject* )Py_TYPE(date));
     return result;
 }
 
@@ -2979,7 +3082,7 @@ date_repr(PyDateTime_Date *self)
 }
 
 static PyObject *
-date_isoformat(PyDateTime_Date *self)
+date_isoformat(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 {
     return PyUnicode_FromFormat("%04d-%02d-%02d",
                                 GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
@@ -2994,7 +3097,7 @@ date_str(PyDateTime_Date *self)
 
 
 static PyObject *
-date_ctime(PyDateTime_Date *self)
+date_ctime(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 {
     return format_ctime(self, 0, 0, 0);
 }
@@ -3042,7 +3145,7 @@ date_format(PyDateTime_Date *self, PyObject *args)
 /* ISO methods. */
 
 static PyObject *
-date_isoweekday(PyDateTime_Date *self)
+date_isoweekday(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 {
     int dow = weekday(GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 
@@ -3050,7 +3153,7 @@ date_isoweekday(PyDateTime_Date *self)
 }
 
 static PyObject *
-date_isocalendar(PyDateTime_Date *self)
+date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 {
     int  year         = GET_YEAR(self);
     int  week1_monday = iso_week1_monday(year);
@@ -3087,7 +3190,7 @@ date_richcompare(PyObject *self, PyObject *other, int op)
 }
 
 static PyObject *
-date_timetuple(PyDateTime_Date *self)
+date_timetuple(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 {
     return build_struct_time(GET_YEAR(self),
                              GET_MONTH(self),
@@ -3136,14 +3239,14 @@ date_hash(PyDateTime_Date *self)
 }
 
 static PyObject *
-date_toordinal(PyDateTime_Date *self)
+date_toordinal(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong(ymd_to_ord(GET_YEAR(self), GET_MONTH(self),
                                      GET_DAY(self)));
 }
 
 static PyObject *
-date_weekday(PyDateTime_Date *self)
+date_weekday(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 {
     int dow = weekday(GET_YEAR(self), GET_MONTH(self), GET_DAY(self));
 
@@ -3171,11 +3274,7 @@ date_reduce(PyDateTime_Date *self, PyObject *arg)
 static PyMethodDef date_methods[] = {
 
     /* Class methods: */
-
-    {"fromtimestamp", (PyCFunction)date_fromtimestamp, METH_VARARGS |
-                                                       METH_CLASS,
-     PyDoc_STR("timestamp -> local date from a POSIX timestamp (like "
-               "time.time()).")},
+    DATETIME_DATE_FROMTIMESTAMP_METHODDEF
 
     {"fromordinal", (PyCFunction)date_fromordinal,      METH_VARARGS |
                                                     METH_CLASS,
@@ -3186,6 +3285,12 @@ static PyMethodDef date_methods[] = {
                                                          METH_CLASS,
       PyDoc_STR("str -> Construct a date from the output of date.isoformat()")},
 
+     {"fromisocalendar", (PyCFunction)(void(*)(void))date_fromisocalendar,
+      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
+      PyDoc_STR("int, int, int -> Construct a date from the ISO year, week "
+                "number and weekday.\n\n"
+                "This is the inverse of the date.isocalendar() function")},
+
     {"today",         (PyCFunction)date_today,   METH_NOARGS | METH_CLASS,
      PyDoc_STR("Current date or datetime:  same as "
                "self.__class__.fromtimestamp(time.time()).")},
@@ -3195,7 +3300,7 @@ static PyMethodDef date_methods[] = {
     {"ctime",       (PyCFunction)date_ctime,        METH_NOARGS,
      PyDoc_STR("Return ctime() style string.")},
 
-    {"strftime",        (PyCFunction)date_strftime,     METH_VARARGS | METH_KEYWORDS,
+    {"strftime",        (PyCFunction)(void(*)(void))date_strftime,     METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("format -> strftime() style string.")},
 
     {"__format__",      (PyCFunction)date_format,       METH_VARARGS,
@@ -3223,7 +3328,7 @@ static PyMethodDef date_methods[] = {
      PyDoc_STR("Return the day of the week represented by the date.\n"
                "Monday == 0 ... Sunday == 6")},
 
-    {"replace",     (PyCFunction)date_replace,      METH_VARARGS | METH_KEYWORDS,
+    {"replace",     (PyCFunction)(void(*)(void))date_replace,      METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return date with new specified fields.")},
 
     {"__reduce__", (PyCFunction)date_reduce,        METH_NOARGS,
@@ -3238,7 +3343,7 @@ PyDoc_STRVAR(date_doc,
 static PyType_Slot date_slots[] = {
     {Py_nb_add, date_add},
     {Py_nb_subtract, date_subtract},
-    {Py_tp_doc, date_doc},
+    {Py_tp_doc, (void *)date_doc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_hash, date_hash},
     {Py_tp_methods, date_methods},
@@ -3390,29 +3495,29 @@ Fail:
  */
 
 static PyObject *
-tzinfo_reduce(PyObject *self)
+tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *args, *state;
     PyObject *getinitargs, *getstate;
 
-    getinitargs = PyObject_GetAttr(self, datetime_global(__getinitargs__));
+    if (_PyObject_LookupAttr(self, datetime_global(__getinitargs__), &getinitargs) < 0) {
+        return NULL;
+    }
     if (getinitargs != NULL) {
         args = _PyObject_CallNoArg(getinitargs);
         Py_DECREF(getinitargs);
-        if (args == NULL) {
-            return NULL;
-        }
     }
     else {
-        PyErr_Clear();
-
         args = PyTuple_New(0);
-        if (args == NULL) {
-            return NULL;
-        }
+    }
+    if (args == NULL) {
+        return NULL;
     }
 
-    getstate = PyObject_GetAttr(self, datetime_global(__getstate__));
+    if (_PyObject_LookupAttr(self, datetime_global(__getstate__), &getstate) < 0) {
+        Py_DECREF(args);
+        return NULL;
+    }
     if (getstate != NULL) {
         state = _PyObject_CallNoArg(getstate);
         Py_DECREF(getstate);
@@ -3455,7 +3560,7 @@ static PyMethodDef tzinfo_methods[] = {
     {"fromutc",         (PyCFunction)tzinfo_fromutc,            METH_O,
      PyDoc_STR("datetime in UTC -> datetime in local time.")},
 
-    {"__reduce__",  (PyCFunction)tzinfo_reduce,             METH_NOARGS,
+    {"__reduce__",  tzinfo_reduce,             METH_NOARGS,
      PyDoc_STR("-> (cls, state)")},
 
     {NULL, NULL}
@@ -3465,7 +3570,7 @@ PyDoc_STRVAR(tzinfo_doc,
 "Abstract base class for time zone info objects.");
 
 static PyType_Slot tzinfo_slots[] = {
-    {Py_tp_doc, tzinfo_doc},
+    {Py_tp_doc, (void *)tzinfo_doc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_methods, tzinfo_methods},
     {Py_tp_new, PyType_GenericNew},
@@ -3510,11 +3615,8 @@ timezone_richcompare(PyDateTime_TimeZone *self,
 {
     if (op != Py_EQ && op != Py_NE)
         Py_RETURN_NOTIMPLEMENTED;
-    if (Py_TYPE(other) != datetime_global(TimeZoneType)) {
-        if (op == Py_EQ)
-            Py_RETURN_FALSE;
-        else
-            Py_RETURN_TRUE;
+    if (!PyTimezone_Check(other)) {
+        Py_RETURN_NOTIMPLEMENTED;
     }
     return delta_richcompare(self->offset, other->offset, op);
 }
@@ -3649,7 +3751,7 @@ timezone_fromutc(PyDateTime_TimeZone *self, PyDateTime_DateTime *dt)
 }
 
 static PyObject *
-timezone_getinitargs(PyDateTime_TimeZone *self)
+timezone_getinitargs(PyDateTime_TimeZone *self, PyObject *Py_UNUSED(ignored))
 {
     if (self->name == NULL)
         return Py_BuildValue("(O)", self->offset);
@@ -3681,7 +3783,7 @@ PyDoc_STRVAR(timezone_doc,
 
 static PyType_Slot timezone_slots[] = {
     {Py_tp_dealloc, timezone_dealloc},
-    {Py_tp_doc, timezone_doc},
+    {Py_tp_doc, (void *)timezone_doc},
     {Py_tp_hash, timezone_hash},
     {Py_tp_methods, timezone_methods},
     {Py_tp_new, timezone_new},
@@ -3826,7 +3928,7 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                 return NULL;
             }
             if (PyUnicode_GET_LENGTH(state) == _PyDateTime_TIME_DATASIZE &&
-                (0x7F & PyUnicode_READ_CHAR(state, 2)) < 24)
+                (0x7F & PyUnicode_READ_CHAR(state, 0)) < 24)
             {
                 state = PyUnicode_AsLatin1String(state);
                 if (state == NULL) {
@@ -4286,12 +4388,12 @@ time_reduce(PyDateTime_Time *self, PyObject *arg)
 
 static PyMethodDef time_methods[] = {
 
-    {"isoformat",   (PyCFunction)time_isoformat,        METH_VARARGS | METH_KEYWORDS,
+    {"isoformat",   (PyCFunction)(void(*)(void))time_isoformat,        METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return string in ISO 8601 format, [HH[:MM[:SS[.mmm[uuu]]]]]"
                "[+HH:MM].\n\n"
                "timespec specifies what components of the time to include.\n")},
 
-    {"strftime",        (PyCFunction)time_strftime,     METH_VARARGS | METH_KEYWORDS,
+    {"strftime",        (PyCFunction)(void(*)(void))time_strftime,     METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("format -> strftime() style string.")},
 
     {"__format__",      (PyCFunction)date_format,       METH_VARARGS,
@@ -4306,7 +4408,7 @@ static PyMethodDef time_methods[] = {
     {"dst",             (PyCFunction)time_dst,          METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.dst(self).")},
 
-    {"replace",     (PyCFunction)time_replace,          METH_VARARGS | METH_KEYWORDS,
+    {"replace",     (PyCFunction)(void(*)(void))time_replace,          METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return time with new specified fields.")},
 
      {"fromisoformat", (PyCFunction)time_fromisoformat, METH_O | METH_CLASS,
@@ -4330,7 +4432,7 @@ a tzinfo subclass. The remaining arguments may be ints.\n");
 static PyType_Slot time_slots[] = {
     {Py_tp_alloc, time_alloc},
     {Py_tp_dealloc, time_dealloc},
-    {Py_tp_doc, time_doc},
+    {Py_tp_doc, (void *)time_doc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_hash, time_hash},
     {Py_tp_methods, time_methods},
@@ -4983,9 +5085,10 @@ add_datetime_timedelta(PyDateTime_DateTime *date, PyDateTime_Delta *delta,
         return NULL;
     }
 
-    return new_datetime(year, month, day,
-                        hour, minute, second, microsecond,
-                        HASTZINFO(date) ? date->tzinfo : Py_None, 0);
+    return new_datetime_subclass_ex(year, month, day,
+                                    hour, minute, second, microsecond,
+                                    HASTZINFO(date) ? date->tzinfo : Py_None,
+                                    (PyObject *)Py_TYPE(date));
 }
 
 static PyObject *
@@ -5209,7 +5312,7 @@ datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-datetime_ctime(PyDateTime_DateTime *self)
+datetime_ctime(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 {
     return format_ctime((PyDateTime_Date *)self,
                         DATE_GET_HOUR(self),
@@ -5699,7 +5802,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-datetime_timetuple(PyDateTime_DateTime *self)
+datetime_timetuple(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 {
     int dstflag = -1;
 
@@ -5774,7 +5877,7 @@ local_to_seconds(int year, int month, int day,
 #define EPOCH_SECONDS (719163LL * 24 * 60 * 60)
 
 static PyObject *
-datetime_timestamp(PyDateTime_DateTime *self)
+datetime_timestamp(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *result;
 
@@ -5783,7 +5886,7 @@ datetime_timestamp(PyDateTime_DateTime *self)
         delta = datetime_subtract((PyObject *)self, datetime_global(Epoch));
         if (delta == NULL)
             return NULL;
-        result = delta_total_seconds(delta);
+        result = delta_total_seconds(delta, NULL);
         Py_DECREF(delta);
     }
     else {
@@ -5804,7 +5907,7 @@ datetime_timestamp(PyDateTime_DateTime *self)
 }
 
 static PyObject *
-datetime_getdate(PyDateTime_DateTime *self)
+datetime_getdate(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 {
     return new_date(GET_YEAR(self),
                     GET_MONTH(self),
@@ -5812,7 +5915,7 @@ datetime_getdate(PyDateTime_DateTime *self)
 }
 
 static PyObject *
-datetime_gettime(PyDateTime_DateTime *self)
+datetime_gettime(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 {
     return new_time(DATE_GET_HOUR(self),
                     DATE_GET_MINUTE(self),
@@ -5823,7 +5926,7 @@ datetime_gettime(PyDateTime_DateTime *self)
 }
 
 static PyObject *
-datetime_gettimetz(PyDateTime_DateTime *self)
+datetime_gettimetz(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 {
     return new_time(DATE_GET_HOUR(self),
                     DATE_GET_MINUTE(self),
@@ -5834,7 +5937,7 @@ datetime_gettimetz(PyDateTime_DateTime *self)
 }
 
 static PyObject *
-datetime_utctimetuple(PyDateTime_DateTime *self)
+datetime_utctimetuple(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
 {
     int y, m, d, hh, mm, ss;
     PyObject *tzinfo;
@@ -5930,7 +6033,7 @@ static PyMethodDef datetime_methods[] = {
      METH_NOARGS | METH_CLASS,
      PyDoc_STR("Return a new datetime representing UTC day and time.")},
 
-    {"fromtimestamp", (PyCFunction)datetime_fromtimestamp,
+    {"fromtimestamp", (PyCFunction)(void(*)(void))datetime_fromtimestamp,
      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("timestamp[, tz] -> tz's local time from POSIX timestamp.")},
 
@@ -5943,7 +6046,7 @@ static PyMethodDef datetime_methods[] = {
      PyDoc_STR("string, format -> new datetime parsed from a string "
                "(like time.strptime()).")},
 
-    {"combine", (PyCFunction)datetime_combine,
+    {"combine", (PyCFunction)(void(*)(void))datetime_combine,
      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("date, time -> datetime with same date and time fields")},
 
@@ -5974,7 +6077,7 @@ static PyMethodDef datetime_methods[] = {
     {"utctimetuple",   (PyCFunction)datetime_utctimetuple, METH_NOARGS,
      PyDoc_STR("Return UTC time tuple, compatible with time.localtime().")},
 
-    {"isoformat",   (PyCFunction)datetime_isoformat, METH_VARARGS | METH_KEYWORDS,
+    {"isoformat",   (PyCFunction)(void(*)(void))datetime_isoformat, METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("[sep] -> string in ISO 8601 format, "
                "YYYY-MM-DDT[HH[:MM[:SS[.mmm[uuu]]]]][+HH:MM].\n"
                "sep is used to separate the year from the time, and "
@@ -5992,10 +6095,10 @@ static PyMethodDef datetime_methods[] = {
     {"dst",             (PyCFunction)datetime_dst, METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.dst(self).")},
 
-    {"replace",     (PyCFunction)datetime_replace,      METH_VARARGS | METH_KEYWORDS,
+    {"replace",     (PyCFunction)(void(*)(void))datetime_replace,      METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return datetime with new specified fields.")},
 
-    {"astimezone",  (PyCFunction)datetime_astimezone, METH_VARARGS | METH_KEYWORDS,
+    {"astimezone",  (PyCFunction)(void(*)(void))datetime_astimezone, METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("tz -> convert to local time in new timezone tz\n")},
 
     {"__reduce_ex__", (PyCFunction)datetime_reduce_ex,     METH_VARARGS,
@@ -6018,7 +6121,7 @@ static PyType_Slot datetime_slots[] = {
     {Py_nb_subtract, datetime_subtract},
     {Py_tp_alloc, datetime_alloc},
     {Py_tp_dealloc, datetime_dealloc},
-    {Py_tp_doc, datetime_doc},
+    {Py_tp_doc, (void *)datetime_doc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_hash, datetime_hash},
     {Py_tp_methods, datetime_methods},
@@ -6276,6 +6379,9 @@ PyInit__datetime(void)
         goto error;
     state->CAPI.TimeZone_UTC = x;
 
+    /* bpo-37642: These attributes are rounded to the nearest minute for backwards
+     * compatibility, even though the constructor will accept a wider range of
+     * values. This may change in the future.*/
     delta = new_delta_ex(-1, 60, 0, 1, state->CAPI.DeltaType); /* -23:59 */
     if (delta == NULL)
         goto error;
@@ -6311,7 +6417,7 @@ PyInit__datetime(void)
     state->CAPI.Delta_FromDelta = new_delta_ex;
     state->CAPI.TimeZone_FromTimeZone = new_timezone;
     state->CAPI.DateTime_FromTimestamp = datetime_fromtimestamp;
-    state->CAPI.Date_FromTimestamp = date_fromtimestamp;
+    state->CAPI.Date_FromTimestamp = datetime_date_fromtimestamp_capi;
     state->CAPI.DateTime_FromDateAndTimeAndFold = new_datetime_ex2;
     state->CAPI.Time_FromTimeAndFold = new_time_ex2;
 

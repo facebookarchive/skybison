@@ -41,6 +41,7 @@ _multibytecodec
 _multiprocessing
 _opcode
 _pickle
+_posixshmem
 _posixsubprocess
 _queue
 _random
@@ -51,12 +52,15 @@ _sha512
 _socket
 _sqlite3
 _ssl
+_statistics
 _struct
 _testbuffer
 _testcapi
 _testimportmultiple
+_testinternalcapi
 _testmultiphase
 _uuid
+_xxsubinterpreters
 _xxtestfuzz
 array
 audioop
@@ -106,7 +110,7 @@ def main():
         sys.stderr.write("Error: Found unexpected additional modules:\n")
         for m in sorted(unexpected):
             sys.stderr.write(f"    {m}\n")
-        sys.stderr.write("If you added a new module update '{__file__}'.\n")
+        sys.stderr.write(f"If you added a new module update '{__file__}'.\n")
         rc = 1
 
     sys.exit(rc)

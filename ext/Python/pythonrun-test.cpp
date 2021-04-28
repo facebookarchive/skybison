@@ -83,7 +83,7 @@ TEST_F(PythonrunExtensionApiTest, PyRunAnyFileExFlagsReturnsZero) {
   const char* buffer = R"(x = 2 <> 3; print(f"{x} by {__file__}"))";
   FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
                         std::strlen(buffer), "r");
-  PyCompilerFlags flags;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
   int returncode = PyRun_AnyFileExFlags(fp, nullptr, /*closeit=*/1, &flags);
   EXPECT_EQ(returncode, 0);
@@ -95,7 +95,7 @@ TEST_F(PythonrunExtensionApiTest, PyRunAnyFileFlagsReturnsZero) {
   const char* buffer = R"(x = 4 <> 4; print(f"{x} by {__file__}"))";
   FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
                         std::strlen(buffer), "r");
-  PyCompilerFlags flags;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
   int returncode = PyRun_AnyFileFlags(fp, "a test", &flags);
   fclose(fp);
@@ -136,8 +136,7 @@ TEST_F(PythonrunExtensionApiTest, PyRunFileExFlagsReturnsTrue) {
   char buffer[] = R"(7 != number)";
   FILE* fp =
       ::fmemopen(reinterpret_cast<void*>(buffer), std::strlen(buffer), "r");
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   PyObjectPtr result(PyRun_FileExFlags(fp, "a test", Py_eval_input,
                                        module_dict.get(), module_dict.get(),
                                        /*closeit=*/1, &flags));
@@ -152,8 +151,7 @@ TEST_F(PythonrunExtensionApiTest, PyRunFileExFlagsWithUserLocalsReturnsTrue) {
   char buffer[] = R"(7 != number)";
   FILE* fp =
       ::fmemopen(reinterpret_cast<void*>(buffer), std::strlen(buffer), "r");
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   PyObjectPtr locals(PyDict_New());
   PyObjectPtr result(PyRun_FileExFlags(fp, "a test", Py_eval_input,
                                        module_dict.get(), locals.get(),
@@ -168,7 +166,7 @@ TEST_F(PythonrunExtensionApiTest, PyRunFileFlagsReturnsFalse) {
   const char* buffer = R"(number <> 9)";
   FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
                         std::strlen(buffer), "r");
-  PyCompilerFlags flags;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
   PyObjectPtr result(PyRun_FileFlags(fp, "a test", Py_eval_input, module_dict,
                                      module_dict, &flags));
@@ -202,7 +200,7 @@ RuntimeError: boom
 }
 
 TEST_F(PythonrunExtensionApiTest, PyRunSimpleStringFlagsReturnsTrue) {
-  PyCompilerFlags flags;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
   EXPECT_EQ(PyRun_SimpleStringFlags("foo = 13 <> 42", &flags), 0);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
@@ -223,7 +221,7 @@ TEST_F(PythonrunExtensionApiTest, PyRunStringFlagsReturnsResult) {
   PyObject* module = PyImport_AddModule("__main__");
   ASSERT_NE(module, nullptr);
   PyObject* module_proxy = PyModule_GetDict(module);
-  PyCompilerFlags flags;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
   EXPECT_TRUE(
       isLongEqualsLong(PyRun_StringFlags("(7 <> 7) + 3", Py_eval_input,
@@ -236,7 +234,7 @@ TEST_F(PythonrunExtensionApiTest,
   PyObject* module = PyImport_AddModule("__main__");
   ASSERT_NE(module, nullptr);
   PyObject* module_proxy = PyModule_GetDict(module);
-  PyCompilerFlags flags;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   flags.cf_flags = PyCF_SOURCE_IS_UTF8;
   EXPECT_TRUE(
       isLongEqualsLong(PyRun_StringFlags("1 + 2", Py_eval_input, module_proxy,
@@ -560,8 +558,7 @@ TEST_F(PythonrunExtensionApiTest, PyRunSimpleFileExFlagsWithPyFileReturnsZero) {
   const char* buffer = R"(print("pyhello"))";
   FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
                         std::strlen(buffer), "r");
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   int returncode = PyRun_SimpleFileExFlags(fp, "test.py", 1, &flags);
   EXPECT_EQ(returncode, 0);
   EXPECT_EQ(streams.out(), "pyhello\n");
@@ -573,8 +570,7 @@ TEST_F(PythonrunExtensionApiTest,
   const char* buffer = R"(print(__file__))";
   FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
                         std::strlen(buffer), "r");
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   int returncode = PyRun_SimpleFileExFlags(fp, "test.py", 1, &flags);
   EXPECT_EQ(returncode, 0);
   EXPECT_EQ(streams.out(), "test.py\n");
@@ -590,8 +586,7 @@ TEST_F(PythonrunExtensionApiTest, PyRunSimpleFileExFlagsPrintsSyntaxError) {
   const char* buffer = ",,,";
   FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
                         std::strlen(buffer), "r");
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   int returncode = PyRun_SimpleFileExFlags(fp, "test.py", 1, &flags);
   EXPECT_EQ(returncode, -1);
   EXPECT_EQ(PyErr_Occurred(), nullptr);
@@ -609,8 +604,7 @@ TEST_F(PythonrunExtensionApiTest,
   const char* buffer = "raise RuntimeError('boom')";
   FILE* fp = ::fmemopen(reinterpret_cast<void*>(const_cast<char*>(buffer)),
                         std::strlen(buffer), "r");
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   int returncode = PyRun_SimpleFileExFlags(fp, "test.py", 1, &flags);
   EXPECT_EQ(returncode, -1);
   EXPECT_EQ(streams.out(), "");

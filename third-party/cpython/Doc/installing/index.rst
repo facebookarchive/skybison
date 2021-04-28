@@ -1,4 +1,4 @@
-.. highlightlang:: none
+.. highlight:: none
 
 .. _installing-index:
 
@@ -53,7 +53,7 @@ Key terms
   evolution of the standard packaging tools and the associated metadata and
   file format standards. They maintain a variety of tools, documentation,
   and issue trackers on both `GitHub <https://github.com/pypa>`__ and
-  `BitBucket <https://bitbucket.org/pypa/>`__.
+  `Bitbucket <https://bitbucket.org/pypa/>`__.
 * ``distutils`` is the original build and distribution system first added to
   the Python standard library in 1998. While direct use of ``distutils`` is
   being phased out, it still laid the foundation for the current packaging
@@ -61,11 +61,6 @@ Key terms
   standard library, but its name lives on in other ways (such as the name
   of the mailing list used to coordinate Python packaging standards
   development).
-
-.. deprecated:: 3.6
-   ``pyvenv`` was the recommended tool for creating virtual environments for
-   Python 3.3 and 3.4, and is `deprecated in Python 3.6
-   <https://docs.python.org/dev/whatsnew/3.6.html#deprecated-features>`_.
 
 .. versionchanged:: 3.5
    The use of ``venv`` is now recommended for creating virtual environments.

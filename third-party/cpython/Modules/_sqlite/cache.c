@@ -30,7 +30,7 @@ pysqlite_Node* pysqlite_new_node(PyObject* key, PyObject* data)
 {
     pysqlite_Node* node;
 
-    node = (pysqlite_Node*) (PyType_GenericNew(pysqlite_global(NodeType), NULL, NULL));
+    node = (pysqlite_Node*) (PyType_GenericNew(pysqlite_global->NodeType, NULL, NULL));
     if (!node) {
         return NULL;
     }
@@ -49,14 +49,10 @@ pysqlite_Node* pysqlite_new_node(PyObject* key, PyObject* data)
 
 void pysqlite_node_dealloc(pysqlite_Node* self)
 {
-    PyTypeObject* tp;
-    freefunc func;
-
+    PyTypeObject* tp = Py_TYPE(self);
     Py_DECREF(self->key);
     Py_DECREF(self->data);
-
-    tp = Py_TYPE(self);
-    func = PyType_GetSlot(tp, Py_tp_free);
+    freefunc func = PyType_GetSlot(tp, Py_tp_free);
     Py_DECREF(tp);
     func(self);
 }
@@ -95,10 +91,9 @@ int pysqlite_cache_init(pysqlite_Cache* self, PyObject* args, PyObject* kwargs)
 
 void pysqlite_cache_dealloc(pysqlite_Cache* self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     pysqlite_Node* node;
     pysqlite_Node* delete_node;
-    PyTypeObject* tp;
-    freefunc func;
 
     if (!self->factory) {
         /* constructor failed, just get out of here */
@@ -117,9 +112,7 @@ void pysqlite_cache_dealloc(pysqlite_Cache* self)
         Py_DECREF(self->factory);
     }
     Py_DECREF(self->mapping);
-
-    tp = Py_TYPE(self);
-    func = PyType_GetSlot(tp, Py_tp_free);
+    freefunc func = PyType_GetSlot(tp, Py_tp_free);
     Py_DECREF(tp);
     func(self);
 }
@@ -131,7 +124,7 @@ PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* args)
     pysqlite_Node* ptr;
     PyObject* data;
 
-    node = (pysqlite_Node*)PyDict_GetItem(self->mapping, key);
+    node = (pysqlite_Node*)PyDict_GetItemWithError(self->mapping, key);
     if (node) {
         /* an entry for this key already exists in the cache */
 
@@ -169,7 +162,11 @@ PyObject* pysqlite_cache_get(pysqlite_Cache* self, PyObject* args)
             }
             ptr->prev = node;
         }
-    } else {
+    }
+    else if (PyErr_Occurred()) {
+        return NULL;
+    }
+    else {
         /* There is no entry for this key in the cache, yet. We'll insert a new
          * entry in the cache, and make space if necessary by throwing the
          * least used item out of the cache. */
@@ -245,7 +242,6 @@ PyObject* pysqlite_cache_display(pysqlite_Cache* self, PyObject* args)
         }
 
         PySys_FormatStdout("%S <- %S -> %S\n", prevkey, ptr->key, nextkey);
-
         ptr = ptr->next;
     }
 

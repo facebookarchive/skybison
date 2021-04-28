@@ -17,10 +17,13 @@ typedef uint16_t _Py_CODEUNIT;
 #  define _Py_OPARG(word) ((word) >> 8)
 #endif
 
+typedef struct _PyOpcache _PyOpcache;
+
 /* Bytecode object */
 typedef struct {
     PyObject_HEAD
     int co_argcount;            /* #arguments, except *args */
+    int co_posonlyargcount;     /* #positional only arguments */
     int co_kwonlyargcount;      /* #keyword only arguments */
     int co_nlocals;             /* #local variables */
     int co_stacksize;           /* #entries needed for evaluation stack */
@@ -48,6 +51,21 @@ typedef struct {
        Type is a void* to keep the format private in codeobject.c to force
        people to go through the proper APIs. */
     void *co_extra;
+
+    /* Per opcodes just-in-time cache
+     *
+     * To reduce cache size, we use indirect mapping from opcode index to
+     * cache object:
+     *   cache = co_opcache[co_opcache_map[next_instr - first_instr] - 1]
+     */
+
+    // co_opcache_map is indexed by (next_instr - first_instr).
+    //  * 0 means there is no cache for this opcode.
+    //  * n > 0 means there is cache in co_opcache[n-1].
+    unsigned char *co_opcache_map;
+    _PyOpcache *co_opcache;
+    int co_opcache_flag;  // used to determine when create a cache.
+    unsigned char co_opcache_size;  // length of co_opcache.
 } PyCodeObject;
 
 /* Masks for co_flags above */
@@ -70,10 +88,10 @@ typedef struct {
 #define CO_ITERABLE_COROUTINE   0x0100
 #define CO_ASYNC_GENERATOR      0x0200
 
-/* These are no longer used. */
-#if 0
-#define CO_GENERATOR_ALLOWED    0x1000
-#endif
+/* bpo-39562: These constant values are changed in Python 3.9
+   to prevent collision with compiler flags. CO_FUTURE_ and PyCF_
+   constants must be kept unique. PyCF_ constants can use bits from
+   0x0100 to 0x10000. CO_FUTURE_ constants use bits starting at 0x20000. */
 #define CO_FUTURE_DIVISION      0x20000
 #define CO_FUTURE_ABSOLUTE_IMPORT 0x40000 /* do absolute imports by default */
 #define CO_FUTURE_WITH_STATEMENT  0x80000
@@ -103,6 +121,11 @@ PyAPI_DATA(PyTypeObject) PyCode_Type;
 /* Public interface */
 PyAPI_FUNC(PyCodeObject *) PyCode_New(
         int, int, int, int, int, PyObject *, PyObject *,
+        PyObject *, PyObject *, PyObject *, PyObject *,
+        PyObject *, PyObject *, int, PyObject *);
+
+PyAPI_FUNC(PyCodeObject *) PyCode_NewWithPosOnlyArgs(
+        int, int, int, int, int, int, PyObject *, PyObject *,
         PyObject *, PyObject *, PyObject *, PyObject *,
         PyObject *, PyObject *, int, PyObject *);
         /* same as struct above */
@@ -139,8 +162,6 @@ PyAPI_FUNC(int) _PyCode_CheckLineNumber(PyCodeObject* co,
 PyAPI_FUNC(PyObject*) _PyCode_ConstantKey(PyObject *obj);
 #endif
 
-PyAPI_FUNC(PyObject *) PyCode_GetFreevars(PyObject *code);
-PyAPI_FUNC(PyObject *) PyCode_GetName(PyObject *code);
 PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
                                       PyObject *names, PyObject *lnotab);
 

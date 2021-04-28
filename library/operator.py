@@ -14,7 +14,7 @@ The Pyro runtime and C-API can delegate to this module to do some heavy lifting.
 
 from builtins import _sequence_repr, _type_name, abs
 
-from _builtins import _divmod, _int_check, _lt as lt, _str_check
+from _builtins import _divmod, _int_check, _lt as lt, _str_check, _type
 
 
 __all__ = [
@@ -83,16 +83,6 @@ def eq(a, b):
     return a == b
 
 
-def le(a, b):
-    "Same as a <= b."
-    return a <= b
-
-
-def ne(a, b):
-    "Same as a != b."
-    return a != b
-
-
 def ge(a, b):
     "Same as a >= b."
     return a >= b
@@ -101,6 +91,16 @@ def ge(a, b):
 def gt(a, b):
     "Same as a > b."
     return a > b
+
+
+def le(a, b):
+    "Same as a <= b."
+    return a <= b
+
+
+def ne(a, b):
+    "Same as a != b."
+    return a != b
 
 
 # Logical Operations **********************************************************#
@@ -139,14 +139,14 @@ def and_(a, b):
     return a & b
 
 
-def floordiv(a, b):
-    "Same as a // b."
-    return a // b
-
-
 def divmod(a, b):
     "Same as divmod(a, b)."
     return _divmod(a, b)
+
+
+def floordiv(a, b):
+    "Same as a // b."
+    return a // b
 
 
 def index(a):
@@ -228,8 +228,7 @@ def xor(a, b):
 def concat(a, b):
     "Same as a + b, for a and b sequences."
     if not hasattr(a, "__getitem__"):
-        msg = "'%s' object can't be concatenated" % type(a).__name__
-        raise TypeError(msg)
+        raise TypeError(f"'{_type(a).__name__}' object can't be concatenated")
     return a + b
 
 
@@ -259,11 +258,9 @@ def getitem(a, b):
 
 def indexOf(a, b):
     "Return the first index of b in a."
-    i = 0
-    for j in a:  # TODO(wmeehan): use enumerate(a)
+    for i, j in enumerate(a):
         if j == b:
             return i
-        i += 1
     else:
         raise ValueError("sequence.index(x): x not in sequence")
 
@@ -283,8 +280,9 @@ def length_hint(obj, default=0):
     integer >= 0.
     """
     if not _int_check(default):
-        msg = "'%s' object cannot be interpreted as an integer" % type(default).__name__
-        raise TypeError(msg)
+        raise TypeError(
+            f"'{_type(default).__name__}' object cannot be interpreted as an integer"
+        )
 
     try:
         return len(obj)
@@ -292,7 +290,7 @@ def length_hint(obj, default=0):
         pass
 
     try:
-        hint = type(obj).__length_hint__
+        hint = _type(obj).__length_hint__
     except AttributeError:
         return default
 
@@ -303,11 +301,9 @@ def length_hint(obj, default=0):
     if val is NotImplemented:
         return default
     if not _int_check(val):
-        msg = "__length_hint__ must be integer, not %s" % type(val).__name__
-        raise TypeError(msg)
+        raise TypeError(f"__length_hint__ must be integer, not {_type(val).__name__}")
     if val < 0:
-        msg = "__length_hint__() should return >= 0"
-        raise ValueError(msg)
+        raise ValueError("__length_hint__() should return >= 0")
     return val
 
 
@@ -402,15 +398,11 @@ class methodcaller:
 
     __slots__ = ("_name", "_args", "_kwargs")
 
-    def __init__(*args, **kwargs):  # noqa: B902
-        if len(args) < 2:
-            msg = "methodcaller needs at least one argument, the method name"
-            raise TypeError(msg)
-        self = args[0]
-        self._name = args[1]
+    def __init__(self, name, /, *args, **kwargs):
+        self._name = name
         if not _str_check(self._name):
             raise TypeError("method name must be a string")
-        self._args = args[2:]
+        self._args = args
         self._kwargs = kwargs
 
     def __call__(self, obj):
@@ -449,8 +441,7 @@ def iand(a, b):
 def iconcat(a, b):
     "Same as a += b, for a and b sequences."
     if not hasattr(a, "__getitem__"):
-        msg = f"'{type(a).__name__}' object can't be concatenated"
-        raise TypeError(msg)
+        raise TypeError(f"'{_type(a).__name__}' object can't be concatenated")
     a += b
     return a
 
@@ -500,7 +491,7 @@ def ipow(a, b):
 def irepeat(a, b):
     "Same as a *= b, for a sequence."
     if not hasattr(a, "__getitem__"):
-        raise TypeError(f"'{type(a).__name__}' object can't be repeated")
+        raise TypeError(f"'{_type(a).__name__}' object can't be repeated")
     a *= b
     return a
 

@@ -65,8 +65,8 @@ exposed by the :mod:`weakref` module for the benefit of advanced uses.
 
 Not all objects can be weakly referenced; those objects which can include class
 instances, functions written in Python (but not in C), instance methods, sets,
-frozensets, some :term:`file objects <file object>`, :term:`generator`\s, type
-objects, sockets, arrays, deques, regular expression pattern objects, and code
+frozensets, some :term:`file objects <file object>`, :term:`generators <generator>`,
+type objects, sockets, arrays, deques, regular expression pattern objects, and code
 objects.
 
 .. versionchanged:: 3.2
@@ -80,9 +80,10 @@ support weak references but can add support through subclassing::
 
    obj = Dict(red=1, green=2, blue=3)   # this object is weak referenceable
 
-Other built-in types such as :class:`tuple` and :class:`int` do not support weak
-references even when subclassed (This is an implementation detail and may be
-different across various Python implementations.).
+.. impl-detail::
+
+   Other built-in types such as :class:`tuple` and :class:`int` do not support weak
+   references even when subclassed.
 
 Extension types can easily be made to support weak references; see
 :ref:`weakref-support`.
@@ -139,6 +140,10 @@ Extension types can easily be made to support weak references; see
    prevent their use as dictionary keys.  *callback* is the same as the parameter
    of the same name to the :func:`ref` function.
 
+   .. versionchanged:: 3.8
+      Extended the operator support on proxy objects to include the matrix
+      multiplication operators ``@`` and ``@=``.
+
 
 .. function:: getweakrefcount(object)
 
@@ -158,13 +163,6 @@ Extension types can easily be made to support weak references; see
    application without adding attributes to those objects.  This can be especially
    useful with objects that override attribute accesses.
 
-   .. note::
-
-      Caution: Because a :class:`WeakKeyDictionary` is built on top of a Python
-      dictionary, it must not change size when iterating over it.  This can be
-      difficult to ensure for a :class:`WeakKeyDictionary` because actions
-      performed by the program during iteration may cause items in the
-      dictionary to vanish "by magic" (as a side effect of garbage collection).
 
 :class:`WeakKeyDictionary` objects have an additional method that
 exposes the internal references directly.  The references are not guaranteed to
@@ -184,13 +182,6 @@ than needed.
    Mapping class that references values weakly.  Entries in the dictionary will be
    discarded when no strong reference to the value exists any more.
 
-   .. note::
-
-      Caution:  Because a :class:`WeakValueDictionary` is built on top of a Python
-      dictionary, it must not change size when iterating over it.  This can be
-      difficult to ensure for a :class:`WeakValueDictionary` because actions performed
-      by the program during iteration may cause items in the dictionary to vanish "by
-      magic" (as a side effect of garbage collection).
 
 :class:`WeakValueDictionary` objects have an additional method that has the
 same issues as the :meth:`keyrefs` method of :class:`WeakKeyDictionary`
@@ -322,12 +313,6 @@ objects.
    types.
 
 
-.. exception:: ReferenceError
-
-   Exception raised when a proxy object is used but the underlying object has been
-   collected.  This is the same as the standard :exc:`ReferenceError` exception.
-
-
 .. seealso::
 
    :pep:`205` - Weak References
@@ -392,7 +377,7 @@ the referent is accessed::
    import weakref
 
    class ExtendedRef(weakref.ref):
-       def __init__(self, ob, callback=None, **annotations):
+       def __init__(self, ob, callback=None, /, **annotations):
            super(ExtendedRef, self).__init__(ob, callback)
            self.__counter = 0
            for k, v in annotations.items():

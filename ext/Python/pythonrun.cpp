@@ -200,10 +200,9 @@ PY_EXPORT int PyRun_InteractiveLoopFlags(FILE* fp, const char* filename,
     return -1;
   }
 
-  PyCompilerFlags local_flags;
+  PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
   if (flags == nullptr) {
     flags = &local_flags;
-    local_flags.cf_flags = 0;
   }
   // TODO(T46358395): Set sys.ps{1,2} in sys module if they don't exist
   int err = 0;

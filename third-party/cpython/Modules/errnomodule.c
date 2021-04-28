@@ -97,13 +97,11 @@ PyMODINIT_FUNC
 PyInit_errno(void)
 {
     PyObject *m, *de;
-
     m = PyState_FindModule(&errnomodule);
     if (m != NULL) {
         Py_INCREF(m);
         return m;
     }
-
     m = PyModule_Create(&errnomodule);
     if (m == NULL)
         return NULL;

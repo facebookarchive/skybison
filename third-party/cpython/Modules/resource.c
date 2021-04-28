@@ -4,10 +4,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include <errno.h>
-/* for sysconf */
-#if defined(HAVE_UNISTD_H)
 #include <unistd.h>
-#endif
 
 /* On some systems, these aren't in any header file.
    On others they are, with inconsistent prototypes.
@@ -123,7 +120,6 @@ static struct PyModuleDef resourcemodule = {
     resourcemodule_free,
 };
 
-
 /*[clinic input]
 resource.getrusage
 
@@ -149,7 +145,7 @@ resource_getrusage_impl(PyObject *module, int who)
         return NULL;
     }
 
-    result = PyStructSequence_New((PyTypeObject *)modulestate_global->StructRUsageType);
+    result = PyStructSequence_New((PyTypeObject *) modulestate_global->StructRUsageType);
     if (!result)
         return NULL;
 
@@ -282,6 +278,11 @@ resource_setrlimit_impl(PyObject *module, int resource, PyObject *limits)
         return NULL;
     }
 
+    if (PySys_Audit("resource.setrlimit", "iO", resource,
+                    limits ? limits : Py_None) < 0) {
+        return NULL;
+    }
+
     if (py2rlimit(limits, &rl) < 0) {
         return NULL;
     }
@@ -324,6 +325,11 @@ resource_prlimit_impl(PyObject *module, pid_t pid, int resource,
     if (resource < 0 || resource >= RLIM_NLIMITS) {
         PyErr_SetString(PyExc_ValueError,
                         "invalid resource specified");
+        return NULL;
+    }
+
+    if (PySys_Audit("resource.prlimit", "iiO", pid, resource,
+                    limits ? limits : Py_None) < 0) {
         return NULL;
     }
 
@@ -372,16 +378,14 @@ resource_getpagesize_impl(PyObject *module)
     return pagesize;
 }
 
-
 PyMODINIT_FUNC
 PyInit_resource(void)
 {
     PyObject *m, *v;
-
-    /* Search for the module */
-    if ((m = PyState_FindModule(&resourcemodule)) != NULL) {
-        Py_INCREF(m);
-        return m;
+    m = PyState_FindModule(&resourcemodule);
+    if (m != NULL) {
+      Py_INCREF(m);
+      return m;
     }
 
     /* Create the module and add the functions */

@@ -28,7 +28,8 @@ a = ast.dump(b)
   EXPECT_TRUE(isUnicodeEqualsCStr(
       a,
       "Module(body=[Expr(value=Call(func=Name(id='print', ctx=Load()), "
-      "args=[Str(s='hello')], keywords=[]))])"));
+      "args=[Constant(value='hello', kind=None)], keywords=[]))], "
+      "type_ignores=[])"));
 }
 
 TEST_F(ConfigExtensionApiTest, ImportUnderBisectReturnsModule) {

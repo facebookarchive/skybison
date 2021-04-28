@@ -19,11 +19,18 @@
 #include "ucnhash.h"
 #include "structmember.h"
 
+#include <stdbool.h>
+
+_Py_IDENTIFIER(NFC);
+_Py_IDENTIFIER(NFD);
+_Py_IDENTIFIER(NFKC);
+_Py_IDENTIFIER(NFKD);
+
 /*[clinic input]
 module unicodedata
-class unicodedata.UCD 'PreviousDBVersion *' 'unicodedatastate(m)->UCD_Type'
+class unicodedata.UCD 'PreviousDBVersion *' '&UCD_Type'
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=67fe9aa79b5f6b28]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6dac153082d150bc]*/
 
 /* character properties */
 
@@ -83,101 +90,16 @@ static PyMemberDef DB_members[] = {
         {NULL}
 };
 
-/* XXX Add doc strings. */
-
-static PyMethodDef unicodedata_functions[] = {
-    UNICODEDATA_UCD___REDUCE___METHODDEF
-    UNICODEDATA_UCD___REDUCE_EX___METHODDEF
-    UNICODEDATA_UCD_DECIMAL_METHODDEF
-    UNICODEDATA_UCD_DIGIT_METHODDEF
-    UNICODEDATA_UCD_NUMERIC_METHODDEF
-    UNICODEDATA_UCD_CATEGORY_METHODDEF
-    UNICODEDATA_UCD_BIDIRECTIONAL_METHODDEF
-    UNICODEDATA_UCD_COMBINING_METHODDEF
-    UNICODEDATA_UCD_MIRRORED_METHODDEF
-    UNICODEDATA_UCD_EAST_ASIAN_WIDTH_METHODDEF
-    UNICODEDATA_UCD_DECOMPOSITION_METHODDEF
-    UNICODEDATA_UCD_NAME_METHODDEF
-    UNICODEDATA_UCD_LOOKUP_METHODDEF
-    UNICODEDATA_UCD_NORMALIZE_METHODDEF
-    {NULL, NULL}                /* sentinel */
-};
-
-static PyObject *
-UCD_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyErr_Format(PyExc_TypeError,
-        "cannot create '%.100s' instances", _PyType_Name(type));
-    return NULL;
-}
-
-static PyType_Slot UCD_Type_slots[] = {
-    {Py_tp_new, UCD_new},
-    {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_methods, unicodedata_functions},
-    {Py_tp_members, DB_members},
-    {0, 0},
-};
-
-static PyType_Spec UCD_Type_spec = {
-    "unicodedata.UCD",
-    sizeof(PreviousDBVersion),
-    0,
-    Py_TPFLAGS_DEFAULT,
-    UCD_Type_slots
-};
-
-PyDoc_STRVAR(unicodedata_docstring,
-"This module provides access to the Unicode Character Database which\n\
-defines character properties for all Unicode characters. The data in\n\
-this database is based on the UnicodeData.txt file version\n\
-" UNIDATA_VERSION " which is publicly available from ftp://ftp.unicode.org/.\n\
-\n\
-The module uses the same names and symbols as defined by the\n\
-UnicodeData File Format " UNIDATA_VERSION ".");
-
-typedef struct {
-    PyObject *UCD_Type;
-} unicodedatastate;
-
-#define unicodedatastate(o) ((unicodedatastate *)PyModule_GetState(o))
-
-#define unicodedatastate_global ((unicodedatastate *)PyModule_GetState(PyState_FindModule(&unicodedatamodule)))
-
-static int unicodedata_clear(PyObject* module) {
-    Py_CLEAR(unicodedatastate(module)->UCD_Type);
-    return 0;
-}
-
-static int unicodedata_traverse(PyObject* module, visitproc visit, void* arg) {
-    Py_VISIT(unicodedatastate(module)->UCD_Type);
-    return 0;
-}
-
-static void unicodedata_free(void* module) {
-    unicodedata_clear((PyObject*)module);
-}
-
-static struct PyModuleDef unicodedatamodule = {
-        PyModuleDef_HEAD_INIT,
-        "unicodedata",
-        unicodedata_docstring,
-        sizeof(unicodedatastate),
-        unicodedata_functions,
-        NULL,
-        unicodedata_traverse,
-        unicodedata_clear,
-        unicodedata_free,
-};
-
-#define UCD_Check(o) (Py_TYPE(o)==(PyTypeObject *)unicodedatastate_global->UCD_Type)
+/* forward declaration */
+static PyTypeObject UCD_Type;
+#define UCD_Check(o) (Py_TYPE(o)==&UCD_Type)
 
 static PyObject*
 new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4),
-                     Py_UCS4 (*normalization)(Py_UCS4), PyObject *type)
+                     Py_UCS4 (*normalization)(Py_UCS4))
 {
         PreviousDBVersion *self;
-        self = PyObject_New(PreviousDBVersion, (PyTypeObject *)type);
+        self = PyObject_New(PreviousDBVersion, &UCD_Type);
         if (self == NULL)
                 return NULL;
         self->name = name;
@@ -188,34 +110,6 @@ new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4)
 
 
 /* --- Module API --------------------------------------------------------- */
-
-/*[clinic input]
-unicodedata.UCD.__reduce__
-returns null and raises an exception to avoid pickling
-[clinic start generated code]*/
-
-static PyObject *
-unicodedata_UCD___reduce___impl(PreviousDBVersion *self)
-/*[clinic end generated code: output=1002a827a4900c6e input=f68e47d45a7ced4b]*/
-{
-    PyErr_Format(PyExc_TypeError,
-        "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
-    return NULL;
-}
-
-/*[clinic input]
-unicodedata.UCD.__reduce_ex__
-  protocol: int
-  /
-Returns NULL and raises an exception to avoid pickling
-[clinic start generated code]*/
-
-static PyObject *
-unicodedata_UCD___reduce_ex___impl(PreviousDBVersion *self, int protocol)
-/*[clinic end generated code: output=0d12289b0ce2ffe3 input=cd5ed3c802227a1f]*/
-{
-    return unicodedata_UCD___reduce___impl(self);
-}
 
 /*[clinic input]
 unicodedata.UCD.decimal
@@ -883,23 +777,40 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
     return result;
 }
 
-/* Return 1 if the input is certainly normalized, 0 if it might not be. */
-static int
-is_normalized(PyObject *self, PyObject *input, int nfc, int k)
-{
-    Py_ssize_t i, len;
-    int kind;
-    void *data;
-    unsigned char prev_combining = 0, quickcheck_mask;
+// This needs to match the logic in makeunicodedata.py
+// which constructs the quickcheck data.
+typedef enum {YES = 0, MAYBE = 1, NO = 2} QuickcheckResult;
 
+/* Run the Unicode normalization "quickcheck" algorithm.
+ *
+ * Return YES or NO if quickcheck determines the input is certainly
+ * normalized or certainly not, and MAYBE if quickcheck is unable to
+ * tell.
+ *
+ * If `yes_only` is true, then return MAYBE as soon as we determine
+ * the answer is not YES.
+ *
+ * For background and details on the algorithm, see UAX #15:
+ *   https://www.unicode.org/reports/tr15/#Detecting_Normalization_Forms
+ */
+static QuickcheckResult
+is_normalized_quickcheck(PyObject *self, PyObject *input,
+                         int nfc, int k, bool yes_only)
+{
     /* An older version of the database is requested, quickchecks must be
        disabled. */
     if (self && UCD_Check(self))
-        return 0;
+        return NO;
 
-    /* The two quickcheck bits at this shift mean 0=Yes, 1=Maybe, 2=No,
-       as described in http://unicode.org/reports/tr15/#Annex8. */
-    quickcheck_mask = 3 << ((nfc ? 4 : 0) + (k ? 2 : 0));
+    Py_ssize_t i, len;
+    int kind;
+    void *data;
+    unsigned char prev_combining = 0;
+
+    /* The two quickcheck bits at this shift have type QuickcheckResult. */
+    int quickcheck_shift = (nfc ? 4 : 0) + (k ? 2 : 0);
+
+    QuickcheckResult result = YES; /* certainly normalized, unless we find something */
 
     i = 0;
     kind = PyUnicode_KIND(input);
@@ -908,23 +819,106 @@ is_normalized(PyObject *self, PyObject *input, int nfc, int k)
     while (i < len) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, i++);
         const _PyUnicode_DatabaseRecord *record = _getrecord_ex(ch);
-        unsigned char combining = record->combining;
-        unsigned char quickcheck = record->normalization_quick_check;
 
-        if (quickcheck & quickcheck_mask)
-            return 0; /* this string might need normalization */
+        unsigned char combining = record->combining;
         if (combining && prev_combining > combining)
-            return 0; /* non-canonical sort order, not normalized */
+            return NO; /* non-canonical sort order, not normalized */
         prev_combining = combining;
+
+        unsigned char quickcheck_whole = record->normalization_quick_check;
+        if (yes_only) {
+            if (quickcheck_whole & (3 << quickcheck_shift))
+                return MAYBE;
+        } else {
+            switch ((quickcheck_whole >> quickcheck_shift) & 3) {
+            case NO:
+              return NO;
+            case MAYBE:
+              result = MAYBE; /* this string might need normalization */
+            }
+        }
     }
-    return 1; /* certainly normalized */
+    return result;
 }
+
+/*[clinic input]
+unicodedata.UCD.is_normalized
+
+    self: self
+    form: unicode
+    unistr as input: unicode
+    /
+
+Return whether the Unicode string unistr is in the normal form 'form'.
+
+Valid values for form are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
+                                   PyObject *input)
+/*[clinic end generated code: output=11e5a3694e723ca5 input=a544f14cea79e508]*/
+{
+    if (PyUnicode_READY(input) == -1) {
+        return NULL;
+    }
+
+    if (PyUnicode_GET_LENGTH(input) == 0) {
+        /* special case empty input strings. */
+        Py_RETURN_TRUE;
+    }
+
+    PyObject *result;
+    int nfc = 0;
+    int k = 0;
+    QuickcheckResult m;
+
+    PyObject *cmp;
+    int match = 0;
+
+    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
+        nfc = 1;
+    }
+    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
+        nfc = 1;
+        k = 1;
+    }
+    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
+        /* matches default values for `nfc` and `k` */
+    }
+    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
+        k = 1;
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError, "invalid normalization form");
+        return NULL;
+    }
+
+    m = is_normalized_quickcheck(self, input, nfc, k, false);
+
+    if (m == MAYBE) {
+        cmp = (nfc ? nfc_nfkc : nfd_nfkd)(self, input, k);
+        if (cmp == NULL) {
+            return NULL;
+        }
+        match = PyUnicode_Compare(input, cmp);
+        Py_DECREF(cmp);
+        result = (match == 0) ? Py_True : Py_False;
+    }
+    else {
+        result = (m == YES) ? Py_True : Py_False;
+    }
+
+    Py_INCREF(result);
+    return result;
+}
+
 
 /*[clinic input]
 unicodedata.UCD.normalize
 
     self: self
-    form: str
+    form: unicode
     unistr as input: unicode
     /
 
@@ -934,9 +928,9 @@ Valid values for form are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
 [clinic start generated code]*/
 
 static PyObject *
-unicodedata_UCD_normalize_impl(PyObject *self, const char *form,
+unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
                                PyObject *input)
-/*[clinic end generated code: output=62d1f8870027efdc input=1744c55f4ab79bf0]*/
+/*[clinic end generated code: output=05ca4385a2ad6983 input=3a5206c0ad2833fb]*/
 {
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* Special case empty input strings, since resizing
@@ -945,29 +939,29 @@ unicodedata_UCD_normalize_impl(PyObject *self, const char *form,
         return input;
     }
 
-    if (strcmp(form, "NFC") == 0) {
-        if (is_normalized(self, input, 1, 0)) {
+    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
+        if (is_normalized_quickcheck(self, input, 1, 0, true) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfc_nfkc(self, input, 0);
     }
-    if (strcmp(form, "NFKC") == 0) {
-        if (is_normalized(self, input, 1, 1)) {
+    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
+        if (is_normalized_quickcheck(self, input, 1, 1, true) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfc_nfkc(self, input, 1);
     }
-    if (strcmp(form, "NFD") == 0) {
-        if (is_normalized(self, input, 0, 0)) {
+    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
+        if (is_normalized_quickcheck(self, input, 0, 0, true) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfd_nfkd(self, input, 0);
     }
-    if (strcmp(form, "NFKD") == 0) {
-        if (is_normalized(self, input, 0, 1)) {
+    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
+        if (is_normalized_quickcheck(self, input, 0, 1, true) == YES) {
             Py_INCREF(input);
             return input;
         }
@@ -1062,7 +1056,7 @@ _getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
     int offset;
     int i;
     int word;
-    unsigned char* w;
+    const unsigned char* w;
 
     if (code >= 0x110000)
         return 0;
@@ -1372,31 +1366,107 @@ unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
 
 /* XXX Add doc strings. */
 
+static PyMethodDef unicodedata_functions[] = {
+    UNICODEDATA_UCD_DECIMAL_METHODDEF
+    UNICODEDATA_UCD_DIGIT_METHODDEF
+    UNICODEDATA_UCD_NUMERIC_METHODDEF
+    UNICODEDATA_UCD_CATEGORY_METHODDEF
+    UNICODEDATA_UCD_BIDIRECTIONAL_METHODDEF
+    UNICODEDATA_UCD_COMBINING_METHODDEF
+    UNICODEDATA_UCD_MIRRORED_METHODDEF
+    UNICODEDATA_UCD_EAST_ASIAN_WIDTH_METHODDEF
+    UNICODEDATA_UCD_DECOMPOSITION_METHODDEF
+    UNICODEDATA_UCD_NAME_METHODDEF
+    UNICODEDATA_UCD_LOOKUP_METHODDEF
+    UNICODEDATA_UCD_IS_NORMALIZED_METHODDEF
+    UNICODEDATA_UCD_NORMALIZE_METHODDEF
+    {NULL, NULL}                /* sentinel */
+};
+
+static PyTypeObject UCD_Type = {
+        /* The ob_type field must be initialized in the module init function
+         * to be portable to Windows without using C++. */
+        PyVarObject_HEAD_INIT(NULL, 0)
+        "unicodedata.UCD",              /*tp_name*/
+        sizeof(PreviousDBVersion),      /*tp_basicsize*/
+        0,                      /*tp_itemsize*/
+        /* methods */
+        (destructor)PyObject_Del, /*tp_dealloc*/
+        0,                      /*tp_vectorcall_offset*/
+        0,                      /*tp_getattr*/
+        0,                      /*tp_setattr*/
+        0,                      /*tp_as_async*/
+        0,                      /*tp_repr*/
+        0,                      /*tp_as_number*/
+        0,                      /*tp_as_sequence*/
+        0,                      /*tp_as_mapping*/
+        0,                      /*tp_hash*/
+        0,                      /*tp_call*/
+        0,                      /*tp_str*/
+        PyObject_GenericGetAttr,/*tp_getattro*/
+        0,                      /*tp_setattro*/
+        0,                      /*tp_as_buffer*/
+        Py_TPFLAGS_DEFAULT,     /*tp_flags*/
+        0,                      /*tp_doc*/
+        0,                      /*tp_traverse*/
+        0,                      /*tp_clear*/
+        0,                      /*tp_richcompare*/
+        0,                      /*tp_weaklistoffset*/
+        0,                      /*tp_iter*/
+        0,                      /*tp_iternext*/
+        unicodedata_functions,  /*tp_methods*/
+        DB_members,             /*tp_members*/
+        0,                      /*tp_getset*/
+        0,                      /*tp_base*/
+        0,                      /*tp_dict*/
+        0,                      /*tp_descr_get*/
+        0,                      /*tp_descr_set*/
+        0,                      /*tp_dictoffset*/
+        0,                      /*tp_init*/
+        0,                      /*tp_alloc*/
+        0,                      /*tp_new*/
+        0,                      /*tp_free*/
+        0,                      /*tp_is_gc*/
+};
+
+PyDoc_STRVAR(unicodedata_docstring,
+"This module provides access to the Unicode Character Database which\n\
+defines character properties for all Unicode characters. The data in\n\
+this database is based on the UnicodeData.txt file version\n\
+" UNIDATA_VERSION " which is publicly available from ftp://ftp.unicode.org/.\n\
+\n\
+The module uses the same names and symbols as defined by the\n\
+UnicodeData File Format " UNIDATA_VERSION ".");
+
+static struct PyModuleDef unicodedatamodule = {
+        PyModuleDef_HEAD_INIT,
+        "unicodedata",
+        unicodedata_docstring,
+        -1,
+        unicodedata_functions,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+};
+
 PyMODINIT_FUNC
 PyInit_unicodedata(void)
 {
     PyObject *m, *v;
 
+    Py_TYPE(&UCD_Type) = &PyType_Type;
+
     m = PyModule_Create(&unicodedatamodule);
     if (!m)
         return NULL;
 
-    PyObject *UCD_Type = PyType_FromSpec(&UCD_Type_spec);
-    if (UCD_Type == NULL) {
-        return NULL;
-    }
-    unicodedatastate(m)->UCD_Type = UCD_Type;
-    Py_INCREF(UCD_Type);
-
-
     PyModule_AddStringConstant(m, "unidata_version", UNIDATA_VERSION);
-    PyModule_AddObject(m, "UCD", UCD_Type);
+    Py_INCREF(&UCD_Type);
+    PyModule_AddObject(m, "UCD", (PyObject*)&UCD_Type);
 
     /* Previous versions */
-    v = new_previous_version("3.2.0",
-                             get_change_3_2_0,
-                             normalization_3_2_0,
-                             UCD_Type);
+    v = new_previous_version("3.2.0", get_change_3_2_0, normalization_3_2_0);
     if (v != NULL)
         PyModule_AddObject(m, "ucd_3_2_0", v);
 

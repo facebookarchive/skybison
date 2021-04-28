@@ -81,7 +81,7 @@ static PyObject* parse(PyObject* /* module */, PyObject** args,
     return nullptr;
   }
 
-  PyCompilerFlags cf;
+  PyCompilerFlags cf = _PyCompilerFlags_INIT;
   cf.cf_flags = flags | PyCF_SOURCE_IS_UTF8;
   PyArena* arena = PyArena_New();
   if (arena == nullptr) return nullptr;

@@ -4,6 +4,8 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
+extern "C" int _PyThreadState_GetRecursionDepth(PyThreadState*);
+
 namespace py {
 namespace testing {
 

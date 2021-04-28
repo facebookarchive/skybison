@@ -12,7 +12,6 @@
 
 #include "impl/blake2.h"
 
-static struct PyModuleDef blake2_module;
 extern PyType_Spec PyBlake2_BLAKE2bType_spec;
 extern PyType_Spec PyBlake2_BLAKE2sType_spec;
 
@@ -39,7 +38,7 @@ static void blake2_module_free(void *m) {
     blake2_module_clear((PyObject *)m);
 }
 
-static struct PyModuleDef blake2_module = {
+struct PyModuleDef blake2_module = {
     PyModuleDef_HEAD_INIT,
     "_blake2",
     blake2mod__doc__,

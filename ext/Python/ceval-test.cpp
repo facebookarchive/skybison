@@ -28,8 +28,7 @@ TEST_F(CevalExtensionApiTest, EvalCodeWithNullGlobalsRaisesSystemError) {
 }
 
 TEST_F(CevalExtensionApiTest, EvalCodeReturnsNonNull) {
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   PyArena* arena = PyArena_New();
   const char* filename = "<string>";
   struct _mod* node = PyParser_ASTFromString("a = 1 + 2", filename,
@@ -50,8 +49,7 @@ module_dict = locals()
 }
 
 TEST_F(CevalExtensionApiTest, EvalCodeWithDictGlobalsUpdatesDict) {
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   PyArena* arena = PyArena_New();
   const char* filename = "<string>";
   struct _mod* node = PyParser_ASTFromString("global a; a = 1 + 2", filename,
@@ -73,8 +71,7 @@ TEST_F(CevalExtensionApiTest, EvalCodeWithDictGlobalsUpdatesDict) {
 }
 
 TEST_F(CevalExtensionApiTest, EvalCodeWithModuleDictAsGlobalsReturnsNonNull) {
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   PyArena* arena = PyArena_New();
   const char* filename = "<string>";
   struct _mod* node =
@@ -104,8 +101,7 @@ module_dict = locals()
 
 TEST_F(CevalExtensionApiTest,
        EvalCodeWithModuleDictAsGlobalsAndLocalsReturnsNonNull) {
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   PyArena* arena = PyArena_New();
   const char* filename = "<string>";
   struct _mod* node = PyParser_ASTFromString("a = 1 + 2", filename,
@@ -141,21 +137,20 @@ TEST_F(CevalExtensionApiTest, GetBuiltinsReturnsMapping) {
 }
 
 TEST_F(CevalExtensionApiTest, MergeCompilerFlagsReturnsTrue) {
-  PyCompilerFlags flags;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
   EXPECT_NE(PyEval_MergeCompilerFlags(&flags), 0);
   EXPECT_EQ(flags.cf_flags, CO_FUTURE_BARRY_AS_BDFL);
 }
 
 TEST_F(CevalExtensionApiTest, MergeCompilerFlagsReturnsFalse) {
-  PyCompilerFlags flags;
-  flags.cf_flags = 0;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   EXPECT_EQ(PyEval_MergeCompilerFlags(&flags), 0);
   EXPECT_EQ(flags.cf_flags, 0);
 }
 
 static PyObject* testMergeCompilerFlags(PyObject*, PyObject*) {
-  PyCompilerFlags flags;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   flags.cf_flags = 0xfba0000;
   EXPECT_NE(PyEval_MergeCompilerFlags(&flags), 0);
   return PyLong_FromLong(flags.cf_flags);
@@ -169,7 +164,7 @@ TEST_F(CevalExtensionApiTest, MergeCompilerFlagsMergesCodeFlags) {
                             methods};
   PyObjectPtr module(PyModule_Create(&def));
   moduleSet("__main__", "test_module", module);
-  PyCompilerFlags flags;
+  PyCompilerFlags flags = _PyCompilerFlags_INIT;
   flags.cf_flags = CO_FUTURE_BARRY_AS_BDFL;
   ASSERT_EQ(PyRun_SimpleStringFlags(
                 "result = test_module.test_merge_compiler_flags()", &flags),

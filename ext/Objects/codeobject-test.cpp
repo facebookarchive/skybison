@@ -9,21 +9,18 @@ namespace testing {
 
 using CodeExtensionApiTest = ExtensionApi;
 
-// TODO(T84156637): remove Pyro-only filter after 3.8 update
-TEST_F(CodeExtensionApiTest, ConstantKeyWithNoneReturnsNoneSelfPyro) {
+TEST_F(CodeExtensionApiTest, ConstantKeyWithNoneReturnsNoneSelf) {
   PyObjectPtr none(borrow(Py_None));
   PyObjectPtr result(_PyCode_ConstantKey(none));
   EXPECT_EQ(result, none);
 }
 
-// TODO(T84156637): remove Pyro-only filter after 3.8 update
-TEST_F(CodeExtensionApiTest, ConstantKeyWithEllipsisReturnsSelfPyro) {
+TEST_F(CodeExtensionApiTest, ConstantKeyWithEllipsisReturnsSelf) {
   PyObjectPtr result(_PyCode_ConstantKey(Py_Ellipsis));
   EXPECT_EQ(result, Py_Ellipsis);
 }
 
-// TODO(T84156637): remove Pyro-only filter after 3.8 update
-TEST_F(CodeExtensionApiTest, ConstantKeyWithIntReturnsSelfPyro) {
+TEST_F(CodeExtensionApiTest, ConstantKeyWithIntReturnsSelf) {
   PyObjectPtr obj(PyLong_FromLong(5));
   PyObjectPtr result(_PyCode_ConstantKey(obj));
   EXPECT_EQ(result, obj);
@@ -60,15 +57,13 @@ TEST_F(CodeExtensionApiTest, ConstantKeyWithBytesReturnsTwoTuple) {
   EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
 }
 
-// TODO(T84156637): remove Pyro-only filter after 3.8 update
-TEST_F(CodeExtensionApiTest, ConstantKeyWithStrReturnsSelfPyro) {
+TEST_F(CodeExtensionApiTest, ConstantKeyWithStrReturnsSelf) {
   PyObjectPtr obj(PyUnicode_FromString("hello"));
   PyObjectPtr result(_PyCode_ConstantKey(obj));
   EXPECT_EQ(result, obj);
 }
 
-// TODO(T84156637): remove Pyro-only filter after 3.8 update
-TEST_F(CodeExtensionApiTest, ConstantKeyWithCodeReturnsSelfPyro) {
+TEST_F(CodeExtensionApiTest, ConstantKeyWithCodeReturnsSelf) {
   PyObjectPtr empty_tuple(PyTuple_New(0));
   PyObjectPtr empty_bytes(PyBytes_FromString(""));
   PyObjectPtr empty_str(PyUnicode_FromString(""));
@@ -154,8 +149,7 @@ TEST_F(CodeExtensionApiTest,
   EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
 }
 
-// TODO(T84156637): remove Pyro-only filter after 3.8 update
-TEST_F(CodeExtensionApiTest, ConstantKeyWithTupleReturnsTwoTuplePyro) {
+TEST_F(CodeExtensionApiTest, ConstantKeyWithTupleReturnsTwoTuple) {
   PyObjectPtr val0(PyLong_FromLong(0));
   Py_INCREF(val0);
   PyObjectPtr val1(PyLong_FromLong(1));
@@ -215,39 +209,6 @@ TEST_F(CodeExtensionApiTest, ConstantKeyWithOtherObjectReturnsTwoTupleWithId) {
   ASSERT_TRUE(PyLong_Check(obj_id));
   EXPECT_EQ(PyLong_AsVoidPtr(obj_id), obj.get());
   EXPECT_EQ(PyTuple_GetItem(result, 1), obj);
-}
-
-TEST_F(CodeExtensionApiTest, GetFreevarsReturnsFreevars) {
-  PyObjectPtr freevars(PyTuple_New(3));
-  PyTuple_SetItem(freevars, 0, PyUnicode_FromString("foo"));
-  PyTuple_SetItem(freevars, 1, PyUnicode_FromString("bar"));
-  PyTuple_SetItem(freevars, 2, PyUnicode_FromString("baz"));
-  PyObjectPtr empty_tuple(PyTuple_New(0));
-  PyObjectPtr empty_bytes(PyBytes_FromString(""));
-  PyObjectPtr empty_str(PyUnicode_FromString(""));
-  PyCodeObject* code = PyCode_New(
-      0, 0, 0, 0, 0, empty_bytes, empty_tuple, empty_tuple, empty_tuple,
-      freevars, empty_tuple, empty_str, empty_str, 0, empty_bytes);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_NE(code, nullptr);
-  PyObjectPtr result(PyCode_GetFreevars(reinterpret_cast<PyObject*>(code)));
-  EXPECT_EQ(result, freevars);
-  Py_DECREF(code);
-}
-
-TEST_F(CodeExtensionApiTest, GetNameReturnsName) {
-  PyObjectPtr empty_tuple(PyTuple_New(0));
-  PyObjectPtr empty_bytes(PyBytes_FromString(""));
-  PyObjectPtr empty_str(PyUnicode_FromString(""));
-  PyObjectPtr name(PyUnicode_FromString("foobar"));
-  PyCodeObject* code = PyCode_New(0, 0, 0, 0, 0, empty_bytes, empty_tuple,
-                                  empty_tuple, empty_tuple, empty_tuple,
-                                  empty_tuple, empty_str, name, 0, empty_bytes);
-  EXPECT_EQ(PyErr_Occurred(), nullptr);
-  ASSERT_NE(code, nullptr);
-  PyObjectPtr result(PyCode_GetName(reinterpret_cast<PyObject*>(code)));
-  EXPECT_EQ(result, name);
-  Py_DECREF(code);
 }
 
 TEST_F(CodeExtensionApiTest, GetNumFreeReturnsNumberOfFreevars) {

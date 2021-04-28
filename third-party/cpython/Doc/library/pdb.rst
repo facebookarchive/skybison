@@ -181,6 +181,8 @@ access further features, you have to do this yourself:
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
 
+   .. audit-event:: pdb.Pdb "" pdb.Pdb
+
    .. versionadded:: 3.1
       The *skip* argument.
 
@@ -529,6 +531,15 @@ by the local file.
 
    Quit from the debugger.  The program being executed is aborted.
 
+.. pdbcommand:: debug code
+
+   Enter a recursive debugger that steps through the code
+   argument (which is an arbitrary expression or statement to be
+   executed in the current environment).
+
+.. pdbcommand:: retval
+
+   Print the return value for the last return of a function.
 
 .. rubric:: Footnotes
 

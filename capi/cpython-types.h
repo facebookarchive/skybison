@@ -87,12 +87,16 @@ struct PyMemberDef;
     !defined(__cplusplus)
 /* GCC has a bug where applying `&*` to a pointer to an incomplete type is
  * rejected incorrectly. See also:
- * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88827 Our PyXXX_Type macros rely
- * on this working. As a workaround for gcc we add an (incomplete) definition
- * here so the type is no longer incomplete. */
+ * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88827 */
+
+/* Our PyXXX_Type macros rely on this working. As a workaround for gcc we add
+ * an (incomplete) definition here so the type is no longer incomplete. */
 struct _typeobject {
   _PyObject_HEAD_EXTRA
 };
+
+/* This definition is needed to compile the `&*` in _PyRuntime */
+struct _rs {};
 #endif
 
 typedef struct _object {
@@ -319,8 +323,12 @@ typedef struct {
 } PyAsyncMethods;
 
 typedef struct {
-  int cf_flags; /* bitmask of CO_xxx flags relevant to future */
+  int cf_flags;           /* bitmask of CO_xxx flags relevant to future */
+  int cf_feature_version; /* minor Python version (PyCF_ONLY_AST) */
 } PyCompilerFlags;
+
+#define _PyCompilerFlags_INIT                                                  \
+  { 0, PY_MINOR_VERSION, }
 
 struct _inittab {
   const char* name;
@@ -414,6 +422,7 @@ typedef struct _frame PyFrameObject;
 typedef struct _code PyCodeObject;
 typedef struct _is PyInterpreterState;
 typedef struct _ts PyThreadState;
+typedef struct _rs _PyRuntimeState;
 
 typedef void (*PyOS_sighandler_t)(int);
 typedef void (*PyCapsule_Destructor)(PyObject*);
@@ -476,6 +485,20 @@ typedef union {
     Py_hash_t hashsalt;
   } expat;
 } _Py_HashSecret_t;
+
+typedef enum {
+  _Py_ERROR_UNKNOWN = 0,
+  _Py_ERROR_STRICT,
+  _Py_ERROR_SURROGATEESCAPE,
+  _Py_ERROR_REPLACE,
+  _Py_ERROR_IGNORE,
+  _Py_ERROR_BACKSLASHREPLACE,
+  _Py_ERROR_SURROGATEPASS,
+  _Py_ERROR_XMLCHARREFREPLACE,
+  _Py_ERROR_OTHER,
+} _Py_error_handler;
+
+struct lconv;
 
 #ifdef __cplusplus
 }

@@ -289,14 +289,10 @@ PyMODINIT_FUNC PyInit_foo() {
     def test_extension_suffixes_matches_sysconfig(self):
         import sysconfig
 
-        self.assertEqual(
-            _imp.extension_suffixes(),
-            [
-                sysconfig.get_config_var("EXT_SUFFIX"),
-                ".abi3" + sysconfig.get_config_var("SHLIB_SUFFIX"),
-                sysconfig.get_config_var("SHLIB_SUFFIX"),
-            ],
-        )
+        suffixes = _imp.extension_suffixes()
+        self.assertIn(sysconfig.get_config_var("EXT_SUFFIX"), suffixes)
+        self.assertIn(".abi3" + sysconfig.get_config_var("SHLIB_SUFFIX"), suffixes)
+        self.assertIn(sysconfig.get_config_var("SHLIB_SUFFIX"), suffixes)
 
     def test_fix_co_filename_updates_filenames_recursively(self):
         def foo():

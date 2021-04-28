@@ -1183,6 +1183,12 @@
 /* Define to 1 if you have the <utime.h> header file. */
 #define HAVE_UTIME_H 1
 
+/* Define to 1 if you have the <uuid.h> header file. */
+/* #undef HAVE_UUID_H */
+
+/* Define to 1 if you have the <uuid/uuid.h> header file. */
+#define HAVE_UUID_UUID_H 1
+
 /* Define to 1 if you have the `wait3' function. */
 #define HAVE_WAIT3 1
 

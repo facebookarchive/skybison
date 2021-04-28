@@ -9,9 +9,7 @@
 import itertools
 import pickle
 import sys
-import test.support
 import unittest
-
 
 # pure Python implementations (3 args only), for comparison
 def pyrange(start, stop, step):

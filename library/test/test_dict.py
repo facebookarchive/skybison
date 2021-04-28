@@ -306,7 +306,7 @@ class DictTest(unittest.TestCase):
                 self.assertNotEqual(d, d2)
                 self.assertEqual(len(d2), len(d) + 1)
 
-    # TODO(T66751420): Implement gc.is_tracked 
+    # TODO(T66751420): Implement gc.is_tracked
     @unittest.skip("Implement gc.is_tracked")
     def test_copy_maintains_tracking(self):
         class A:
@@ -482,6 +482,39 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             for i in d:
                 d[i+1] = 1
+
+    # TODO(T54069383): Throw RuntimeError on mutation
+    @unittest.skip("Throw RuntimeError on mutation")
+    def test_mutating_iteration_delete(self):
+        # change dict content during iteration
+        d = {}
+        d[0] = 0
+        with self.assertRaises(RuntimeError):
+            for i in d:
+                del d[0]
+                d[0] = 0
+
+    # TODO(T54069383): Throw RuntimeError on mutation
+    @unittest.skip("Throw RuntimeError on mutation")
+    def test_mutating_iteration_delete_over_values(self):
+        # change dict content during iteration
+        d = {}
+        d[0] = 0
+        with self.assertRaises(RuntimeError):
+            for i in d.values():
+                del d[0]
+                d[0] = 0
+
+    # TODO(T54069383): Throw RuntimeError on mutation
+    @unittest.skip("Throw RuntimeError on mutation")
+    def test_mutating_iteration_delete_over_items(self):
+        # change dict content during iteration
+        d = {}
+        d[0] = 0
+        with self.assertRaises(RuntimeError):
+            for i in d.items():
+                del d[0]
+                d[0] = 0
 
     def test_mutating_lookup(self):
         # changing dict during a lookup (issue #14417)
@@ -931,7 +964,6 @@ class DictTest(unittest.TestCase):
 
     # TODO(T54087589): Patch platform.python_implementation to return Pyro
     # We will never support this; we should rely on the cpython_only decorator
-    @support.cpython_only
     @unittest.skip("Patch platform.python_implementation to return Pyro")
     def test_splittable_setdefault(self):
         """split table must be combined when setdefault()
@@ -970,7 +1002,9 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(a), ['x', 'z', 'y'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
-    @support.cpython_only
+    # TODO(T54087589): Patch platform.python_implementation to return Pyro
+    # We will never support this; we should rely on the cpython_only decorator
+    @unittest.skip("Patch platform.python_implementation to return Pyro")
     def test_splittable_pop(self):
         """split table must be combined when d.pop(k)"""
         a, b = self.make_shared_key_dict(2)
@@ -981,8 +1015,7 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             a.pop('y')
 
-        # TODO(T66752762): Shared dict size is innacurate after pop
-        #self.assertGreater(sys.getsizeof(a), orig_size)
+        self.assertGreater(sys.getsizeof(a), orig_size)
         self.assertEqual(list(a), ['x', 'z'])
         self.assertEqual(list(b), ['x', 'y', 'z'])
 
@@ -1000,8 +1033,9 @@ class DictTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             b.pop('a')
 
-    # TODO(T54077463): Fix attribute deletion of instance_proxys
-    @unittest.skip("Fix attribute deletion of instance_proxys")
+    # TODO(T54087589): Patch platform.python_implementation to return Pyro
+    # We will never support this; we should rely on the cpython_only decorator
+    @unittest.skip("Patch platform.python_implementation to return Pyro")
     def test_splittable_popitem(self):
         """split table must be combined when d.popitem()"""
         a, b = self.make_shared_key_dict(2)
@@ -1056,7 +1090,7 @@ class DictTest(unittest.TestCase):
             it = iter(data)
             d = pickle.dumps(it, proto)
             it = pickle.loads(d)
-            self.assertEqual(sorted(it), sorted(data))
+            self.assertEqual(list(it), list(data))
 
             it = pickle.loads(d)
             try:
@@ -1066,7 +1100,7 @@ class DictTest(unittest.TestCase):
             d = pickle.dumps(it, proto)
             it = pickle.loads(d)
             del data[drop]
-            self.assertEqual(sorted(it), sorted(data))
+            self.assertEqual(list(it), list(data))
 
     # TODO(T54077858): Implement dict_keyiterator.__reduce__
     @unittest.skip("Implement dict_keyiterator.__reduce__")
@@ -1101,7 +1135,7 @@ class DictTest(unittest.TestCase):
             it = iter(data.values())
             d = pickle.dumps(it, proto)
             it = pickle.loads(d)
-            self.assertEqual(sorted(list(it)), sorted(list(data.values())))
+            self.assertEqual(list(it), list(data.values()))
 
             it = pickle.loads(d)
             drop = next(it)
@@ -1109,6 +1143,68 @@ class DictTest(unittest.TestCase):
             it = pickle.loads(d)
             values = list(it) + [drop]
             self.assertEqual(sorted(values), sorted(list(data.values())))
+
+    # TODO(T54077858): Implement dict_keyiterator.__reduce__
+    @unittest.skip("Implement dict_keyiterator.__reduce__")
+    def test_reverseiterator_pickling(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            data = {1:"a", 2:"b", 3:"c"}
+            it = reversed(data)
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            self.assertEqual(list(it), list(reversed(data)))
+
+            it = pickle.loads(d)
+            try:
+                drop = next(it)
+            except StopIteration:
+                continue
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            del data[drop]
+            self.assertEqual(list(it), list(reversed(data)))
+
+    # TODO(T54077858): Implement dict_keyiterator.__reduce__
+    @unittest.skip("Implement dict_keyiterator.__reduce__")
+    def test_reverseitemiterator_pickling(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            data = {1:"a", 2:"b", 3:"c"}
+            # dictviews aren't picklable, only their iterators
+            itorg = reversed(data.items())
+            d = pickle.dumps(itorg, proto)
+            it = pickle.loads(d)
+            # note that the type of the unpickled iterator
+            # is not necessarily the same as the original.  It is
+            # merely an object supporting the iterator protocol, yielding
+            # the same objects as the original one.
+            # self.assertEqual(type(itorg), type(it))
+            self.assertIsInstance(it, collections.abc.Iterator)
+            self.assertEqual(dict(it), data)
+
+            it = pickle.loads(d)
+            drop = next(it)
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            del data[drop[0]]
+            self.assertEqual(dict(it), data)
+
+    # TODO(T54077858): Implement dict_keyiterator.__reduce__
+    @unittest.skip("Implement dict_keyiterator.__reduce__")
+    def test_reversevaluesiterator_pickling(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            data = {1:"a", 2:"b", 3:"c"}
+            # data.values() isn't picklable, only its iterator
+            it = reversed(data.values())
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            self.assertEqual(list(it), list(reversed(data.values())))
+
+            it = pickle.loads(d)
+            drop = next(it)
+            d = pickle.dumps(it, proto)
+            it = pickle.loads(d)
+            values = list(it) + [drop]
+            self.assertEqual(sorted(values), sorted(data.values()))
 
     def test_instance_dict_getattr_str_subclass(self):
         class Foo:
@@ -1119,7 +1215,6 @@ class DictTest(unittest.TestCase):
             pass
         self.assertEqual(f.msg, getattr(f, _str('msg')))
         self.assertEqual(f.msg, f.__dict__[_str('msg')])
-
 
     # TODO(T53626118): Support str subclasses in _instance_setattr
     @unittest.skip("Support str subclasses in _instance_setattr")
@@ -1184,7 +1279,7 @@ class DictTest(unittest.TestCase):
         support.check_free_after_iterating(self, lambda d: iter(d.items()), dict)
 
     def test_equal_operator_modifying_operand(self):
-        # test fix for seg fault reported in issue 27945 part 3.
+        # test fix for seg fault reported in bpo-27945 part 3.
         class X():
             def __del__(self):
                 dict_b.clear()
@@ -1199,6 +1294,16 @@ class DictTest(unittest.TestCase):
         dict_a = {X(): 0}
         dict_b = {X(): X()}
         self.assertTrue(dict_a == dict_b)
+
+        # test fix for seg fault reported in bpo-38588 part 1.
+        class Y:
+            def __eq__(self, other):
+                dict_d.clear()
+                return True
+
+        dict_c = {0: Y()}
+        dict_d = {0: set()}
+        self.assertTrue(dict_c == dict_d)
 
     def test_fromkeys_operator_modifying_dict_operand(self):
         # test fix for seg fault reported in issue 27945 part 4a.
@@ -1270,6 +1375,40 @@ class DictTest(unittest.TestCase):
 
         self.assertRaises(RuntimeError, iter_and_mutate)
 
+    def test_reversed(self):
+        d = {"a": 1, "b": 2, "foo": 0, "c": 3, "d": 4}
+        del d["foo"]
+        r = reversed(d)
+        self.assertEqual(list(r), list('dcba'))
+        self.assertRaises(StopIteration, next, r)
+
+    def test_reverse_iterator_for_empty_dict(self):
+        # bpo-38525: revered iterator should work properly
+
+        # empty dict is directly used for reference count test
+        self.assertEqual(list(reversed({})), [])
+        self.assertEqual(list(reversed({}.items())), [])
+        self.assertEqual(list(reversed({}.values())), [])
+        self.assertEqual(list(reversed({}.keys())), [])
+
+        # dict() and {} don't trigger the same code path
+        self.assertEqual(list(reversed(dict())), [])
+        self.assertEqual(list(reversed(dict().items())), [])
+        self.assertEqual(list(reversed(dict().values())), [])
+        self.assertEqual(list(reversed(dict().keys())), [])
+
+    # TODO(T89204535): fix reversed() to allow dict
+    @unittest.skip("reversed() should access dict keys")
+    def test_reverse_iterator_for_shared_shared_dicts(self):
+        class A:
+            def __init__(self, x, y):
+                if x: self.x = x
+                if y: self.y = y
+
+        self.assertEqual(list(reversed(A(1, 2).__dict__)), ['y', 'x'])
+        self.assertEqual(list(reversed(A(1, 0).__dict__)), ['x'])
+        self.assertEqual(list(reversed(A(0, 1).__dict__)), ['y'])
+
     # TODO(T54255120): Calling dict on OrderedDict should preserve order
     @unittest.skip("Calling dict on OrderedDict should preserve order")
     def test_dict_copy_order(self):
@@ -1332,7 +1471,6 @@ class CAPITest(unittest.TestCase):
         d = {k1: 1}
         self.assertEqual(dict_getitem_knownhash(d, k1, hash(k1)), 1)
         self.assertRaises(Exc, dict_getitem_knownhash, d, k2, hash(k2))
-
 
 
 class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):

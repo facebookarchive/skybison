@@ -6,13 +6,12 @@
 #include "capi-fixture.h"
 #include "capi-testing.h"
 
-extern "C" int _Py_EncodeUTF8Ex(const wchar_t* text, char** str,
-                                size_t* error_pos, const char** reason,
-                                int raw_malloc, int surrogateescape);
-extern "C" wchar_t* _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t);
-extern "C" int _Py_DecodeUTF8Ex(const char* c_str, Py_ssize_t size,
-                                wchar_t** result, size_t* wlen,
-                                const char** reason, int surrogateescape);
+extern "C" int _Py_EncodeUTF8Ex(const wchar_t*, char**, size_t*, const char**,
+                                int, _Py_error_handler);
+extern "C" wchar_t* _Py_DecodeUTF8_surrogateescape(const char*, Py_ssize_t,
+                                                   size_t*);
+extern "C" int _Py_DecodeUTF8Ex(const char*, Py_ssize_t, wchar_t**, size_t*,
+                                const char**, _Py_error_handler);
 extern "C" int _Py_normalize_encoding(const char*, char*, size_t);
 
 namespace py {
@@ -2781,8 +2780,7 @@ TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExWithEmptyStrReturnsZero) {
   wchar_t* result = nullptr;
   EXPECT_EQ(0, _Py_DecodeUTF8Ex(str, /*size=*/0, /*result=*/&result,
                                 /*wlen=*/nullptr,
-                                /*reason=*/nullptr,
-                                /*surrogateescape=*/0));
+                                /*reason=*/nullptr, _Py_ERROR_STRICT));
   ASSERT_NE(result, nullptr);
   EXPECT_STREQ(result, L"");
   PyMem_RawFree(result);
@@ -2794,8 +2792,7 @@ TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExWithASCIIStrReturnsZero) {
   EXPECT_EQ(0,
             _Py_DecodeUTF8Ex(str, /*size=*/std::strlen(str), /*result=*/&result,
                              /*wlen=*/nullptr,
-                             /*reason=*/nullptr,
-                             /*surrogateescape=*/0));
+                             /*reason=*/nullptr, _Py_ERROR_STRICT));
   ASSERT_NE(result, nullptr);
   EXPECT_EQ(std::wcslen(result), size_t{5});
   EXPECT_EQ('h', result[0]);
@@ -2811,8 +2808,7 @@ TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExDecodesUpToSizeBytes) {
   wchar_t* result = nullptr;
   EXPECT_EQ(0, _Py_DecodeUTF8Ex(str, /*size=*/3, /*result=*/&result,
                                 /*wlen=*/nullptr,
-                                /*reason=*/nullptr,
-                                /*surrogateescape=*/0));
+                                /*reason=*/nullptr, _Py_ERROR_STRICT));
   ASSERT_NE(result, nullptr);
   EXPECT_EQ(std::wcslen(result), size_t{3});
   EXPECT_EQ('h', result[0]);
@@ -2828,8 +2824,7 @@ TEST_F(UnicodeExtensionApiTest, DecodeUTF8ExWithASCIIStrSetsWlen) {
   EXPECT_EQ(0,
             _Py_DecodeUTF8Ex(str, /*size=*/std::strlen(str), /*result=*/&result,
                              /*wlen=*/&wlen,
-                             /*reason=*/nullptr,
-                             /*surrogateescape=*/0));
+                             /*reason=*/nullptr, _Py_ERROR_STRICT));
   ASSERT_NE(result, nullptr);
   EXPECT_EQ(std::wcslen(result), size_t{5});
   EXPECT_EQ('h', result[0]);
@@ -2846,7 +2841,7 @@ TEST_F(UnicodeExtensionApiTest, EncodeUTF8ExWithEmptyStrReturnsZero) {
   char* result = nullptr;
   EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/nullptr,
                                 /*reason=*/nullptr, /*raw_malloc=*/0,
-                                /*surrogateescape=*/0));
+                                _Py_ERROR_STRICT));
   ASSERT_NE(result, nullptr);
   EXPECT_STREQ(result, "");
   PyMem_Free(result);
@@ -2857,7 +2852,7 @@ TEST_F(UnicodeExtensionApiTest, EncodeUTF8ExWithASCIIStrReturnsZero) {
   char* result = nullptr;
   EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/nullptr,
                                 /*reason=*/nullptr, /*raw_malloc=*/0,
-                                /*surrogateescape=*/0));
+                                _Py_ERROR_STRICT));
   ASSERT_NE(result, nullptr);
   EXPECT_STREQ(result, "hello");
   PyMem_Free(result);
@@ -2868,7 +2863,7 @@ TEST_F(UnicodeExtensionApiTest, EncodeUTF8ExWithRawMallocReturnsZero) {
   char* result = nullptr;
   EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/nullptr,
                                 /*reason=*/nullptr, /*raw_malloc=*/1,
-                                /*surrogateescape=*/0));
+                                _Py_ERROR_STRICT));
   ASSERT_NE(result, nullptr);
   EXPECT_STREQ(result, "hello");
   PyMem_RawFree(result);
@@ -2879,7 +2874,7 @@ TEST_F(UnicodeExtensionApiTest, EncodeUTF8ExWithLatin1ReturnsZero) {
   char* result = nullptr;
   EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/nullptr,
                                 /*reason=*/nullptr, /*raw_malloc=*/0,
-                                /*surrogateescape=*/0));
+                                _Py_ERROR_STRICT));
   ASSERT_NE(result, nullptr);
   EXPECT_STREQ(result, u8"cr\xC3\xA8me br\xC3\xBBl\xE0\xBA\x9E");
   PyMem_Free(result);
@@ -2891,7 +2886,7 @@ TEST_F(UnicodeExtensionApiTest,
   char* result = reinterpret_cast<char*>(0xdeadbeef);
   EXPECT_EQ(-2, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/nullptr,
                                  /*reason=*/nullptr, /*raw_malloc=*/0,
-                                 /*surrogateescape=*/0));
+                                 _Py_ERROR_STRICT));
   EXPECT_EQ(result, reinterpret_cast<char*>(0xdeadbeef));
 }
 
@@ -2902,7 +2897,7 @@ TEST_F(UnicodeExtensionApiTest,
   size_t error_pos = 1337;
   EXPECT_EQ(-2, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/&error_pos,
                                  /*reason=*/nullptr, /*raw_malloc=*/0,
-                                 /*surrogateescape=*/0));
+                                 _Py_ERROR_STRICT));
   EXPECT_EQ(result, reinterpret_cast<char*>(0xdeadbeef));
   EXPECT_EQ(error_pos, size_t{3});
 }
@@ -2914,7 +2909,7 @@ TEST_F(UnicodeExtensionApiTest,
   const char* reason = nullptr;
   EXPECT_EQ(-2, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/nullptr,
                                  /*reason=*/&reason, /*raw_malloc=*/0,
-                                 /*surrogateescape=*/0));
+                                 _Py_ERROR_STRICT));
   EXPECT_EQ(result, reinterpret_cast<char*>(0xdeadbeef));
   ASSERT_NE(reason, nullptr);
   EXPECT_STREQ(reason, "encoding error");
@@ -2928,7 +2923,7 @@ TEST_F(UnicodeExtensionApiTest,
   const char* reason = const_cast<const char*>(reinterpret_cast<char*>(0x1337));
   EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/&error_pos,
                                 /*reason=*/&reason, /*raw_malloc=*/0,
-                                /*surrogateescape=*/1));
+                                _Py_ERROR_SURROGATEESCAPE));
   EXPECT_EQ(error_pos, size_t{1337});
   EXPECT_EQ(reason, reinterpret_cast<char*>(0x1337));
   ASSERT_NE(result, nullptr);
@@ -2944,7 +2939,7 @@ TEST_F(UnicodeExtensionApiTest,
   const char* reason = const_cast<const char*>(reinterpret_cast<char*>(0x1337));
   EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/&error_pos,
                                 /*reason=*/nullptr, /*raw_malloc=*/0,
-                                /*surrogateescape=*/1));
+                                _Py_ERROR_SURROGATEESCAPE));
   EXPECT_EQ(error_pos, size_t{1337});
   EXPECT_EQ(reason, reinterpret_cast<char*>(0x1337));
   ASSERT_NE(result, nullptr);
@@ -2960,7 +2955,7 @@ TEST_F(UnicodeExtensionApiTest,
   const char* reason = const_cast<const char*>(reinterpret_cast<char*>(0x1337));
   EXPECT_EQ(0, _Py_EncodeUTF8Ex(str, &result, /*error_pos=*/&error_pos,
                                 /*reason=*/nullptr, /*raw_malloc=*/0,
-                                /*surrogateescape=*/1));
+                                _Py_ERROR_SURROGATEESCAPE));
   EXPECT_EQ(error_pos, size_t{1337});
   EXPECT_EQ(reason, reinterpret_cast<char*>(0x1337));
   ASSERT_NE(result, nullptr);
@@ -3000,15 +2995,20 @@ sys_default = sys.getdefaultencoding()
 
 TEST_F(UnicodeExtensionApiTest,
        DecodeUTF8SurrogateEscapeWithEmptyStringReturnsEmptyString) {
-  wchar_t* wpath = _Py_DecodeUTF8_surrogateescape("", 0);
+  size_t wlen;
+  wchar_t* wpath = _Py_DecodeUTF8_surrogateescape("", 0, &wlen);
   EXPECT_STREQ(wpath, L"");
+  EXPECT_EQ(wlen, size_t{0});
   PyMem_RawFree(wpath);
 }
 
 TEST_F(UnicodeExtensionApiTest, DecodeUTF8SurrogateEscapeReturnsWideString) {
   const char* path = "/foo/bar/bat";
-  wchar_t* wpath = _Py_DecodeUTF8_surrogateescape(path, std::strlen(path));
+  size_t len = std::strlen(path);
+  size_t wlen;
+  wchar_t* wpath = _Py_DecodeUTF8_surrogateescape(path, len, &wlen);
   EXPECT_STREQ(wpath, L"/foo/bar/bat");
+  EXPECT_EQ(wlen, len);
   PyMem_RawFree(wpath);
 }
 

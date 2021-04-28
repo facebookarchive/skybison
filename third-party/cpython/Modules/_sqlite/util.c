@@ -56,7 +56,7 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
             break;
         case SQLITE_INTERNAL:
         case SQLITE_NOTFOUND:
-            PyErr_SetString(pysqlite_global(InternalError), sqlite3_errmsg(db));
+            PyErr_SetString(pysqlite_global->InternalError, sqlite3_errmsg(db));
             break;
         case SQLITE_NOMEM:
             (void)PyErr_NoMemory();
@@ -74,23 +74,23 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
         case SQLITE_PROTOCOL:
         case SQLITE_EMPTY:
         case SQLITE_SCHEMA:
-            PyErr_SetString(pysqlite_global(OperationalError), sqlite3_errmsg(db));
+            PyErr_SetString(pysqlite_global->OperationalError, sqlite3_errmsg(db));
             break;
         case SQLITE_CORRUPT:
-            PyErr_SetString(pysqlite_global(DatabaseError), sqlite3_errmsg(db));
+            PyErr_SetString(pysqlite_global->DatabaseError, sqlite3_errmsg(db));
             break;
         case SQLITE_TOOBIG:
-            PyErr_SetString(pysqlite_global(DataError), sqlite3_errmsg(db));
+            PyErr_SetString(pysqlite_global->DataError, sqlite3_errmsg(db));
             break;
         case SQLITE_CONSTRAINT:
         case SQLITE_MISMATCH:
-            PyErr_SetString(pysqlite_global(IntegrityError), sqlite3_errmsg(db));
+            PyErr_SetString(pysqlite_global->IntegrityError, sqlite3_errmsg(db));
             break;
         case SQLITE_MISUSE:
-            PyErr_SetString(pysqlite_global(ProgrammingError), sqlite3_errmsg(db));
+            PyErr_SetString(pysqlite_global->ProgrammingError, sqlite3_errmsg(db));
             break;
         default:
-            PyErr_SetString(pysqlite_global(DatabaseError), sqlite3_errmsg(db));
+            PyErr_SetString(pysqlite_global->DatabaseError, sqlite3_errmsg(db));
             break;
     }
 

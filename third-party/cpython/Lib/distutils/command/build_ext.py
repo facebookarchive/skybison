@@ -490,8 +490,7 @@ class build_ext(Command):
                   "in 'ext_modules' option (extension '%s'), "
                   "'sources' must be present and must be "
                   "a list of source filenames" % ext.name)
-        # sort to make the resulting .so file build reproducible
-        sources = sorted(sources)
+        sources = list(sources)
 
         ext_path = self.get_ext_fullpath(ext.name)
         depends = sources + ext.depends

@@ -523,20 +523,20 @@ semlock_dealloc(SemLockObject* self)
 }
 
 static PyObject *
-semlock_count(SemLockObject *self)
+semlock_count(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong((long)self->count);
 }
 
 static PyObject *
-semlock_ismine(SemLockObject *self)
+semlock_ismine(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
     /* only makes sense for a lock */
     return PyBool_FromLong(ISMINE(self));
 }
 
 static PyObject *
-semlock_getvalue(SemLockObject *self)
+semlock_getvalue(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
 #ifdef HAVE_BROKEN_SEM_GETVALUE
     PyErr_SetNone(PyExc_NotImplementedError);
@@ -554,7 +554,7 @@ semlock_getvalue(SemLockObject *self)
 }
 
 static PyObject *
-semlock_iszero(SemLockObject *self)
+semlock_iszero(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
 #ifdef HAVE_BROKEN_SEM_GETVALUE
     if (sem_trywait(self->handle) < 0) {
@@ -575,7 +575,7 @@ semlock_iszero(SemLockObject *self)
 }
 
 static PyObject *
-semlock_afterfork(SemLockObject *self)
+semlock_afterfork(SemLockObject *self, PyObject *Py_UNUSED(ignored))
 {
     self->count = 0;
     Py_RETURN_NONE;
@@ -586,11 +586,11 @@ semlock_afterfork(SemLockObject *self)
  */
 
 static PyMethodDef semlock_methods[] = {
-    {"acquire", (PyCFunction)semlock_acquire, METH_VARARGS | METH_KEYWORDS,
+    {"acquire", (PyCFunction)(void(*)(void))semlock_acquire, METH_VARARGS | METH_KEYWORDS,
      "acquire the semaphore/lock"},
     {"release", (PyCFunction)semlock_release, METH_NOARGS,
      "release the semaphore/lock"},
-    {"__enter__", (PyCFunction)semlock_acquire, METH_VARARGS | METH_KEYWORDS,
+    {"__enter__", (PyCFunction)(void(*)(void))semlock_acquire, METH_VARARGS | METH_KEYWORDS,
      "enter the semaphore/lock"},
     {"__exit__", (PyCFunction)semlock_release, METH_VARARGS,
      "exit the semaphore/lock"},

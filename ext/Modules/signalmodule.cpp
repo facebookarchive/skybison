@@ -26,7 +26,12 @@ PY_EXPORT void PyErr_SetInterrupt() {
 
 PY_EXPORT void PyOS_InitInterrupts() { UNIMPLEMENTED("PyOS_InitInterrupts"); }
 
-PY_EXPORT int PyOS_InterruptOccurred() {
+PY_EXPORT int PyOS_InterruptOccurred(void) {
   UNIMPLEMENTED("PyOS_InterruptOccurred");
 }
+
+PY_EXPORT int _PyOS_InterruptOccurred(PyThreadState*) {
+  UNIMPLEMENTED("_PyOS_InterruptOccurred");
+}
+
 }  // namespace py

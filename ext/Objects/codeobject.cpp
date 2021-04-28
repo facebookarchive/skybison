@@ -146,18 +146,6 @@ PY_EXPORT Py_ssize_t PyCode_GetNumFree_Func(PyObject* code) {
   return freevars.length();
 }
 
-PY_EXPORT PyObject* PyCode_GetName_Func(PyObject* code) {
-  return ApiHandle::newReference(
-      Thread::current()->runtime(),
-      Code::cast(ApiHandle::fromPyObject(code)->asObject()).name());
-}
-
-PY_EXPORT PyObject* PyCode_GetFreevars_Func(PyObject* code) {
-  return ApiHandle::newReference(
-      Thread::current()->runtime(),
-      Code::cast(ApiHandle::fromPyObject(code)->asObject()).freevars());
-}
-
 static RawObject constantKey(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();

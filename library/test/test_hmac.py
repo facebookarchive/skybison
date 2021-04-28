@@ -45,7 +45,7 @@ class CompareDigestTestCase(unittest.TestCase):
         a, b = bytearray(b"foobar"), bytearray(b"foobar")
         self.assertTrue(hmac.compare_digest(a, b))
 
-        # Testing bytearrays of diffeent lengths
+        # Testing bytearrays of different lengths
         a, b = bytearray(b"foobar"), bytearray(b"foo")
         self.assertFalse(hmac.compare_digest(a, b))
 
@@ -58,7 +58,7 @@ class CompareDigestTestCase(unittest.TestCase):
         self.assertTrue(hmac.compare_digest(a, b))
         self.assertTrue(hmac.compare_digest(b, a))
 
-        # Testing byte bytearray of diffeent lengths
+        # Testing byte bytearray of different lengths
         a, b = bytearray(b"foobar"), b"foo"
         self.assertFalse(hmac.compare_digest(a, b))
         self.assertFalse(hmac.compare_digest(b, a))
@@ -72,7 +72,7 @@ class CompareDigestTestCase(unittest.TestCase):
         a, b = "foobar", "foobar"
         self.assertTrue(hmac.compare_digest(a, b))
 
-        # Testing str of diffeent lengths
+        # Testing str of different lengths
         a, b = "foo", "foobar"
         self.assertFalse(hmac.compare_digest(a, b))
 

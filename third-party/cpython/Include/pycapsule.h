@@ -22,6 +22,7 @@ typedef void (*PyCapsule_Destructor)(PyObject *);
 
 #define PyCapsule_CheckExact(op) PyCapsule_CheckExact_Func((PyObject*)op)
 
+
 PyAPI_FUNC(PyObject *) PyCapsule_New(
     void *pointer,
     const char *name,

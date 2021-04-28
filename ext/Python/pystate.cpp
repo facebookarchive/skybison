@@ -131,8 +131,16 @@ PY_EXPORT PyThreadState* PyThreadState_Swap(PyThreadState* /* s */) {
   UNIMPLEMENTED("PyThreadState_Swap");
 }
 
-PY_EXPORT void _PyGILState_Reinit() {
+PY_EXPORT void _PyGILState_Reinit(_PyRuntimeState*) {
   // TODO(T39596544): do nothing until we have a GIL.
+}
+
+PY_EXPORT void _PyInterpreterState_DeleteExceptMain(_PyRuntimeState*) {
+  // TODO(T87097565): Implement instead of making it a noop
+}
+
+PY_EXPORT void _PyRuntimeState_ReInitThreads(_PyRuntimeState*) {
+  // TODO(T87097565): Implement instead of making it a noop
 }
 
 PY_EXPORT int _PyState_AddModule(PyObject* module, PyModuleDef* def) {
@@ -148,7 +156,7 @@ PY_EXPORT PyThreadState* _PyThreadState_GET_Func(void) {
   return reinterpret_cast<PyThreadState*>(Thread::current());
 }
 
-PY_EXPORT void _PyThreadState_Init(PyThreadState* /* e */) {
+PY_EXPORT void _PyThreadState_Init(_PyRuntimeState*, PyThreadState* /* e */) {
   UNIMPLEMENTED("_PyThreadState_Init");
 }
 
@@ -176,6 +184,10 @@ PY_EXPORT PyThreadState* PyInterpreterState_ThreadHead(
 
 PY_EXPORT PyInterpreterState* _PyInterpreterState_Get(void) {
   return reinterpret_cast<PyInterpreterState*>(Thread::current()->runtime());
+}
+
+PY_EXPORT _PyRuntimeState* _PyRuntime_Ptr() {
+  return reinterpret_cast<_PyRuntimeState*>(Thread::current()->runtime());
 }
 
 PY_EXPORT void _PyState_ClearModules() {

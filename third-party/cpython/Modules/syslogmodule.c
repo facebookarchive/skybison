@@ -128,7 +128,6 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
         Py_INCREF(new_S_ident_o);
     }
 
-    /*  get sys.argv[0] or NULL if we can't for some reason  */
     if (!new_S_ident_o) {
         new_S_ident_o = syslog_get_argv();
     }
@@ -145,6 +144,10 @@ syslog_openlog(PyObject * self, PyObject * args, PyObject *kwds)
         ident = PyUnicode_AsUTF8(state->S_ident_o);
         if (ident == NULL)
             return NULL;
+    }
+
+    if (PySys_Audit("syslog.openlog", "sll", ident, logopt, facility) < 0) {
+        return NULL;
     }
 
     openlog(ident, logopt, facility);
@@ -173,6 +176,10 @@ syslog_syslog(PyObject * self, PyObject * args)
     if (message == NULL)
         return NULL;
 
+    if (PySys_Audit("syslog.syslog", "is", priority, message) < 0) {
+        return NULL;
+    }
+
     /*  if log is not opened, open it now  */
     if (!syslogmodulestate(self)->S_log_open) {
         PyObject *openargs;
@@ -197,6 +204,9 @@ syslog_syslog(PyObject * self, PyObject * args)
 static PyObject *
 syslog_closelog(PyObject *self, PyObject *unused)
 {
+    if (PySys_Audit("syslog.closelog", NULL) < 0) {
+        return NULL;
+    }
     _syslogmodulestate *state = syslogmodulestate(self);
     if (state->S_log_open) {
         closelog();
@@ -213,6 +223,9 @@ syslog_setlogmask(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "l;mask for priority", &maskpri))
         return NULL;
+    if (PySys_Audit("syslog.setlogmask", "(O)", args ? args : Py_None) < 0) {
+        return NULL;
+    }
     omaskpri = setlogmask(maskpri);
     return PyLong_FromLong(omaskpri);
 }
@@ -245,12 +258,14 @@ static int _syslogmodule_traverse(PyObject *m, visitproc visit, void *arg) {
         Py_VISIT(state->S_ident_o);
     return 0;
 }
+
 static int _syslogmodule_clear(PyObject *m) {
     _syslogmodulestate *state = syslogmodulestate(m);
     if (state != NULL)
         Py_CLEAR(state->S_ident_o);
     return 0;
 }
+
 static void _syslogmodule_free(void *m) {
     _syslogmodule_clear((PyObject *)m);
 }
@@ -258,7 +273,7 @@ static void _syslogmodule_free(void *m) {
 /* List of functions defined in the module */
 
 static PyMethodDef syslog_methods[] = {
-    {"openlog",         (PyCFunction) syslog_openlog,           METH_VARARGS | METH_KEYWORDS},
+    {"openlog",         (PyCFunction)(void(*)(void)) syslog_openlog,           METH_VARARGS | METH_KEYWORDS},
     {"closelog",        syslog_closelog,        METH_NOARGS},
     {"syslog",          syslog_syslog,          METH_VARARGS},
     {"setlogmask",      syslog_setlogmask,      METH_VARARGS},
@@ -285,12 +300,12 @@ static struct PyModuleDef syslogmodule = {
 PyMODINIT_FUNC
 PyInit_syslog(void)
 {
-    PyObject *m = PyState_FindModule(&syslogmodule);
+    PyObject *m;
+    m = PyState_FindModule(&syslogmodule);
     if (m != NULL) {
         Py_INCREF(m);
         return m;
     }
-
     /* Create the module and add the functions */
     m = PyModule_Create(&syslogmodule);
     if (m == NULL)
@@ -299,7 +314,6 @@ PyInit_syslog(void)
     _syslogmodulestate *state = syslogmodulestate(m);
     state->S_ident_o = NULL;
     state->S_log_open = 0;
-
     /* Add some symbolic constants to the module */
 
     /* Priorities */

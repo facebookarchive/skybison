@@ -65,7 +65,11 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
     }
 
     if (factory == NULL) {
-        factory = (PyObject*)pysqlite_global(ConnectionType);
+        factory = (PyObject*)pysqlite_global->ConnectionType;
+    }
+
+    if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
+        return NULL;
     }
 
     result = PyObject_Call(factory, args, kwargs);
@@ -126,7 +130,7 @@ static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyOb
     rc = sqlite3_enable_shared_cache(do_enable);
 
     if (rc != SQLITE_OK) {
-        PyErr_SetString(pysqlite_global(OperationalError), "Changing the shared_cache flag failed");
+        PyErr_SetString(pysqlite_global->OperationalError, "Changing the shared_cache flag failed");
         return NULL;
     } else {
         Py_RETURN_NONE;
@@ -154,10 +158,10 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args)
      * (99 % of all usages) */
     if (type == &PyLong_Type || type == &PyFloat_Type
             || type == &PyUnicode_Type || type == &PyByteArray_Type) {
-        pysqlite_global(BaseTypeAdapted) = 1;
+        pysqlite_global->BaseTypeAdapted = 1;
     }
 
-    rc = pysqlite_microprotocols_add(type, (PyObject*)pysqlite_global(PrepareProtocolType), caster);
+    rc = pysqlite_microprotocols_add(type, (PyObject*)pysqlite_global->PrepareProtocolType, caster);
     if (rc == -1)
         return NULL;
 
@@ -181,12 +185,12 @@ static PyObject* module_register_converter(PyObject* self, PyObject* args)
     }
 
     /* convert the name to upper case */
-    name = PyObject_CallMethodObjArgs(orig_name, pysqlite_global(upper), NULL);
+    name = PyObject_CallMethodObjArgs(orig_name, pysqlite_global->upper, NULL);
     if (!name) {
         goto error;
     }
 
-    if (PyDict_SetItem(pysqlite_global(converters), name, callable) != 0) {
+    if (PyDict_SetItem(pysqlite_global->converters, name, callable) != 0) {
         goto error;
     }
 
@@ -204,7 +208,7 @@ Registers a converter with pysqlite. Non-standard.");
 
 static PyObject* enable_callback_tracebacks(PyObject* self, PyObject* args)
 {
-    if (!PyArg_ParseTuple(args, "i", &pysqlite_global(enable_callback_tracebacks))) {
+    if (!PyArg_ParseTuple(args, "i", &(pysqlite_global->enable_callback_tracebacks))) {
         return NULL;
     }
 
@@ -229,12 +233,12 @@ static void converters_init(PyObject* module)
 }
 
 static PyMethodDef module_methods[] = {
-    {"connect",  (PyCFunction)module_connect,
+    {"connect",  (PyCFunction)(void(*)(void))module_connect,
      METH_VARARGS | METH_KEYWORDS, module_connect_doc},
-    {"complete_statement",  (PyCFunction)module_complete,
+    {"complete_statement",  (PyCFunction)(void(*)(void))module_complete,
      METH_VARARGS | METH_KEYWORDS, module_complete_doc},
 #ifdef HAVE_SHARED_CACHE
-    {"enable_shared_cache",  (PyCFunction)module_enable_shared_cache,
+    {"enable_shared_cache",  (PyCFunction)(void(*)(void))module_enable_shared_cache,
      METH_VARARGS | METH_KEYWORDS, module_enable_shared_cache_doc},
 #endif
     {"register_adapter", (PyCFunction)module_register_adapter,
@@ -338,6 +342,7 @@ static int _sqlite3module_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->cursor);
     Py_VISIT(state->finalize);
     Py_VISIT(state->upper);
+    Py_VISIT(state->iterdump);
     Py_VISIT(state->converters);
     Py_VISIT(state->psyco_adapters);
     return 0;
@@ -368,6 +373,7 @@ static int _sqlite3module_clear(PyObject *m)
     Py_CLEAR(state->cursor);
     Py_CLEAR(state->finalize);
     Py_CLEAR(state->upper);
+    Py_CLEAR(state->iterdump);
     Py_CLEAR(state->converters);
     Py_CLEAR(state->psyco_adapters);
     return 0;
@@ -421,7 +427,6 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     }
 
     module = PyModule_Create(&_sqlite3module);
-
     if (module == NULL) {
         return NULL;
     }
@@ -468,8 +473,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     Py_INCREF(statement_type);
     PyModule_AddObject(module, "Statement", statement_type);
 
-    /* Create DB-API Exception hierarchy */
-
+    /*** Create DB-API Exception hierarchy */
     error_type = PyErr_NewException(MODULE_NAME ".Error", PyExc_Exception, NULL);
     if (error_type == NULL) {
         goto error;
@@ -592,6 +596,7 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     state->cursor = PyUnicode_InternFromString("cursor");
     state->finalize = PyUnicode_InternFromString("finalize");
     state->upper = PyUnicode_InternFromString("upper");
+    state->iterdump = PyUnicode_InternFromString("_iterdump");
 
 error:
     if (PyErr_Occurred())

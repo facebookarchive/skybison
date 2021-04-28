@@ -70,7 +70,7 @@ Comments
 A comment starts with a hash character (``#``) that is not part of a string
 literal, and ends at the end of the physical line.  A comment signifies the end
 of the logical line unless the implicit line joining rules are invoked. Comments
-are ignored by the syntax; they are not tokens.
+are ignored by the syntax.
 
 
 .. _encodings:
@@ -316,7 +316,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <http://www.unicode.org/Public/11.0.0/ucd/PropList.txt>`_ to support backwards
+  <http://www.unicode.org/Public/12.1.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -325,7 +325,7 @@ of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
 4.1 can be found at
-https://www.dcl.hpi.uni-potsdam.de/home/loewis/table-3131.html.
+https://www.unicode.org/Public/13.0.0/ucd/DerivedCoreProperties.txt
 
 
 .. _keywords:
@@ -376,11 +376,11 @@ characters:
       information on this convention.
 
 ``__*__``
-   System-defined names. These names are defined by the interpreter and its
-   implementation (including the standard library).  Current system names are
-   discussed in the :ref:`specialnames` section and elsewhere.  More will likely
-   be defined in future versions of Python.  *Any* use of ``__*__`` names, in
-   any context, that does not follow explicitly documented use, is subject to
+   System-defined names, informally known as "dunder" names. These names are
+   defined by the interpreter and its implementation (including the standard library).
+   Current system names are discussed in the :ref:`specialnames` section and elsewhere.
+   More will likely be defined in future versions of Python.  *Any* use of ``__*__`` names,
+   in any context, that does not follow explicitly documented use, is subject to
    breakage without warning.
 
 ``__*``
@@ -594,8 +594,9 @@ escape sequences only recognized in string literals fall into the category of
 unrecognized escapes for bytes literals.
 
    .. versionchanged:: 3.6
-      Unrecognized escape sequences produce a DeprecationWarning.  In
-      some future version of Python they will be a SyntaxError.
+      Unrecognized escape sequences produce a :exc:`DeprecationWarning`.  In
+      a future Python version they will be a :exc:`SyntaxWarning` and
+      eventually a :exc:`SyntaxError`.
 
 Even in a raw literal, quotes can be escaped with a backslash, but the
 backslash remains in the result; for example, ``r"\""`` is a valid string
@@ -636,9 +637,11 @@ and formatted string literals may be concatenated with plain string literals.
    single: string; formatted literal
    single: string; interpolated literal
    single: f-string
+   single: fstring
    single: {} (curly brackets); in formatted string literal
    single: ! (exclamation); in formatted string literal
    single: : (colon); in formatted string literal
+   single: = (equals); for help in debugging using string literals
 .. _f-strings:
 
 Formatted string literals
@@ -658,7 +661,7 @@ for the contents of the string is:
 
 .. productionlist::
    f_string: (`literal_char` | "{{" | "}}" | `replacement_field`)*
-   replacement_field: "{" `f_expression` ["!" `conversion`] [":" `format_spec`] "}"
+   replacement_field: "{" `f_expression` ["="] ["!" `conversion`] [":" `format_spec`] "}"
    f_expression: (`conditional_expression` | "*" `or_expr`)
                :   ("," `conditional_expression` | "," "*" `or_expr`)* [","]
                : | `yield_expression`
@@ -670,18 +673,36 @@ The parts of the string outside curly braces are treated literally,
 except that any doubled curly braces ``'{{'`` or ``'}}'`` are replaced
 with the corresponding single curly brace.  A single opening curly
 bracket ``'{'`` marks a replacement field, which starts with a
-Python expression.  After the expression, there may be a conversion field,
-introduced by an exclamation point ``'!'``.  A format specifier may also
-be appended, introduced by a colon ``':'``.  A replacement field ends
-with a closing curly bracket ``'}'``.
+Python expression. To display both the expression text and its value after
+evaluation, (useful in debugging), an equal sign ``'='`` may be added after the
+expression. A conversion field, introduced by an exclamation point ``'!'`` may
+follow.  A format specifier may also be appended, introduced by a colon ``':'``.
+A replacement field ends with a closing curly bracket ``'}'``.
 
 Expressions in formatted string literals are treated like regular
 Python expressions surrounded by parentheses, with a few exceptions.
-An empty expression is not allowed, and a :keyword:`lambda` expression
-must be surrounded by explicit parentheses.  Replacement expressions
-can contain line breaks (e.g. in triple-quoted strings), but they
-cannot contain comments.  Each expression is evaluated in the context
-where the formatted string literal appears, in order from left to right.
+An empty expression is not allowed, and both :keyword:`lambda`  and
+assignment expressions ``:=`` must be surrounded by explicit parentheses.
+Replacement expressions can contain line breaks (e.g. in triple-quoted
+strings), but they cannot contain comments.  Each expression is evaluated
+in the context where the formatted string literal appears, in order from
+left to right.
+
+.. versionchanged:: 3.7
+   Prior to Python 3.7, an :keyword:`await` expression and comprehensions
+   containing an :keyword:`async for` clause were illegal in the expressions
+   in formatted string literals due to a problem with the implementation.
+
+When the equal sign ``'='`` is provided, the output will have the expression
+text, the ``'='`` and the evaluated value. Spaces after the opening brace
+``'{'``, within the expression and after the ``'='`` are all retained in the
+output. By default, the ``'='`` causes the :func:`repr` of the expression to be
+provided, unless there is a format specified. When a format is specified it
+defaults to the :func:`str` of the expression unless a conversion ``'!r'`` is
+declared.
+
+.. versionadded:: 3.8
+   The equal sign ``'='`` was added in Python 3.8.
 
 If a conversion is specified, the result of evaluating the expression
 is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
@@ -717,9 +738,22 @@ Some examples of formatted string literals::
    >>> today = datetime(year=2017, month=1, day=27)
    >>> f"{today:%B %d, %Y}"  # using date format specifier
    'January 27, 2017'
+   >>> f"{today=:%B %d, %Y}" # using date format specifier and debugging
+   'today=January 27, 2017'
    >>> number = 1024
    >>> f"{number:#0x}"  # using integer format specifier
    '0x400'
+   >>> foo = "bar"
+   >>> f"{ foo = }" # preserves whitespace
+   " foo = 'bar'"
+   >>> line = "The mill's closed"
+   >>> f"{line = }"
+   'line = "The mill\'s closed"'
+   >>> f"{line = :20}"
+   "line = The mill's closed   "
+   >>> f"{line = !r:20}"
+   'line = "The mill\'s closed" '
+
 
 A consequence of sharing the same syntax as regular string literals is
 that characters in the replacement fields must not conflict with the
@@ -885,7 +919,7 @@ The following tokens are operators:
 
 
    +       -       *       **      /       //      %      @
-   <<      >>      &       |       ^       ~
+   <<      >>      &       |       ^       ~       :=
    <       >       <=      >=      ==      !=
 
 
