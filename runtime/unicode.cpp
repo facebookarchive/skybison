@@ -6,6 +6,9 @@
 
 namespace py {
 
+constexpr byte Byte::kTable[];
+constexpr byte Byte::kToLower[];
+constexpr byte Byte::kToUpper[];
 constexpr byte UTF8::kBOM[];
 constexpr byte UTF16::kBOMLittleEndian[];
 constexpr byte UTF16::kBOMBigEndian[];

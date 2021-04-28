@@ -1107,6 +1107,15 @@ PyAPI_FUNC_DECL(wchar_t* Py_GetProgramName(void));
 PyAPI_FUNC_DECL(wchar_t* Py_GetPythonHome(void));
 PyAPI_FUNC_DECL(int Py_GetRecursionLimit(void));
 PyAPI_FUNC_DECL(const char* Py_GetVersion(void));
+PyAPI_FUNC_DECL(int Py_ISALNUM_Func(unsigned char));
+PyAPI_FUNC_DECL(int Py_ISALPHA_Func(unsigned char));
+PyAPI_FUNC_DECL(int Py_ISDIGIT_Func(unsigned char));
+PyAPI_FUNC_DECL(int Py_ISLOWER_Func(unsigned char));
+PyAPI_FUNC_DECL(int Py_ISSPACE_Func(unsigned char));
+PyAPI_FUNC_DECL(int Py_ISUPPER_Func(unsigned char));
+PyAPI_FUNC_DECL(int Py_ISXDIGIT_Func(unsigned char));
+PyAPI_FUNC_DECL(unsigned char Py_TOLOWER_Func(unsigned char));
+PyAPI_FUNC_DECL(unsigned char Py_TOUPPER_Func(unsigned char));
 PyAPI_FUNC_DECL(void Py_IncRef(PyObject*));
 PyAPI_FUNC_DECL(void Py_Initialize(void));
 PyAPI_FUNC_DECL(void Py_InitializeEx(int));
@@ -1694,15 +1703,15 @@ PyAPI_FUNC_DECL(Py_ssize_t _Py_write_noraise(int, const void*, size_t));
 
 /* Character macros from pyctype.h */
 #define Py_CHARMASK(c) ((unsigned char)((c)&0xff))
-#define Py_ISALNUM(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_ALNUM)
-#define Py_ISALPHA(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_ALPHA)
-#define Py_ISDIGIT(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_DIGIT)
-#define Py_ISLOWER(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_LOWER)
-#define Py_ISSPACE(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_SPACE)
-#define Py_ISUPPER(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_UPPER)
-#define Py_ISXDIGIT(c) (_Py_ctype_table[Py_CHARMASK(c)] & PY_CTF_XDIGIT)
-#define Py_TOLOWER(c) (_Py_ctype_tolower[Py_CHARMASK(c)])
-#define Py_TOUPPER(c) (_Py_ctype_toupper[Py_CHARMASK(c)])
+#define Py_ISALNUM(c) (Py_ISALNUM_Func(Py_CHARMASK(c)))
+#define Py_ISALPHA(c) (Py_ISALPHA_Func(Py_CHARMASK(c)))
+#define Py_ISDIGIT(c) (Py_ISDIGIT_Func(Py_CHARMASK(c)))
+#define Py_ISLOWER(c) (Py_ISLOWER_Func(Py_CHARMASK(c)))
+#define Py_ISSPACE(c) (Py_ISSPACE_Func(Py_CHARMASK(c)))
+#define Py_ISUPPER(c) (Py_ISUPPER_Func(Py_CHARMASK(c)))
+#define Py_ISXDIGIT(c) (Py_ISXDIGIT_Func(Py_CHARMASK(c)))
+#define Py_TOLOWER(c) (Py_TOLOWER_Func(Py_CHARMASK(c)))
+#define Py_TOUPPER(c) (Py_TOUPPER_Func(Py_CHARMASK(c)))
 
 #define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
 

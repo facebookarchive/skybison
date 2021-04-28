@@ -940,6 +940,7 @@ add_library(
   ext/Python/modsupport.cpp
   ext/Python/mysnprintf.cpp
   ext/Python/pathconfig.cpp
+  ext/Python/pyctype.cpp
   ext/Python/pyhash.cpp
   ext/Python/pylifecycle.cpp
   ext/Python/pystate.cpp
@@ -1229,6 +1230,7 @@ set(
   ext/Python/modsupport-test.cpp
   ext/Python/mysnprintf-test.cpp
   ext/Python/pathconfig-test.cpp
+  ext/Python/pyctype-test.cpp
   ext/Python/pyhash-test.cpp
   ext/Python/pylifecycle-test.cpp
   ext/Python/pystate-test.cpp

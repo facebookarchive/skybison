@@ -2,7 +2,6 @@
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "byteslike.h"
-#include "capi.h"
 #include "frame.h"
 #include "int-builtins.h"
 #include "modules.h"
@@ -309,7 +308,7 @@ RawObject FUNC(_codecs, _escape_decode)(Thread* thread, Arguments args) {
         return runtime->newStrFromFmt(
             "decoding error; unknown error handling code: %S", &errors);
     }
-    if (i < length && (_Py_ctype_table[bytes.byteAt(i)] & 0x10)) {
+    if (i < length && Byte::isHexDigit(bytes.byteAt(i))) {
       i++;
     }
   }

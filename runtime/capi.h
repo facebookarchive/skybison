@@ -15,8 +15,6 @@
 
 // from Include/longobject.h
 extern "C" const unsigned char _PyLong_DigitValue[];  // NOLINT
-// from Include/pyctype.h
-extern "C" const unsigned int _Py_ctype_table[];  // NOLINT
 
 struct PyModuleDef;
 
