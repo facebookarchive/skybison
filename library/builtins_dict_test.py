@@ -3,8 +3,6 @@ import collections
 import unittest
 from unittest.mock import Mock, call
 
-from test_support import supports_38_feature
-
 
 class DictTests(unittest.TestCase):
     def test_repr_returns_string(self):
@@ -747,7 +745,6 @@ class DictItemsTests(unittest.TestCase):
         self.assertIsInstance(result, set)
         self.assertEqual(result, {("hello", "world")})
 
-    @supports_38_feature
     def test_reversed_of_items_returns_reversed_items(self):
         mapping = {"hello": "world", "foo": "bar", "marco": "polo"}
         self.assertEqual(
@@ -759,7 +756,6 @@ class DictItemsTests(unittest.TestCase):
             list(reversed_keys), [("marco", "polo"), ("foo", "bar"), ("hello", "world")]
         )
 
-    @supports_38_feature
     def test_reversed_items_of_dictionary_built_with_setitem(self):
         d = {}
         d["a"] = 1
@@ -769,7 +765,6 @@ class DictItemsTests(unittest.TestCase):
         self.assertEqual(list(d.items()), [("a", 100), ("b", 2), ("c", 3)])
         self.assertEqual(list(reversed(d.items())), [("c", 3), ("b", 2), ("a", 100)])
 
-    @supports_38_feature
     def test_reversed_items_of_wrong_type_raises_type_error(self):
         keys = {}.keys()
         item_type = type({}.items())
@@ -1189,20 +1184,17 @@ class DictValuesTests(unittest.TestCase):
         reversed_values = reversed(mapping.values())
         self.assertEqual(list(reversed_values), ["bar", "world"])
 
-    @supports_38_feature
     def test_reversed_returns_reversed_keys(self):
         mapping = {"hello": "world", "foo": "bar"}
         reversed_keys = reversed(mapping)
         self.assertEqual(list(reversed_keys), ["foo", "hello"])
 
-    @supports_38_feature
     def test_reversed_of_keys_returns_reversed_keys(self):
         mapping = {"hello": "world", "foo": "bar", "marco": "polo"}
         self.assertEqual(list(mapping.keys()), ["hello", "foo", "marco"])
         reversed_keys = reversed(mapping.keys())
         self.assertEqual(list(reversed_keys), ["marco", "foo", "hello"])
 
-    @supports_38_feature
     def test_reverse_keys_of_dictionary_built_with_setitem(self):
         d = {}
         d["a"] = 1
@@ -1213,7 +1205,6 @@ class DictValuesTests(unittest.TestCase):
         reversed_keys = reversed(d.keys())
         self.assertEqual(list(reversed_keys), ["c", "b", "a"])
 
-    @supports_38_feature
     def test_reverse_of_dictonary_subclass_implementing_iter_ignores_subclass(self):
         class C(dict):
             def __iter__(self):
@@ -1223,7 +1214,6 @@ class DictValuesTests(unittest.TestCase):
         reversed_keys = reversed(d)
         self.assertEqual(list(reversed_keys), ["c", "a"])
 
-    @supports_38_feature
     def test_reverse_of_dictonary_subclass_implementing_keys_ignores_keys(self):
         class C(dict):
             def keys(self):
@@ -1233,12 +1223,10 @@ class DictValuesTests(unittest.TestCase):
         reversed_keys = reversed(d)
         self.assertEqual(list(reversed_keys), ["c", "a"])
 
-    @supports_38_feature
     def test_reverse_of_non_dict_raises_type_error(self):
         with self.assertRaises(TypeError):
             dict.__reversed__(None)
 
-    @supports_38_feature
     def test_reverse_of_non_dict_keys_raises_type_error(self):
         with self.assertRaises(TypeError):
             type({}.keys()).__reversed__(None)

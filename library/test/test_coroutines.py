@@ -15,6 +15,8 @@ import warnings
 from test import support
 from test.support.script_helper import assert_python_ok
 
+from test_support import cpython_only
+
 
 class AsyncYieldFrom:
     def __init__(self, obj):
@@ -75,7 +77,7 @@ def silence_coro_gc():
 
 # TODO(T71327927) - Make compile() work as well as it does when running full
 # scripts.
-@unittest.skipIf(sys.implementation.name == "pyro", "T71327927")
+@cpython_only
 class AsyncBadSyntaxTest(unittest.TestCase):
 
     def test_badsyntax_1(self):
@@ -514,7 +516,7 @@ class CoroutineTest(unittest.TestCase):
         self.assertFalse(hasattr(gen, '__await__'))
 
     # TODO(T71328122) Implement coroutine.cr_code
-    @unittest.skipIf(sys.implementation.name == "pyro", "T71328122")
+    @cpython_only
     def test_func_1(self):
         async def foo():
             return 10
@@ -645,7 +647,7 @@ class CoroutineTest(unittest.TestCase):
         self.assertEqual(run_async(bar()), ([], 'spam'))
         coro.close()
 
-    @unittest.skipIf(sys.implementation.name == "pyro", "Requires GC API")
+    @cpython_only
     def test_func_9(self):
         async def foo():
             pass
@@ -906,7 +908,7 @@ class CoroutineTest(unittest.TestCase):
         self.assertEqual(result[1].value, 10)
 
     # TODO(T71328257) - Implement missing attributes on coroutine
-    @unittest.skipIf(sys.implementation.name == "pyro", "T71328257")
+    @cpython_only
     def test_cr_await(self):
         @types.coroutine
         def a():
@@ -937,7 +939,7 @@ class CoroutineTest(unittest.TestCase):
         self.assertEqual(inspect.getcoroutinestate(coro_b), inspect.CORO_CLOSED)
         self.assertIsNone(coro_b.cr_await)
 
-    @unittest.skipIf(sys.implementation.name == "pyro", "Missing __doc__ support")
+    @cpython_only
     def test_corotype_1(self):
         ct = types.CoroutineType
         self.assertIn('into coroutine', ct.send.__doc__)
@@ -1547,7 +1549,7 @@ class CoroutineTest(unittest.TestCase):
         self.assertEqual(buffer, [i for i in range(1, 21)] +
                                  ['what?', 'end'])
 
-    @unittest.skipIf(sys.implementation.name == "pyro", "Requires GC API")
+    @cpython_only
     def test_for_2(self):
         tup = (1, 2, 3)
         refs_before = sys.getrefcount(tup)
@@ -1563,7 +1565,7 @@ class CoroutineTest(unittest.TestCase):
 
         self.assertEqual(sys.getrefcount(tup), refs_before)
 
-    @unittest.skipIf(sys.implementation.name == "pyro", "Requires GC API")
+    @cpython_only
     def test_for_3(self):
         class I:
             def __aiter__(self):
@@ -1584,7 +1586,7 @@ class CoroutineTest(unittest.TestCase):
 
         self.assertEqual(sys.getrefcount(aiter), refs_before)
 
-    @unittest.skipIf(sys.implementation.name == "pyro", "Requires GC API")
+    @cpython_only
     def test_for_4(self):
         class I:
             def __aiter__(self):
@@ -1608,7 +1610,7 @@ class CoroutineTest(unittest.TestCase):
 
         self.assertEqual(sys.getrefcount(aiter), refs_before)
 
-    @unittest.skipIf(sys.implementation.name == "pyro", "Requires GC API")
+    @cpython_only
     def test_for_6(self):
         I = 0
 
@@ -2009,7 +2011,7 @@ class CoroutineTest(unittest.TestCase):
             ([], {1: 1, 2: 2, 3: 3}))
 
     # TODO(T71328424) Make copying/pickling work as appropriate.
-    @unittest.skipIf(sys.implementation.name == "pyro", "T71328424")
+    @cpython_only
     def test_copy(self):
         async def func(): pass
         coro = func()
@@ -2023,7 +2025,7 @@ class CoroutineTest(unittest.TestCase):
         finally:
             aw.close()
 
-    @unittest.skipIf(sys.implementation.name == "pyro", "fix async gen pickling")
+    @cpython_only
     def test_pickle(self):
         async def func(): pass
         coro = func()
@@ -2039,7 +2041,7 @@ class CoroutineTest(unittest.TestCase):
         finally:
             aw.close()
 
-    @unittest.skipIf(sys.implementation.name == "pyro", "Requires GC API")
+    @cpython_only
     def test_fatal_coro_warning(self):
         # Issue 27811
         async def func(): pass
@@ -2164,7 +2166,7 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
 
 
 # TODO(T71328526) - Implement sys.get_coroutine_origin_tracking_depth()
-@unittest.skipIf(sys.implementation.name == "pyro", "T71328526")
+@cpython_only
 class OriginTrackingTest(unittest.TestCase):
     def here(self):
         info = inspect.getframeinfo(inspect.currentframe().f_back)
@@ -2293,7 +2295,7 @@ class OriginTrackingTest(unittest.TestCase):
 
 
 # TODO(T71328384) - Support warnings related to async
-@unittest.skipIf(sys.implementation.name == "pyro", "T71328384")
+@cpython_only
 class UnawaitedWarningDuringShutdownTest(unittest.TestCase):
     # https://bugs.python.org/issue32591#msg310726
     def test_unawaited_warning_during_shutdown(self):
@@ -2314,9 +2316,7 @@ class UnawaitedWarningDuringShutdownTest(unittest.TestCase):
         assert_python_ok("-c", code)
 
 
-@unittest.skipIf(
-    sys.implementation.name == "pyro",
-    "_testcapi module not supported")
+@cpython_only
 class CAPITest(unittest.TestCase):
 
     def test_tp_await_1(self):

@@ -3,7 +3,7 @@ import ctypes
 import ctypes.util
 import unittest
 
-from test_support import pyro_only, supports_38_feature
+from test_support import pyro_only
 
 
 class CtypesTests(unittest.TestCase):
@@ -28,7 +28,6 @@ class CtypesTests(unittest.TestCase):
 
         self.assertEqual(ctypes.sizeof(ArraySub()), 2)
 
-    @supports_38_feature
     def test_array_without_length_raises_attribute_error(self):
         with self.assertRaises(AttributeError) as ctx:
 
@@ -37,7 +36,6 @@ class CtypesTests(unittest.TestCase):
 
         self.assertEqual(str(ctx.exception), "class must define a '_length_' attribute")
 
-    @supports_38_feature
     def test_array_with_non_int_length_raises_type_error(self):
         with self.assertRaises(TypeError) as ctx:
 
@@ -49,7 +47,6 @@ class CtypesTests(unittest.TestCase):
             str(ctx.exception), "The '_length_' attribute must be an integer"
         )
 
-    @supports_38_feature
     def test_array_with_negative_length_raises_attribute_error(self):
         with self.assertRaises(ValueError) as ctx:
 

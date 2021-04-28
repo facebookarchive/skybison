@@ -15,6 +15,8 @@ import unittest
 import weakref
 from test import mapping_tests, support
 
+from test_support import cpython_only
+
 
 class DictTest(unittest.TestCase):
 
@@ -1035,7 +1037,7 @@ class DictTest(unittest.TestCase):
 
     # TODO(T54087589): Patch platform.python_implementation to return Pyro
     # We will never support this; we should rely on the cpython_only decorator
-    @unittest.skip("Patch platform.python_implementation to return Pyro")
+    @cpython_only
     def test_splittable_popitem(self):
         """split table must be combined when d.popitem()"""
         a, b = self.make_shared_key_dict(2)

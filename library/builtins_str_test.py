@@ -633,18 +633,15 @@ class StrTests(unittest.TestCase):
             None,
         )
 
-    @unittest.skipUnless(hasattr(str, "isascii"), "Added in 3.7")
     def test_isascii_with_empty_string_returns_true(self):
         self.assertTrue("".isascii())
 
-    @unittest.skipUnless(hasattr(str, "isascii"), "Added in 3.7")
     def test_isascii_with_ascii_values_returns_true(self):
         self.assertTrue("howdy".isascii())
         self.assertTrue("\x00".isascii())
         self.assertTrue("\x7f".isascii())
         self.assertTrue("\x00\x7f".isascii())
 
-    @unittest.skipUnless(hasattr(str, "isascii"), "Added in 3.7")
     def test_isascii_with_nonascii_values_return_false(self):
         self.assertFalse("\x80".isascii())
         self.assertFalse("\xe9".isascii())

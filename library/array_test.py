@@ -3,8 +3,6 @@ import array
 import unittest
 from unittest.mock import Mock
 
-from test_support import supports_38_feature
-
 
 class ArrayTest(unittest.TestCase):
     def test_new_with_bad_typecode_raises_value_error(self):
@@ -108,7 +106,6 @@ class ArrayTest(unittest.TestCase):
         self.assertEqual(float_array[2], 4.0)
         self.assertEqual(type(float_array[2]), float)
 
-    @supports_38_feature
     def test_new_with_integer_typecode_and_list_calls_dunder_index_on_elements(self):
         class IntSub(int):
             pass

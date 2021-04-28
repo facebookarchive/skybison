@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import sys
 import unittest
+
+from test_support import pyro_only
 
 
 class GCModuleTest(unittest.TestCase):
@@ -9,7 +10,7 @@ class GCModuleTest(unittest.TestCase):
 
         self.assertEqual(gc.__name__, "gc")
 
-    @unittest.skipIf(sys.implementation.name != "pyro", "cpython does s not support")
+    @pyro_only
     def test_can_immortalize(self):
         import gc
 

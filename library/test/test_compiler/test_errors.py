@@ -57,7 +57,6 @@ class ErrorTests(CompilerTest):
                     return"""
             )
 
-    @unittest.skipIf(sys.version_info < (3, 7), "parse fails on 3.6")
     def test_async_with_outside_async_func(self):
         with self.assertRaisesRegex(SyntaxError, "'async with' outside async function"):
             self.compile(
@@ -67,7 +66,6 @@ class ErrorTests(CompilerTest):
                         pass"""
             )
 
-    @unittest.skipIf(sys.version_info < (3, 7), "parse fails on 3.6")
     def test_async_with_outside_func(self):
         with self.assertRaisesRegex(SyntaxError, "'async with' outside async function"):
             self.compile(

@@ -3,8 +3,6 @@ import unittest
 from array import array
 from unittest.mock import Mock
 
-from test_support import supports_38_feature
-
 
 class ByteArrayTests(unittest.TestCase):
     def test_dunder_add_with_non_bytearray_raises_type_error(self):
@@ -253,14 +251,12 @@ class ByteArrayTests(unittest.TestCase):
         self.assertIsNone(ba.__init__())
         self.assertEqual(ba, b"")
 
-    @supports_38_feature
     def test_dunder_init_with_encoding_without_source_raises_type_error(self):
         ba = bytearray.__new__(bytearray)
         with self.assertRaises(TypeError) as context:
             ba.__init__(encoding="utf-8")
         self.assertEqual(str(context.exception), "encoding without a string argument")
 
-    @supports_38_feature
     def test_dunder_init_with_errors_without_source_raises_type_error(self):
         ba = bytearray.__new__(bytearray)
         with self.assertRaises(TypeError) as context:
@@ -289,14 +285,12 @@ class ByteArrayTests(unittest.TestCase):
         self.assertIsNone(ba.__init__("hello\uac80world", "ascii", "ignore"))
         self.assertEqual(ba, b"helloworld")
 
-    @supports_38_feature
     def test_dunder_init_with_non_str_and_encoding_raises_type_error(self):
         ba = bytearray.__new__(bytearray)
         with self.assertRaises(TypeError) as context:
             ba.__init__(0, encoding="utf-8")
         self.assertEqual(str(context.exception), "encoding without a string argument")
 
-    @supports_38_feature
     def test_dunder_init_with_non_str_and_errors_raises_type_error(self):
         ba = bytearray.__new__(bytearray)
         with self.assertRaises(TypeError) as context:

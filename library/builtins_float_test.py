@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import unittest
 
-from test_support import supports_38_feature
-
 
 class FloatTests(unittest.TestCase):
     def test_dunder_add_with_non_float_raises_type_error(self):
@@ -291,7 +289,6 @@ class FloatTests(unittest.TestCase):
         self.assertEqual(c, 0.0)
         self.assertEqual(float(c), 1.0)
 
-    @supports_38_feature
     def test_dunder_new_calls_type_index(self):
         class C:
             def __index__(self):
@@ -302,7 +299,6 @@ class FloatTests(unittest.TestCase):
         result = float.__new__(float, c)
         self.assertEqual(result, 42.0)
 
-    @supports_38_feature
     def test_dunder_new_calls_float_when_index_and_float_exist(self):
         class C:
             def __float__(self):

@@ -5,8 +5,6 @@ import contextlib
 import time
 import unittest
 
-from test_support import supports_38_feature
-
 
 _thread._enable_threads = True
 
@@ -23,7 +21,6 @@ class UnderThreadTest(unittest.TestCase):
         self.assertIsInstance(new_id, int)
         self.assertNotEqual(new_id, current_id)
 
-    @supports_38_feature
     def test_start_new_thread_with_exception_prints_error(self):
         def bootstrap():
             raise RuntimeError

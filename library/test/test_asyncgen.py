@@ -9,6 +9,9 @@ import sys
 import types
 import unittest
 from test.support import import_module
+
+from test_support import cpython_only, pyro_only
+
 asyncio = import_module("asyncio")
 
 
@@ -52,7 +55,7 @@ def to_list(gen):
 
 # TODO(T71327927) - Make compile() work as well as it does when running full
 # scripts.
-@unittest.skipIf(sys.implementation.name == "pyro", "T71327927")
+@cpython_only
 class AsyncGenSyntaxTest(unittest.TestCase):
 
     def test_async_gen_syntax_01(self):
@@ -349,7 +352,7 @@ class AsyncGenTest(unittest.TestCase):
         self.compare_generators(sync_gen_wrapper(), async_gen_wrapper())
 
     # TODO(T71329077) Make __name__ and __qualname__ read/write on generators
-    @unittest.skipIf(sys.implementation.name == "pyro", "T71329077")
+    @cpython_only
     def test_async_gen_api_01(self):
         async def gen():
             yield 123
@@ -652,7 +655,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         fut.cancel()
         self.loop.run_until_complete(asyncio.sleep(0.01))
 
-    @unittest.skipIf(sys.implementation.name == "pyro", "Requires GC API")
+    @cpython_only
     def test_async_gen_asyncio_gc_aclose_09(self):
         DONE = 0
 

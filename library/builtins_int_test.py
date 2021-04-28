@@ -2,7 +2,7 @@
 import array
 import unittest
 
-from test_support import pyro_only, supports_38_feature
+from test_support import pyro_only
 
 try:
     from _builtins import _int_ctor
@@ -76,7 +76,6 @@ class IntTests(unittest.TestCase):
         foo.__int__ = "not callable"
         self.assertEqual(int.__new__(int, foo), 0)
 
-    @supports_38_feature
     def test_dunder_new_uses_type_dunder_index(self):
         class Foo:
             def __index__(self):
@@ -95,7 +94,6 @@ class IntTests(unittest.TestCase):
         foo.__trunc__ = "not callable"
         self.assertEqual(int.__new__(int, foo), 0)
 
-    @supports_38_feature
     def test_dunder_new_uses_type_dunder_trunc_dunder_index(self):
         class Num:
             def __index__(self):
@@ -252,7 +250,6 @@ class IntTests(unittest.TestCase):
             2,
         )
 
-    @supports_38_feature
     def test_as_integer_ratio_with_non_int_raises_type_error(self):
         with self.assertRaises(TypeError) as ctx:
             int.as_integer_ratio("foo")
@@ -261,7 +258,6 @@ class IntTests(unittest.TestCase):
         self.assertIn("'int'", exception_text)
         self.assertIn("'str'", exception_text)
 
-    @supports_38_feature
     def test_as_integer_ratio_with_int_returns_tuple_with_same_object(self):
         i = 5
         result = i.as_integer_ratio()
@@ -270,7 +266,6 @@ class IntTests(unittest.TestCase):
         self.assertIs(result[0], i)
         self.assertEqual(result[1], 1)
 
-    @supports_38_feature
     def test_as_integer_ratio_with_bool_returns_tuple_with_int(self):
         i = True
         result = i.as_integer_ratio()
@@ -279,7 +274,6 @@ class IntTests(unittest.TestCase):
         self.assertEqual(result[0], 1)
         self.assertEqual(result[1], 1)
 
-    @supports_38_feature
     def test_as_integer_ratio_with_int_subclass_returns_tuple_with_underlying_int(self):
         class C(int):
             pass

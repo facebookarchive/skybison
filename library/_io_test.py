@@ -10,7 +10,7 @@ import unittest
 import unittest.mock
 from unittest.mock import Mock
 
-from test_support import pyro_only, supports_38_feature
+from test_support import pyro_only
 
 
 try:
@@ -1009,7 +1009,6 @@ class BytesIOTests(unittest.TestCase):
         with self.assertRaises(UserWarning):
             f.seek(pos)
 
-    @supports_38_feature
     def test_seek_with_class_whence_calls_dunder_index(self):
         class C:
             def __index__(self):
@@ -2010,7 +2009,6 @@ class OpenTests(unittest.TestCase):
             with open(full_path, "r") as fp:
                 self.assertEqual(fp.read(), "foobar")
 
-    @supports_38_feature
     def test_open_code_returns_buffered_reader(self):
         with tempfile.TemporaryDirectory() as tempdir:
             filename = "temp.txt"
@@ -3667,7 +3665,6 @@ class StringIOTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             string_io.seek(0, "not-int")
 
-    @supports_38_feature
     def test_seek_accepts_index_covertible_whence(self):
         class IndexLike:
             def __index__(self):

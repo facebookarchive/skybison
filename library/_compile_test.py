@@ -3,7 +3,7 @@ import dis
 import io
 import unittest
 
-from test_support import pyro_only
+from test_support import cpython_only, pyro_only
 
 
 def dis_str(code):
@@ -333,9 +333,10 @@ class PrintfTransformTests(unittest.TestCase):
             str.__mod__("%s %% foo %r bar %a %s", (1, 2, 3, 4)),
         )
 
-    @unittest.skipIf(True, "TODO(T78706522): Port printf transforms to compiler/")
+    # TODO(T78706522): Port printf transforms to compiler
     # Getting this working might require some modifications to the Dino
     # compiler.
+    @cpython_only
     def test_with_invalid_ast_raises_type_error(self):
         import ast
 

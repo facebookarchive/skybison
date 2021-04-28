@@ -6,8 +6,6 @@ import unittest
 import zipfile
 from tempfile import TemporaryDirectory
 
-from test_support import supports_38_feature
-
 
 class OptionsTest(unittest.TestCase):
     def test_I_option_sets_isolated_no_user_site_ignore_environment_flags(self):
@@ -89,7 +87,6 @@ class OptionsTest(unittest.TestCase):
             )
             self.assertIn(f"sys.path: ['', '{path0}', '{path1}'", result.stdout)
 
-    @supports_38_feature
     def test_PYTHONPYCACHEPREFIX_sets_sys_pycache_prefix(self):
         with TemporaryDirectory() as tempdir:
             path = os.path.abspath(os.path.join(tempdir, "foo"))
