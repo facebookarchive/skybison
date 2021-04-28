@@ -49,8 +49,6 @@ class ApiHandleDict {
 
   void* remove(RawObject key);
 
-  void shrink();
-
   void visitKeys(PointerVisitor* visitor);
 
   // Getters and setters

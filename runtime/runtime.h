@@ -353,7 +353,7 @@ class Runtime {
 
   RawObject* finalizableReferences();
 
-  void visitRoots(PointerVisitor* visitor);
+  void visitRootsWithoutApiHandles(PointerVisitor* visitor);
 
   RawObject findModule(const Object& name);
   RawObject findModuleById(SymbolId name);

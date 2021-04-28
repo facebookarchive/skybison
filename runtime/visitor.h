@@ -27,4 +27,10 @@ class HeapObjectVisitor {
   virtual ~HeapObjectVisitor() = default;
 };
 
+class HandleVisitor {
+ public:
+  virtual void visitHandle(void* handle, RawObject object) = 0;
+  virtual ~HandleVisitor() = default;
+};
+
 }  // namespace py

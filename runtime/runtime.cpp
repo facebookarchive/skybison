@@ -1723,7 +1723,6 @@ void Runtime::collectGarbage() {
   EVENT(CollectGarbage);
   bool run_callback = callbacks_ == NoneType::object();
   RawObject cb = scavenge(this);
-  capiHandlesShrink(this);
   callbacks_ = WeakRef::spliceQueue(callbacks_, cb);
   if (run_callback) {
     processCallbacks();
@@ -2062,7 +2061,7 @@ void Runtime::cacheSysInstances(Thread* thread, const Module& sys) {
   CHECK(!display_hook_.isErrorNotFound(), "sys.displayhook not found");
 }
 
-void Runtime::visitRoots(PointerVisitor* visitor) {
+void Runtime::visitRootsWithoutApiHandles(PointerVisitor* visitor) {
   visitRuntimeRoots(visitor);
   visitThreadRoots(visitor);
 }
@@ -2111,9 +2110,6 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
 
   // Visit modules
   visitor->visitPointer(&modules_, PointerKind::kRuntime);
-
-  // Visit C-API handles.
-  capiHandlesVisit(this, visitor);
 
   // Visit symbols
   symbols_->visit(visitor);
@@ -3572,9 +3568,9 @@ void Runtime::freeApiHandles() {
 
   // Process any native instance that is only referenced through the NativeProxy
   for (;;) {
-    word before = numExtensionObjects(this) + numTrackedApiHandles(this);
+    word before = numExtensionObjects(this) + numApiHandles(this);
     collectGarbage();
-    word after = numExtensionObjects(this) + numTrackedApiHandles(this);
+    word after = numExtensionObjects(this) + numApiHandles(this);
     word num_handles_collected = before - after;
     if (num_handles_collected == 0) {
       // Fixpoint: no change in tracking
@@ -3585,7 +3581,7 @@ void Runtime::freeApiHandles() {
 
   // Finally, skip trying to cleanly deallocate the object. Just free the
   // memory without calling the deallocation functions.
-  capiHandlesDispose(this);
+  disposeApiHandles(this);
   disposeExtensionObjects(this);
 }
 

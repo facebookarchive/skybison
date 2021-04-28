@@ -14,6 +14,7 @@
 #include "object-builtins.h"
 #include "objects.h"
 #include "runtime.h"
+#include "scavenger.h"
 #include "thread.h"
 #include "visitor.h"
 
@@ -280,15 +281,6 @@ void* ApiHandleDict::remove(RawObject key) {
   return result;
 }
 
-void ApiHandleDict::shrink() {
-  int32_t num_items = numItems();
-  if (num_items < capacity() / kShrinkFactor) {
-    // Ensure that the indices array is large enough to limit collisions.
-    word new_num_indices = Utils::nextPowerOfTwo((num_items * 3) / 2 + 1);
-    rehash(new_num_indices);
-  }
-}
-
 void ApiHandleDict::visitKeys(PointerVisitor* visitor) {
   RawObject* keys = this->keys();
   if (keys == nullptr) return;
@@ -370,11 +362,14 @@ ApiHandle* ApiHandle::borrowedReference(Runtime* runtime, RawObject obj) {
     return handleFromImmediate(obj);
   }
   if (runtime->isInstanceOfNativeProxy(obj)) {
-    return static_cast<ApiHandle*>(
+    ApiHandle* result = static_cast<ApiHandle*>(
         Int::cast(obj.rawCast<RawNativeProxy>().native()).asCPtr());
+    result->ob_refcnt |= kBorrowedBit;
+    return result;
   }
   ApiHandle* result = ApiHandle::newReferenceWithManaged(runtime, obj);
-  result->decrefNoImmediate();
+  result->ob_refcnt |= kBorrowedBit;
+  result->ob_refcnt--;
   return result;
 }
 
@@ -407,7 +402,11 @@ void* ApiHandle::cache(Runtime* runtime) {
   return caches->at(obj);
 }
 
-void ApiHandle::dispose(Runtime* runtime) {
+NEVER_INLINE void ApiHandle::dispose() {
+  disposeWithRuntime(Thread::current()->runtime());
+}
+
+void ApiHandle::disposeWithRuntime(Runtime* runtime) {
   // TODO(T46009838): If a module handle is being disposed, this should register
   // a weakref to call the module's m_free once's the module is collected
 
@@ -442,77 +441,133 @@ void ApiHandle::setRefcnt(Py_ssize_t count) {
   ob_refcnt = count | flags;
 }
 
-void capiHandlesClearNotReferenced(Runtime* runtime) {
-  ApiHandleDict* handles = capiHandles(runtime);
-  ApiHandleDict* caches = capiCaches(runtime);
-
-  // Objects have moved; rehash the caches first to reflect new addresses
-  caches->rehash(caches->numIndices());
-
-  // Now caches can be removed with ->remove()
-  int32_t end = handles->nextIndex();
-  RawObject* keys = handles->keys();
-  void** values = handles->values();
-
-  // Loops through the handle table clearing out handles which are not
-  // referenced by managed objects or by an extension object.
-  RawObject key = NoneType::object();
-  void* value;
-  for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
-    ApiHandle* handle = static_cast<ApiHandle*>(value);
-    if (handle->refcntNoImmediate() == 0) {
-      // TODO(T56760343): Remove the cache lookup. This should become simpler
-      // when it is easier to associate a cache with a handle or when the need
-      // for caches is eliminated.
-      void* cache = caches->remove(key);
-      itemAtPutTombstone(keys, values, i - 1);
-      freeHandle(runtime, handle);
-      std::free(cache);
-    }
-  }
-
-  handles->rehash(handles->numIndices());
-}
-
-void capiHandlesDispose(Runtime* runtime) {
+void disposeApiHandles(Runtime* runtime) {
   ApiHandleDict* handles = capiHandles(runtime);
   int32_t end = handles->nextIndex();
   RawObject* keys = handles->keys();
   void** values = handles->values();
+
   RawObject key = NoneType::object();
   void* value;
-
   for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
     ApiHandle* handle = reinterpret_cast<ApiHandle*>(value);
-    handle->dispose(runtime);
+    handle->disposeWithRuntime(runtime);
   }
 }
 
-void capiHandlesShrink(Runtime* runtime) { capiHandles(runtime)->shrink(); }
+word numApiHandles(Runtime* runtime) {
+  return capiHandles(runtime)->numItems();
+}
 
-void capiHandlesVisit(Runtime* runtime, PointerVisitor* visitor) {
+void visitApiHandles(Runtime* runtime, HandleVisitor* visitor) {
   ApiHandleDict* handles = capiHandles(runtime);
-  handles->visitKeys(visitor);
-
   int32_t end = handles->nextIndex();
   RawObject* keys = handles->keys();
   void** values = handles->values();
+
+  RawObject key = NoneType::object();
+  void* value;
+  for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
+    visitor->visitHandle(value, key);
+  }
+}
+
+void visitIncrementedApiHandles(Runtime* runtime, PointerVisitor* visitor) {
+  // Report handles with a refcount > 0 as roots. We deliberately do not visit
+  // other handles and do not update dictionary keys yet.
+  ApiHandleDict* handles = capiHandles(runtime);
+  int32_t end = handles->nextIndex();
+  RawObject* keys = handles->keys();
+  void** values = handles->values();
+
   RawObject key = NoneType::object();
   void* value;
   for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
     ApiHandle* handle = reinterpret_cast<ApiHandle*>(value);
     if (handle->refcntNoImmediate() > 0) {
-      visitor->visitPointer(reinterpret_cast<RawObject*>(&handle->reference_),
-                            PointerKind::kApiHandle);
+      visitor->visitPointer(&key, PointerKind::kApiHandle);
+      // We do not write back the changed `key` to the dictionary yet but leave
+      // that to `visitNotIncrementedBorrowedApiHandles` because we still need
+      // the old `key` to access `capiCaches` there).
     }
   }
-
-  ApiHandleDict* caches = capiCaches(runtime);
-  caches->visitKeys(visitor);
 }
 
-void* objectBorrowedReference(Runtime* runtime, RawObject obj) {
-  return ApiHandle::borrowedReference(runtime, obj);
+void visitNotIncrementedBorrowedApiHandles(Runtime* runtime,
+                                           Scavenger* scavenger,
+                                           PointerVisitor* visitor) {
+  // This function:
+  // - Rebuilds the handle dictionary: The GC may have moved object around so
+  //   we have to adjust the dictionary keys to the new references and updated
+  //   hash values. As a side effect this also clears tombstones and shrinks
+  //   the dictionary if possible.
+  // - Remove (or rather not insert into the new dictionary) entries with
+  //   refcount zero, that are not referenced from any other live object
+  //   (object is "white" after GC tri-coloring).
+  // - Rebuild cache dictionary to adjust for moved `key` addresses.
+
+  ApiHandleDict* caches = capiCaches(runtime);
+  ApiHandleDict* handles = capiHandles(runtime);
+  int32_t end = handles->nextIndex();
+  int32_t* indices = handles->indices();
+  RawObject* keys = handles->keys();
+  void** values = handles->values();
+
+  word old_num_items = handles->numItems();
+  word new_num_indices = Utils::nextPowerOfTwo((old_num_items * 3) / 2 + 1);
+  int32_t new_capacity = maxCapacity(new_num_indices);
+  int32_t* new_indices = newIndices(new_num_indices);
+  RawObject* new_keys = newKeys(new_capacity);
+  void** new_values = newValues(new_capacity);
+
+  RawObject key = NoneType::object();
+  void* value;
+  int32_t count = 0;
+  for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
+    ApiHandle* handle = reinterpret_cast<ApiHandle*>(value);
+    if (handle->refcntNoImmediate() == 0) {
+      DCHECK(handle->isBorrowedNoImmediate(),
+             "non-borrowed object should already be disposed");
+      if (key.isHeapObject() &&
+          isWhiteObject(scavenger, HeapObject::cast(key))) {
+        // Lookup associated cache data. Note that `key` and the keys in the
+        // `caches` array both use addressed from before GC movement.
+        // `caches.rehash()` happens is delayed until the end of this function.
+        void* cache = caches->remove(key);
+        freeHandle(runtime, handle);
+        std::free(cache);
+        continue;
+      }
+    }
+    visitor->visitPointer(&key, PointerKind::kApiHandle);
+    handle->reference_ = reinterpret_cast<uintptr_t>(key.raw());
+    // Insert into new handle dictionary.
+    uword hash = handleHash(key);
+    for (IndexProbe probe = probeBegin(new_num_indices, hash);;
+         probeNext(&probe)) {
+      if (indexAt(new_indices, probe.index) == kEmptyIndex) {
+        indexAtPut(new_indices, probe.index, count);
+        itemAtPut(new_keys, new_values, count, key, value);
+        break;
+      }
+    }
+    count++;
+  }
+
+  handles->setCapacity(new_capacity);
+  handles->setIndices(new_indices);
+  handles->setKeys(new_keys);
+  handles->setNextIndex(count);
+  handles->setNumIndices(new_num_indices);
+  handles->setValues(new_values);
+
+  std::free(indices);
+  std::free(keys);
+  std::free(values);
+
+  // Re-hash caches dictionary.
+  caches->visitKeys(visitor);
+  caches->rehash(caches->numIndices());
 }
 
 RawObject objectGetMember(Thread* thread, RawObject ptr, RawObject name) {

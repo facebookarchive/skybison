@@ -74,8 +74,4 @@ void initializeCAPIState(Runtime* runtime) {
   state->num_extension_objects = 0;
 }
 
-word numTrackedApiHandles(Runtime* runtime) {
-  return capiHandles(runtime)->numItems();
-}
-
 }  // namespace py

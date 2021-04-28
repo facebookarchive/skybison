@@ -35,6 +35,7 @@ char* bytesAsString(Runtime* runtime, ApiHandle* handle, const Bytes& bytes) {
   bytes.copyTo(cache, len);
   cache[len] = '\0';
   handle->setCache(runtime, cache);
+  handle->setBorrowedNoImmediate();
   return reinterpret_cast<char*>(cache);
 }
 

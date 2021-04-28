@@ -389,7 +389,7 @@ class HeapProfiler {
   void writeHandleRoot(RawObject obj);
   void writeStackRoot(RawObject obj);
   void writeStickyClassRoot(RawObject obj);
-  void writeApiHandleRoot(RawObject obj);
+  void writeApiHandleRoot(void* handle, RawObject obj);
   void writeUnknownRoot(RawObject obj);
 
   // Writes a string in UTF-8 record to the output stream.

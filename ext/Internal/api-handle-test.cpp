@@ -1,5 +1,6 @@
 #include "api-handle.h"
 
+#include "cpython-func.h"
 #include "gtest/gtest.h"
 
 #include "capi-state.h"
@@ -34,6 +35,114 @@ static RawObject initializeExtensionType(PyObject* extension_type) {
 
   extension_type->reference_ = type.raw();
   return *type;
+}
+
+static ApiHandle* findHandleMatching(Runtime* runtime,
+                                     const char* str_contents) {
+  class Visitor : public HandleVisitor {
+   public:
+    void visitHandle(void* handle, RawObject object) override {
+      if (object.isStr() && Str::cast(object).equalsCStr(str_contents)) {
+        found = handle;
+      }
+    }
+    const char* str_contents;
+    void* found = nullptr;
+  };
+  Visitor visitor;
+  visitor.str_contents = str_contents;
+  visitApiHandles(runtime, &visitor);
+  return reinterpret_cast<ApiHandle*>(visitor.found);
+}
+
+TEST_F(ApiHandleTest, ManagedObjectHandleWithRefcountZeroIsDisposed) {
+  HandleScope scope(thread_);
+  Object object(&scope, runtime_->newStrFromCStr("hello world"));
+
+  ApiHandle* handle = ApiHandle::newReference(runtime_, *object);
+  ASSERT_FALSE(handle->isImmediate());
+  ASSERT_FALSE(handle->isBorrowedNoImmediate());
+  EXPECT_EQ(handle->refcnt(), 1);
+
+  EXPECT_EQ(findHandleMatching(runtime_, "hello world"), handle);
+  handle->decref();
+  EXPECT_EQ(findHandleMatching(runtime_, "hello world"), nullptr);
+}
+
+TEST_F(ApiHandleTest, ManagedObjectHandleWithRefcountZeroAfterGCIsDisposed) {
+  HandleScope scope(thread_);
+  Object object(&scope, runtime_->newStrFromCStr("hello world"));
+
+  ApiHandle* handle = ApiHandle::newReference(runtime_, *object);
+  ASSERT_FALSE(handle->isImmediate());
+  ASSERT_FALSE(handle->isBorrowedNoImmediate());
+  EXPECT_EQ(handle->refcnt(), 1);
+
+  EXPECT_EQ(findHandleMatching(runtime_, "hello world"), handle);
+  runtime_->collectGarbage();
+  EXPECT_EQ(findHandleMatching(runtime_, "hello world"), handle);
+  handle->decref();
+  EXPECT_EQ(findHandleMatching(runtime_, "hello world"), nullptr);
+}
+
+TEST_F(ApiHandleTest, ManagedObjectHandleBorrowedIsNotDisposed) {
+  HandleScope scope(thread_);
+  Object object(&scope, runtime_->newStrFromCStr("hello world"));
+
+  ApiHandle* handle = ApiHandle::borrowedReference(runtime_, *object);
+  ASSERT_FALSE(handle->isImmediate());
+  ASSERT_TRUE(handle->isBorrowedNoImmediate());
+  EXPECT_EQ(handle->refcnt(), 0);
+
+  EXPECT_EQ(findHandleMatching(runtime_, "hello world"), handle);
+  runtime_->collectGarbage();
+  EXPECT_EQ(findHandleMatching(runtime_, "hello world"), handle);
+}
+
+TEST_F(ApiHandleTest, ManagedObjectHandleBorrowedIsDisposedByGC) {
+  HandleScope scope(thread_);
+  Object object(&scope, runtime_->newStrFromCStr("hello world"));
+
+  ApiHandle* handle = ApiHandle::borrowedReference(runtime_, *object);
+  ASSERT_FALSE(handle->isImmediate());
+  ASSERT_TRUE(handle->isBorrowedNoImmediate());
+  EXPECT_EQ(handle->refcnt(), 0);
+
+  EXPECT_EQ(findHandleMatching(runtime_, "hello world"), handle);
+  object = NoneType::object();
+  runtime_->collectGarbage();
+  EXPECT_EQ(findHandleMatching(runtime_, "hello world"), nullptr);
+}
+
+TEST_F(ApiHandleTest, ManagedObjectHandleCachedIsDisposedByGC) {
+  HandleScope scope(thread_);
+  Object object(&scope, runtime_->newStrFromCStr("hello world"));
+
+  ApiHandle* handle = ApiHandle::newReference(runtime_, *object);
+  ASSERT_FALSE(handle->isImmediate());
+  ASSERT_FALSE(handle->isBorrowedNoImmediate());
+  ASSERT_EQ(handle->refcnt(), 1);
+
+  EXPECT_EQ(capiCaches(runtime_)->at(*object), nullptr);
+  const char* as_utf8 = PyUnicode_AsUTF8(handle);
+  EXPECT_EQ(capiCaches(runtime_)->at(*object), as_utf8);
+  EXPECT_TRUE(handle->isBorrowedNoImmediate());
+  handle->decref();
+  ASSERT_EQ(handle->refcnt(), 0);
+  EXPECT_EQ(findHandleMatching(runtime_, "hello world"), handle);
+
+  // Check that handle is not disposed while still references by `object`.
+  runtime_->collectGarbage();
+
+  EXPECT_EQ(capiCaches(runtime_)->at(*object), as_utf8);
+  EXPECT_TRUE(handle->isBorrowedNoImmediate());
+  EXPECT_EQ(std::strcmp(as_utf8, "hello world"), 0);
+  EXPECT_EQ(findHandleMatching(runtime_, "hello world"), handle);
+
+  // Check that handle is disposed when last reference in `object` disappears.
+  object = NoneType::object();
+  runtime_->collectGarbage();
+  EXPECT_EQ(findHandleMatching(runtime_, "hello world"), nullptr);
 }
 
 TEST_F(ApiHandleTest, BorrowedApiHandles) {
@@ -257,26 +366,46 @@ TEST_F(ApiHandleTest, Cache) {
   EXPECT_EQ(handle2->cache(runtime_), buffer1);
 
   Object key(&scope, handle1->asObject());
-  handle1->dispose(runtime_);
+  handle1->disposeWithRuntime(runtime_);
   ApiHandleDict* caches = capiCaches(runtime_);
   EXPECT_FALSE(caches->at(*key) != nullptr);
   EXPECT_EQ(handle2->cache(runtime_), buffer1);
 }
 
-TEST_F(ApiHandleTest, CapiHandlesVisit) {
+TEST_F(ApiHandleTest, VisitApiHandlesVisitsAllHandles) {
   HandleScope scope(thread_);
 
-  Object obj1(&scope, runtime_->newInt(123));
-  Object obj2(&scope, runtime_->newStrFromCStr("hello"));
-  ApiHandle::newReference(runtime_, *obj1);
-  ApiHandle::newReference(runtime_, *obj2);
+  Object obj0(&scope, runtime_->newDict());
+  Object obj1(&scope, runtime_->newStrFromCStr("hello world"));
+  ApiHandle* handle0 = ApiHandle::newReference(runtime_, *obj0);
+  ApiHandle* handle1 = ApiHandle::borrowedReference(runtime_, *obj1);
 
-  RememberingVisitor visitor;
-  capiHandlesVisit(runtime_, &visitor);
+  struct Visitor : public HandleVisitor {
+    void visitHandle(void* handle, RawObject object) override {
+      if (object == obj0) {
+        EXPECT_EQ(obj0_handle, nullptr);
+        obj0_handle = handle;
+      }
+      if (object == obj1) {
+        EXPECT_EQ(obj1_handle, nullptr);
+        obj1_handle = handle;
+      }
+    }
 
-  // We should've visited obj2, but not obj1 since it is a SmallInt.
-  EXPECT_FALSE(visitor.hasVisited(*obj1));
-  EXPECT_TRUE(visitor.hasVisited(*obj2));
+    RawObject obj0 = NoneType::object();
+    RawObject obj1 = NoneType::object();
+    void* obj0_handle = nullptr;
+    void* obj1_handle = nullptr;
+  };
+
+  Visitor visitor;
+  visitor.obj0 = *obj0;
+  visitor.obj1 = *obj1;
+  visitApiHandles(runtime_, &visitor);
+
+  EXPECT_EQ(visitor.obj0_handle, handle0);
+  EXPECT_EQ(visitor.obj1_handle, handle1);
+  handle0->decref();
 }
 
 TEST_F(CApiHandlesDeathTest, CleanupApiHandlesOnExit) {

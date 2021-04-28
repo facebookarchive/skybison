@@ -164,6 +164,7 @@ word moduleExecDef(Thread* thread, const Module& module, PyModuleDef* def) {
   ApiHandle* handle = ApiHandle::borrowedReference(runtime, *module);
   if (def->m_size >= 0) {
     if (handle->cache(runtime) == nullptr) {
+      DCHECK(handle->isBorrowedNoImmediate(), "handle must be marked borrowed");
       handle->setCache(runtime, std::calloc(def->m_size, 1));
       if (!handle->cache(runtime)) {
         thread->raiseMemoryError();

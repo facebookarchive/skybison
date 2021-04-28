@@ -24,6 +24,7 @@ extern "C" char* PyOS_Readline(FILE*, FILE*, const char*);
 
 namespace py {
 
+class HandleVisitor;
 class PointerVisitor;
 class Runtime;
 class Scavenger;
@@ -33,18 +34,9 @@ static const word kCAPIStateSize = 256;
 
 extern struct _inittab* PyImport_Inittab;
 
-// WARNING: This function should be called by the garbage collector.
-void capiHandlesClearNotReferenced(Runtime* runtime);
-
-// WARNING: This function should be called for shutdown.
-void capiHandlesDispose(Runtime* runtime);
-
-// WARNING: This function should be called during garbage collection.
-void capiHandlesShrink(Runtime* runtime);
-
-void capiHandlesVisit(Runtime* runtime, PointerVisitor* visitor);
-
 void disposeExtensionObjects(Runtime* runtime);
+
+void disposeApiHandles(Runtime* runtime);
 
 void finalizeCAPIModules();
 void finalizeCAPIState(Runtime* runtime);
@@ -70,12 +62,9 @@ RawObject moduleInitBuiltinExtension(Thread* thread, const Str& name);
 RawObject moduleLoadDynamicExtension(Thread* thread, const Str& name,
                                      const Str& path);
 
+word numApiHandles(Runtime* runtime);
+
 word numExtensionObjects(Runtime* runtime);
-
-word numTrackedApiHandles(Runtime* runtime);
-
-// Return a borrowed reference to the object.
-void* objectBorrowedReference(Runtime* runtime, RawObject obj);
 
 RawObject objectGetMember(Thread* thread, RawObject ptr, RawObject name);
 
@@ -115,5 +104,21 @@ RawObject newBytesFromBuffer(Thread* thread, const Object& obj);
 
 void visitExtensionObjects(Runtime* runtime, Scavenger* scavenger,
                            PointerVisitor* visitor);
+
+// Calls `visitor->visitHandle` for all `ApiHandle`s.
+void visitApiHandles(Runtime* runtime, HandleVisitor* visitor);
+
+// Visits all `ApiHandle`s with `refcount > 1`. `ApiHandle`s with refcount zero
+// are ignored here and will be handled by
+// `visitNotIncrementedBorrowedApiHandles`.
+void visitIncrementedApiHandles(Runtime* runtime, PointerVisitor* visitor);
+
+// Should be called when all GC roots are processed and no gray objects remain.
+// This disposes `ApiHandle`s with reference count 0 that are not referenced
+// from live objects in the managed heap ("white" objects after GC tri-color
+// marking).
+void visitNotIncrementedBorrowedApiHandles(Runtime* runtime,
+                                           Scavenger* scavenger,
+                                           PointerVisitor* visitor);
 
 }  // namespace py

@@ -62,7 +62,8 @@ class ApiHandle : public PyObject {
   void decrefNoImmediate();
 
   // Remove the ApiHandle from the dictionary and free its memory
-  void dispose(Runtime* runtime);
+  void dispose();
+  void disposeWithRuntime(Runtime* runtime);
 
   bool isImmediate();
 
@@ -78,6 +79,9 @@ class ApiHandle : public PyObject {
   Py_ssize_t refcntNoImmediate();
 
   void setRefcnt(Py_ssize_t count);
+
+  void setBorrowedNoImmediate();
+  bool isBorrowedNoImmediate();
 
  private:
   static bool isEncodeableAsImmediate(RawObject obj);
@@ -130,6 +134,10 @@ inline void ApiHandle::decrefNoImmediate() {
   DCHECK(!isImmediate(), "must not be called with immediate object");
   DCHECK((ob_refcnt & ~kBorrowedBit) > 0, "reference count underflow");
   --ob_refcnt;
+  // Dispose `ApiHandle`s without `kBorrowedBit` when they reach refcount zero.
+  if (ob_refcnt == 0) {
+    dispose();
+  }
 }
 
 inline ApiHandle* ApiHandle::fromPyObject(PyObject* py_obj) {
@@ -172,10 +180,26 @@ inline Py_ssize_t ApiHandle::refcntNoImmediate() {
   return ob_refcnt & ~kBorrowedBit;
 }
 
+inline void ApiHandle::setBorrowedNoImmediate() {
+  DCHECK(!isImmediate(), "must not be called with immediate object");
+  ob_refcnt |= kBorrowedBit;
+}
+
+inline bool ApiHandle::isBorrowedNoImmediate() {
+  DCHECK(!isImmediate(), "must not be called with immediate object");
+  return (ob_refcnt & kBorrowedBit) != 0;
+}
+
 inline RawObject ApiHandle::stealReference(PyObject* py_obj) {
   ApiHandle* handle = ApiHandle::fromPyObject(py_obj);
   if (handle->isImmediate()) return handle->asObjectImmediate();
-  handle->decrefNoImmediate();
+  DCHECK((handle->ob_refcnt & ~kBorrowedBit) > 0, "refcount underflow");
+  // Mark stolen reference as borrowed. This is to support code like this that
+  // increases refcount after the fact:
+  //     PyModule_AddObject(..., x);
+  //     Py_INCREF(x);
+  handle->ob_refcnt |= kBorrowedBit;
+  handle->ob_refcnt--;
   return handle->asObjectNoImmediate();
 }
 

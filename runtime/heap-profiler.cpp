@@ -506,14 +506,11 @@ void HeapProfiler::writeThreadRoot(Thread* thread) {
 // Format:
 //   ID - object ID
 //   ID - ApiHandle address
-void HeapProfiler::writeApiHandleRoot(RawObject obj) {
+void HeapProfiler::writeApiHandleRoot(void* handle, RawObject obj) {
   SubRecord sub(kRootJniGlobal, current_record_);
   // object ID
   sub.writeObjectId(objectId(obj));
   // ApiHandle address
-  // TODO(emacs): Propagate the ApiHandle pointer through to this function
-  // instead of looking it up again.
-  void* handle = objectBorrowedReference(thread_->runtime(), obj);
   sub.writeObjectId(reinterpret_cast<uword>(handle));
 }
 
@@ -706,6 +703,19 @@ static void writeToFileStream(const void* data, word length, void* stream) {
   CHECK(result == length, "could not write the whole chunk to disk");
 }
 
+class HeapProfilerHandleVisitor : public HandleVisitor {
+ public:
+  HeapProfilerHandleVisitor(HeapProfiler* profiler) : profiler_(profiler) {}
+  void visitHandle(void* handle, RawObject obj) {
+    return profiler_->writeApiHandleRoot(handle, obj);
+  }
+
+ protected:
+  HeapProfiler* profiler_;
+
+  DISALLOW_COPY_AND_ASSIGN(HeapProfilerHandleVisitor);
+};
+
 class HeapProfilerRootVisitor : public PointerVisitor {
  public:
   HeapProfilerRootVisitor(HeapProfiler* profiler) : profiler_(profiler) {}
@@ -724,7 +734,8 @@ class HeapProfilerRootVisitor : public PointerVisitor {
       case PointerKind::kStack:
         return profiler_->writeStackRoot(obj);
       case PointerKind::kApiHandle:
-        return profiler_->writeApiHandleRoot(obj);
+        // Should only see handles in `HeapProfilerHandleVisitor`.
+        UNREACHABLE("should not be used");
       case PointerKind::kLayout:
         return profiler_->writeStickyClassRoot(obj);
     }
@@ -826,7 +837,9 @@ RawObject heapDump(Thread* thread, const char* filename) {
     Runtime* runtime = thread->runtime();
 
     HeapProfilerRootVisitor root_visitor(&profiler);
-    runtime->visitRoots(&root_visitor);
+    runtime->visitRootsWithoutApiHandles(&root_visitor);
+    HeapProfilerHandleVisitor handle_visitor(&profiler);
+    visitApiHandles(runtime, &handle_visitor);
 
     HeapProfilerObjectVisitor object_visitor(&profiler);
     runtime->heap()->visitAllObjects(&object_visitor);

@@ -19,6 +19,7 @@ char* bytearrayAsString(Runtime* runtime, ApiHandle* handle,
   array.copyTo(buffer, len);
   buffer[len] = '\0';
   handle->setCache(runtime, buffer);
+  handle->setBorrowedNoImmediate();
   return reinterpret_cast<char*>(buffer);
 }
 

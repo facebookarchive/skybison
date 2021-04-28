@@ -632,6 +632,7 @@ PY_EXPORT const char* PyUnicode_AsUTF8AndSize(PyObject* pyunicode,
   str.copyTo(result, length);
   result[length] = '\0';
   handle->setCache(runtime, result);
+  handle->setBorrowedNoImmediate();
   return reinterpret_cast<char*>(result);
 }
 
@@ -2235,6 +2236,7 @@ PY_EXPORT void* PyUnicode_DATA_Func(PyObject* str) {
   str_obj.copyTo(result, length);
   result[length] = '\0';
   handle->setCache(runtime, result);
+  handle->setBorrowedNoImmediate();
   return reinterpret_cast<char*>(result);
 }
 

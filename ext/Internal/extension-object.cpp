@@ -29,20 +29,21 @@ void finalizeExtensionObject(Thread* thread, RawObject object) {
   destructor tp_dealloc =
       reinterpret_cast<destructor>(typeSlotAt(type, Py_tp_dealloc));
   DCHECK(tp_dealloc != nullptr, "Extension types must have a dealloc slot");
-  PyObject* obj =
-      reinterpret_cast<PyObject*>(Int::cast(proxy.native()).asCPtr());
-  CHECK(obj->ob_refcnt == 1,
+  ApiHandle* handle = ApiHandle::fromPyObject(
+      reinterpret_cast<PyObject*>(Int::cast(proxy.native()).asCPtr()));
+  CHECK(handle->refcnt() == 1,
         "The runtime must hold the last reference to the PyObject* (%p). "
         "Expecting a refcount of 1, but found %ld\n",
-        reinterpret_cast<void*>(obj), obj->ob_refcnt);
-  obj->ob_refcnt--;
-  (*tp_dealloc)(obj);
-  if (!proxy.native().isNoneType() && obj->ob_refcnt == 0) {
+        reinterpret_cast<void*>(handle), handle->refcnt());
+  handle->setRefcnt(0);
+  handle->setBorrowedNoImmediate();
+  (*tp_dealloc)(handle);
+  if (!proxy.native().isNoneType() && handle->refcnt() == 0) {
     // `proxy.native()` being `None` indicates the extension object memory was
     // not freed. `ob_refcnt == 0` means the object was not resurrected.
     // This typically indicates that the user maintains a free-list and wants to
     // call `PyObject_Init` on the memory again, we have to untrack it!
-    ListEntry* entry = reinterpret_cast<ListEntry*>(obj) - 1;
+    ListEntry* entry = reinterpret_cast<ListEntry*>(handle) - 1;
     untrackExtensionObject(runtime, entry);
   }
 }

@@ -29,8 +29,6 @@ class Scavenger : public PointerVisitor {
 
   void processGrayObjects();
 
-  void processRoots();
-
   void processLayouts();
 
   void compactLayoutTypeTransitions();
@@ -66,10 +64,12 @@ RawObject Scavenger::scavenge() {
   if (Space* immortal = heap_->immortal()) {
     processImmortalRoots(immortal);
   }
-  processRoots();
+  runtime_->visitRootsWithoutApiHandles(this);
+  visitIncrementedApiHandles(runtime_, this);
   processGrayObjects();
-  capiHandlesClearNotReferenced(runtime_);
   visitExtensionObjects(runtime_, this, this);
+  processGrayObjects();
+  visitNotIncrementedBorrowedApiHandles(runtime_, this, this);
   processGrayObjects();
   processDelayedReferences();
   processLayouts();
@@ -122,8 +122,6 @@ void Scavenger::processImmortalRoots(Space* immortal) {
     }
   }
 }
-
-void Scavenger::processRoots() { runtime_->visitRoots(this); }
 
 bool Scavenger::isWhiteObject(RawHeapObject object) {
   DCHECK(!to_->contains(object.address()),
