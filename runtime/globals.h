@@ -40,6 +40,9 @@ const int kBitsPerDouble = kBitsPerByte * kDoubleSize;
 const int kDoubleMantissaBits = 52;
 const double kDoubleNaN = std::numeric_limits<double>::quiet_NaN();
 const double kDoubleInfinity = std::numeric_limits<double>::infinity();
+const auto kDoubleMinExp = std::numeric_limits<double>::min_exponent;
+const auto kDoubleMaxExp = std::numeric_limits<double>::max_exponent;
+const auto kDoubleDigits = std::numeric_limits<double>::digits;
 
 const int16_t kMaxInt16 = INT16_MAX;
 const int16_t kMinInt16 = INT16_MIN;
@@ -51,6 +54,9 @@ const uint64_t kMaxUint64 = UINT64_MAX;
 const uint32_t kMaxUint32 = UINT32_MAX;
 
 const byte kMaxByte = 0xFF;
+
+const long kMinLong = std::numeric_limits<long>::min();
+const long kMaxLong = std::numeric_limits<long>::max();
 
 const word kMinWord = INTPTR_MIN;
 const word kMaxWord = INTPTR_MAX;

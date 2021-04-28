@@ -15,6 +15,7 @@
 #include "thread.h"
 #include "type-builtins.h"
 #include "unicode.h"
+#include "utils.h"
 
 namespace py {
 
@@ -58,20 +59,20 @@ static void digitsFromDigitsWithUnderscores(const char* s, char* dup,
   const char* last = s + *length;
   for (p = s; p < last; p++) {
     if (*p == '_') {
-      /* Underscores are only allowed after digits. */
+      // Underscores are only allowed after digits.
       if (!ASCII::isDigit(prev)) {
         return;
       }
     } else {
       *end++ = *p;
-      /* Underscores are only allowed before digits. */
+      // Underscores are only allowed before digits.
       if (prev == '_' && !ASCII::isDigit(*p)) {
         return;
       }
     }
     prev = *p;
   }
-  /* Underscores are not allowed at the end. */
+  // Underscores are not allowed at the end.
   if (prev == '_') {
     return;
   }
@@ -577,9 +578,9 @@ RawObject METH(float, __round__)(Thread* thread, Arguments args) {
   // For `ndigits < ndigits_min`, `value` always rounds to +-0.0.
   // Here 0.30103 is an upper bound for `log10(2)`.
   static const word ndigits_max =
-      static_cast<word>((DBL_MANT_DIG - DBL_MIN_EXP) * 0.30103);
+      static_cast<word>((kDoubleDigits - kDoubleMinExp) * 0.30103);
   static const word ndigits_min =
-      -static_cast<word>((DBL_MAX_EXP + 1) * 0.30103);
+      -static_cast<word>((kDoubleMaxExp + 1) * 0.30103);
   if (ndigits > ndigits_max) {
     return *value_float;
   }
@@ -670,6 +671,325 @@ RawObject METH(float, __pow__)(Thread* thread, Arguments args) {
   if (!maybe_error.isNoneType()) return *maybe_error;
 
   return runtime->newFloat(std::pow(left, right));
+}
+
+static word nextNonHexDigit(const Str& str, word pos) {
+  for (word len = str.length(); pos < len; ++pos) {
+    if (!Byte::isHexDigit(str.byteAt(pos))) {
+      break;
+    }
+  }
+  return pos;
+}
+
+static word nextNonWhitespace(const Str& str, word pos) {
+  for (word length = str.length(); pos < length; ++pos) {
+    if (!Byte::isSpace(str.byteAt(pos))) {
+      break;
+    }
+  }
+  return pos;
+}
+
+static bool strParseOptionalSign(const Str& str, word* pos) {
+  if (*pos >= str.length()) {
+    return false;
+  }
+
+  switch (str.byteAt(*pos)) {
+    case '-':
+      ++(*pos);
+      return true;
+    case '+':
+      ++(*pos);
+      // FALLTHROUGH
+    default:
+      return false;
+  }
+}
+
+static bool strAdvancePrefixCaseInsensitiveASCII(const Str& str, word* pos,
+                                                 const char* lowercase_prefix) {
+  // Caution: if supporting unicode, don't re-write this naively,
+  //  string case operations are tricky, and locale/language
+  //  dependent
+  DCHECK(pos != nullptr, "pos must be non-null");
+  DCHECK(lowercase_prefix != nullptr, "lowercase_prefix must be non-null");
+
+  word i = *pos;
+  word length = str.length();
+  if (i >= length) {
+    return false;
+  }
+
+  for (; i < length && *lowercase_prefix != '\0'; ++i, ++lowercase_prefix) {
+    if (Byte::toLower(str.byteAt(i)) != *lowercase_prefix) {
+      return false;
+    }
+  }
+  // Ensure that the entire prefix was present
+  bool result = *lowercase_prefix == '\0';
+  if (result) {
+    *pos = i;
+  }
+  return result;
+}
+
+static bool parseInfOrNan(const Str& str, word* pos, double* result) {
+  word pos_start = *pos;
+
+  bool negate = strParseOptionalSign(str, pos);
+  if (strAdvancePrefixCaseInsensitiveASCII(str, pos, "inf")) {
+    strAdvancePrefixCaseInsensitiveASCII(str, pos, "inity");
+    *result = negate ? -kDoubleInfinity : kDoubleInfinity;
+  } else if (strAdvancePrefixCaseInsensitiveASCII(str, pos, "nan")) {
+    *result = negate ? -kDoubleNaN : kDoubleNaN;
+  } else {
+    *pos = pos_start;
+    *result = -1.0;
+    return false;
+  }
+
+  return true;
+}
+
+static RawObject newFloatOrSubclass(Thread* thread, const Type& type,
+                                    const Str& str, word pos, double result) {
+  // Optional trailing whitespace leading to the end of the string
+  pos = nextNonWhitespace(str, pos);
+
+  if (pos != str.length()) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "invalid hexadecimal floating-point string");
+  }
+
+  if (type.instanceLayoutId() == LayoutId::kFloat) {
+    return thread->runtime()->newFloat(result);
+  }
+
+  HandleScope scope(thread);
+  Object obj(&scope, thread->runtime()->newFloat(result));
+  return Interpreter::call1(thread, type, obj);
+}
+
+// For 0 <= i < ndigits (implicit), get_hex_digit(i) gives the jth most
+// significant digit, skipping over the '.' between integral and fractional
+// digits.
+static word getHexDigit(const Str& str, word fdigits, word coeff_end, word i) {
+  // Note: this assumes that:
+  // A) all hex digit codepoints have been previously verified to be 1 byte long
+  // B) the separating 'p' or 'P' character has been previously verified to be 1
+  // byte long.
+  word pos = i < fdigits ? coeff_end - (i) : coeff_end - 1 - i;
+  word result = Byte::toHexDigit(str.byteAt(pos));
+  DCHECK(result >= 0, "Only hex digits should be indexed here");
+  return result;
+}
+
+// Computes a integer float value from the digits in str via getHexDigit(), from
+// digit_ms..digit_ls, inclusive
+static double sumHexDigitsDouble(const Str& str, word fdigits, word coeff_end,
+                                 word digit_ms, word digit_ls) {
+  double result = 0;
+  for (word i = digit_ms; i >= digit_ls; --i) {
+    result = 16.0 * result + getHexDigit(str, fdigits, coeff_end, i);
+  }
+  return result;
+}
+
+static RawObject raiseOverflowErrorHexFloatTooLarge(Thread* thread) {
+  return thread->raiseWithFmt(
+      LayoutId::kOverflowError,
+      "hexadecimal value too large to represent as a float");
+}
+
+static void floatHexParseCoefficients(const Str& str, word* pos, word* ndigits,
+                                      word* fdigits, word* coeff_end) {
+  DCHECK(pos != nullptr && ndigits != nullptr && fdigits != nullptr &&
+             coeff_end != nullptr,
+         "Invalid argument to floatHexParseCoefficients");
+
+  word coeff_start = *pos;
+  *pos = nextNonHexDigit(str, *pos);
+
+  const word length = str.length();
+  word pos_store = *pos;
+  if (*pos < length && '.' == str.byteAt(*pos)) {
+    // Note skipping over the '.' character
+    *pos = nextNonHexDigit(str, *pos + 1);
+    *coeff_end = *pos - 1;
+  } else {
+    *coeff_end = *pos;
+  }
+
+  // ndigits = total # of hex digits; fdigits = # after point
+  *ndigits = *coeff_end - coeff_start;
+  *fdigits = *coeff_end - pos_store;
+}
+
+static long floatHexParseExponent(const Str& str, word* pos) {
+  long exponent = 0;
+  if (*pos < str.length() && 'p' == Byte::toLower(str.byteAt(*pos))) {
+    ++(*pos);
+    bool negate = strParseOptionalSign(str, pos);
+
+    for (word length = str.length();
+         *pos < length && Byte::isDigit(str.byteAt(*pos)); ++(*pos)) {
+      exponent = exponent * 10 + Byte::toDigit(str.byteAt(*pos));
+    }
+    if (negate) {
+      exponent = -exponent;
+    }
+  }
+  return exponent;
+}
+
+RawObject METH(float, fromhex)(Thread* thread, Arguments args) {
+  // Convert a hexadecimal string to a float.
+  // Check the function arguments
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+
+  Object type_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfType(*type_obj)) {
+    return thread->raiseRequiresType(type_obj, ID(type));
+  }
+  Type type(&scope, *type_obj);
+
+  Object str_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfStr(*str_obj)) {
+    return thread->raiseRequiresType(str_obj, ID(str));
+  }
+
+  const Str str(&scope, strUnderlying(*str_obj));
+
+  //
+  // Parse the string
+  //
+
+  // leading whitespace
+  word pos = nextNonWhitespace(str, 0);
+
+  // infinities and nans
+  {
+    double result;
+    if (parseInfOrNan(str, &pos, &result)) {
+      return newFloatOrSubclass(thread, type, str, pos, result);
+    }
+  }
+
+  // optional sign
+  bool negate = strParseOptionalSign(str, &pos);
+
+  // [0x]
+  strAdvancePrefixCaseInsensitiveASCII(str, &pos, "0x");
+
+  // coefficient: <integer> [. <fraction>]
+  word ndigits, fdigits, coeff_end;
+  floatHexParseCoefficients(str, &pos, &ndigits, &fdigits, &coeff_end);
+  if (ndigits == 0) {
+    return thread->raiseWithFmt(
+        LayoutId::kValueError,
+        "invalid hexadecimal floating-point string, no digits");
+  }
+
+  if (ndigits > Utils::minimum(kDoubleMinExp - kDoubleDigits - kMinLong / 2,
+                               kMaxLong / 2 + 1 - kDoubleMaxExp) /
+                    4) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "hexadecimal string too long to convert");
+  }
+
+  // [p <exponent>]
+  long exponent = floatHexParseExponent(str, &pos);
+
+  //
+  // Compute rounded value of the hex string
+  //
+
+  // Discard leading zeros, and catch extreme overflow and underflow
+  while (ndigits > 0 &&
+         getHexDigit(str, fdigits, coeff_end, ndigits - 1) == 0) {
+    --ndigits;
+  }
+  if (ndigits == 0 || exponent < kMinLong / 2) {
+    return newFloatOrSubclass(thread, type, str, pos, negate ? -0.0 : 0.0);
+  }
+  if (exponent > kMaxLong / 2) {
+    return raiseOverflowErrorHexFloatTooLarge(thread);
+  }
+
+  // Adjust exponent for fractional part, 4 bits per nibble
+  exponent -= 4 * static_cast<long>(fdigits);
+
+  // top_exponent = 1 more than exponent of most sig. bit of coefficient
+  long top_exponent = exponent + 4 * (static_cast<long>(ndigits) - 1);
+  for (int digit = getHexDigit(str, fdigits, coeff_end, ndigits - 1);
+       digit != 0; digit /= 2) {
+    ++top_exponent;
+  }
+
+  // catch almost all nonextreme cases of overflow and underflow here
+  if (top_exponent < kDoubleMinExp - kDoubleDigits) {
+    return newFloatOrSubclass(thread, type, str, pos, negate ? -0.0 : 0.0);
+  }
+  if (top_exponent > kDoubleMaxExp) {
+    return raiseOverflowErrorHexFloatTooLarge(thread);
+  }
+
+  // lsb = exponent of least significant bit of the *rounded* value.
+  // This is top_exponent - kDoubleDigits unless result is subnormal.
+  long lsb = Utils::maximum(top_exponent, static_cast<long>(kDoubleMinExp)) -
+             kDoubleDigits;
+  // Check if rounding required
+  double result = 0.0;
+  if (exponent >= lsb) {
+    // no rounding required
+    result = sumHexDigitsDouble(str, fdigits, coeff_end, ndigits - 1, 0);
+  } else {
+    // rounding required.  key_digit is the index of the hex digit
+    // containing the first bit to be rounded away.
+    int half_eps = 1 << static_cast<int>((lsb - exponent - 1) % 4);
+    long key_digit = (lsb - exponent - 1) / 4;
+    result =
+        sumHexDigitsDouble(str, fdigits, coeff_end, ndigits - 1, key_digit + 1);
+
+    // sum in the final key_digit, but subtract off 2*half_eps from it first to
+    // allow for the rounding below.
+    int digit = getHexDigit(str, fdigits, coeff_end, key_digit);
+    result = 16.0 * result + static_cast<double>(digit & (16 - 2 * half_eps));
+
+    // round-half-even: round up if bit lsb-1 is 1 and at least one of
+    // bits lsb, lsb-2, lsb-3, lsb-4, ... is 1.
+    if ((digit & half_eps) != 0) {
+      bool round_up = false;
+      if ((digit & (3 * half_eps - 1)) != 0 ||
+          (half_eps == 8 &&
+           (getHexDigit(str, fdigits, coeff_end, key_digit + 1) & 1) != 0)) {
+        round_up = true;
+      } else {
+        for (ssize_t i = key_digit - 1; i >= 0; --i) {
+          if (getHexDigit(str, fdigits, coeff_end, i) != 0) {
+            round_up = true;
+            break;
+          }
+        }
+      }
+      if (round_up) {
+        result += 2 * half_eps;
+        if (top_exponent == kDoubleMaxExp &&
+            result == ldexp(static_cast<double>(2 * half_eps), kDoubleDigits)) {
+          // overflow corner case: pre-rounded value < 2**kDoubleMaxExp;
+          // rounded=2**kDoubleMaxExp.
+          return raiseOverflowErrorHexFloatTooLarge(thread);
+        }
+      }
+    }
+    // Adjust the exponent over 4 bits for every nibble we skipped processing
+    exponent += 4 * key_digit;
+  }
+  result = ldexp(result, static_cast<int>(exponent));
+  return newFloatOrSubclass(thread, type, str, pos, negate ? -result : result);
 }
 
 RawObject METH(float, hex)(Thread* thread, Arguments args) {

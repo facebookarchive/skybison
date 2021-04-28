@@ -51,6 +51,8 @@ class Byte {
   static bool isUpper(byte b);
 
   // Conversion
+  static int8_t toDigit(byte b);
+  static int8_t toHexDigit(byte b);
   static byte toLower(byte b);
   static byte toUpper(byte b);
 
@@ -453,6 +455,21 @@ inline bool Byte::isSpace(byte b) { return (kTable[b] & kSpace) != 0; }
 inline bool Byte::isUpper(byte b) { return (kTable[b] & kUpper) != 0; }
 
 inline bool Byte::isHexDigit(byte b) { return (kTable[b] & kHexDigit) != 0; }
+
+inline int8_t Byte::toDigit(byte b) { return Byte::isDigit(b) ? b - '0' : -1; }
+
+inline int8_t Byte::toHexDigit(byte b) {
+  if (Byte::isDigit(b)) {
+    return b - '0';
+  }
+  if ('a' <= b && b <= 'f') {
+    return b - 'a' + 10;
+  }
+  if ('A' <= b && b <= 'F') {
+    return b - 'A' + 10;
+  }
+  return -1;
+}
 
 inline byte Byte::toLower(byte b) { return kToLower[b]; }
 

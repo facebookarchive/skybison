@@ -3981,7 +3981,7 @@ class float(bootstrap=True):
 
     @classmethod
     def fromhex(cls, string):
-        _unimplemented()
+        _builtin()
 
     def hex(self):
         _builtin()
