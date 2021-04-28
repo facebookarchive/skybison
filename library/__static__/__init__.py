@@ -62,6 +62,7 @@ except ImportError:
     def rand():
         return random.randint(0, RAND_MAX)
 
+
 try:
     import cinder
 except ImportError:
