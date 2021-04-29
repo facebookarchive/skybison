@@ -48,6 +48,14 @@ TEST_F(DateTimeExtensionApiTest, PyDateTimeCheckWithNonDateTimeReturnsFalse) {
   EXPECT_FALSE(PyDateTime_Check(instance));
 }
 
+TEST_F(DateTimeExtensionApiTest,
+       PyDateTimeFromDateAndTimeReturnsDateTimeObject) {
+  PyDateTime_IMPORT;
+  PyObjectPtr result(PyDateTime_FromDateAndTime(1, 2, 3, 4, 5, 6, 10));
+  ASSERT_NE(result, nullptr);
+  EXPECT_TRUE(PyDateTime_Check(result));
+}
+
 TEST_F(DateTimeExtensionApiTest, PyDateCheckWithDateObjectReturnsTrue) {
   PyRun_SimpleString(R"(
 import datetime
@@ -117,6 +125,13 @@ TEST_F(DateTimeExtensionApiTest, PyDeltaCheckWithNonDeltaReturnsFalse) {
   EXPECT_FALSE(PyDelta_Check(instance));
 }
 
+TEST_F(DateTimeExtensionApiTest, PyDeltaFromDSUReturnsObject) {
+  PyDateTime_IMPORT;
+  PyObjectPtr result(PyDelta_FromDSU(1, 2, 500));
+  ASSERT_NE(result, nullptr);
+  EXPECT_TRUE(PyDelta_Check(result));
+}
+
 TEST_F(DateTimeExtensionApiTest, PyDateTimeGETsEveryUnitOfTime) {
   PyRun_SimpleString(R"(
 import datetime
@@ -135,6 +150,21 @@ instance = datetime.datetime(1990, 2, 3, 4, 5, 6, 10000)
   Py_DECREF(instance);
 }
 
+TEST_F(DateTimeExtensionApiTest, PyDateTimeTimeGETsEveryUnitOfTime) {
+  PyRun_SimpleString(R"(
+import datetime
+instance = datetime.time(1, 40, 50, 999)
+)");
+  PyObject* instance = mainModuleGet("instance");
+  ASSERT_NE(instance, nullptr);
+  PyDateTime_IMPORT;
+  EXPECT_EQ(PyDateTime_TIME_GET_HOUR(instance), 1);
+  EXPECT_EQ(PyDateTime_TIME_GET_MINUTE(instance), 40);
+  EXPECT_EQ(PyDateTime_TIME_GET_SECOND(instance), 50);
+  EXPECT_EQ(PyDateTime_TIME_GET_MICROSECOND(instance), 999);
+  Py_DECREF(instance);
+}
+
 TEST_F(DateTimeExtensionApiTest, PyDeltaGETsEveryUnitOfTime) {
   PyRun_SimpleString(R"(
 import datetime
@@ -147,6 +177,17 @@ instance = datetime.timedelta(1, 2, 3)
   EXPECT_EQ(PyDateTime_DELTA_GET_SECONDS(instance), 2);
   EXPECT_EQ(PyDateTime_DELTA_GET_MICROSECONDS(instance), 3);
   Py_DECREF(instance);
+}
+
+TEST_F(DateTimeExtensionApiTest, PyTimeCheckWithTimeObjectReturnsTrue) {
+  PyRun_SimpleString(R"(
+import datetime
+instance = datetime.time(1, 2, 3)
+)");
+  PyObjectPtr instance(mainModuleGet("instance"));
+  ASSERT_NE(instance, nullptr);
+  PyDateTime_IMPORT;
+  EXPECT_TRUE(PyTime_Check(instance));
 }
 
 }  // namespace testing
