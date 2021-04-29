@@ -7689,8 +7689,112 @@ instance = C([4, 5, 6])
   List instance(&scope, mainModuleAt(runtime_, "instance"));
   Function deopt_caller(&scope, createTrampolineFunction1(thread_, instance));
   Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_EQ(function.entryAsm(), entry_before);
   EXPECT_EQ(*result, NoneType::object());
   EXPECT_TRUE(isIntEqualsWord(instance.at(0), 123));
+}
+
+TEST_F(JitTest, InplaceAddSmallintAddsIntegers) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(obj):
+  obj += 1
+  return obj
+
+# Rewrite INPLACE_OP_ANAMORPHIC to INPLACE_ADD_SMALLINT
+foo(1)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, INPLACE_ADD_SMALLINT));
+  Object obj(&scope, SmallInt::fromWord(12));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, obj));
+  EXPECT_TRUE(isIntEqualsWord(*result, 13));
+}
+
+TEST_F(JitTest, InplaceAddSmallintWithNonIntDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(left, right):
+  left += right
+  return left
+
+# Rewrite INPLACE_OP_MONOMORPHIC to INPLACE_ADD_SMALLINT
+foo(1, 2)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, INPLACE_ADD_SMALLINT));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Str left(&scope, SmallStr::fromCStr("hello"));
+  Str right(&scope, SmallStr::fromCStr(" world"));
+  Function deopt_caller(&scope,
+                        createTrampolineFunction2(thread_, left, right));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_EQ(function.entryAsm(), entry_before);
+  EXPECT_TRUE(isStrEqualsCStr(*result, "hello world"));
+}
+
+TEST_F(JitTest, InplaceSubSmallintSubsIntegers) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(obj):
+  obj -= 1
+  return obj
+
+# Rewrite INPLACE_OP_ANAMORPHIC to INPLACE_SUB_SMALLINT
+foo(1)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, INPLACE_SUB_SMALLINT));
+  Object obj(&scope, SmallInt::fromWord(12));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, obj));
+  EXPECT_TRUE(isIntEqualsWord(*result, 11));
+}
+
+TEST_F(JitTest, InplaceSubSmallintWithNonIntDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C(int):
+  pass
+
+def foo(obj):
+  obj -= 1
+  return obj
+
+# Rewrite INPLACE_OP_MONOMORPHIC to INPLACE_SUB_SMALLINT
+foo(1)
+instance = C(12)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, INPLACE_SUB_SMALLINT));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  Function deopt_caller(&scope, createTrampolineFunction1(thread_, instance));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_EQ(function.entryAsm(), entry_before);
+  EXPECT_TRUE(runtime_->isInstanceOfInt(*result));
+  EXPECT_TRUE(isIntEqualsWord(intUnderlying(*result), 11));
 }
 
 }  // namespace testing

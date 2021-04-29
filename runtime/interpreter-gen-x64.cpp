@@ -2569,6 +2569,8 @@ bool isSupportedInJIT(Bytecode bc) {
     case COMPARE_LT_SMALLINT:
     case COMPARE_NE_SMALLINT:
     case DUP_TOP:
+    case INPLACE_ADD_SMALLINT:
+    case INPLACE_SUB_SMALLINT:
     case LOAD_BOOL:
     case LOAD_CONST:
     case LOAD_FAST_REVERSE:
