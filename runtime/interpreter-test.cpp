@@ -7588,5 +7588,110 @@ foo(1, 1)
   EXPECT_EQ(function.entryAsm(), entry_before);
 }
 
+TEST_F(JitTest, BinarySubscrListReturnsItem) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(obj):
+  return obj[0]
+
+# Rewrite BINARY_SUBSCR_ANAMORPHIC to BINARY_SUBSCR_LIST
+foo([3, 2, 1])
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BINARY_SUBSCR_LIST));
+  List list(&scope, runtime_->newList());
+  Object obj(&scope, SmallStr::fromCStr("bar"));
+  runtime_->listAdd(thread_, list, obj);
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, list));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "bar"));
+}
+
+TEST_F(JitTest, BinarySubscrListWithNonListDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(obj):
+  return obj[0]
+
+# Rewrite BINARY_SUBSCR_ANAMORPHIC to BINARY_SUBSCR_LIST
+foo([3, 2, 1])
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BINARY_SUBSCR_LIST));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Object obj(&scope, SmallInt::fromWord(7));
+  Object non_list(&scope, runtime_->newTupleWith1(obj));
+  Function deopt_caller(&scope, createTrampolineFunction1(thread_, non_list));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_TRUE(containsBytecode(function, BINARY_SUBSCR_MONOMORPHIC));
+  EXPECT_TRUE(isIntEqualsWord(*result, 7));
+  EXPECT_EQ(function.entryAsm(), entry_before);
+}
+
+TEST_F(JitTest, StoreSubscrListStoresItem) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(obj):
+  obj[0] = 123
+
+# Rewrite STORE_SUBSCR_ANAMORPHIC to STORE_SUBSCR_LIST
+foo([3, 2, 1])
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, STORE_SUBSCR_LIST));
+  List list(&scope, runtime_->newList());
+  Object obj(&scope, SmallStr::fromCStr("bar"));
+  runtime_->listAdd(thread_, list, obj);
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, list));
+  EXPECT_EQ(*result, NoneType::object());
+  EXPECT_TRUE(isIntEqualsWord(list.at(0), 123));
+}
+
+TEST_F(JitTest, StoreSubscrListWithNonListDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C(list):
+  pass
+
+def foo(obj):
+  obj[0] = 123
+
+# Rewrite STORE_SUBSCR_ANAMORPHIC to STORE_SUBSCR_LIST
+foo([3, 2, 1])
+instance = C([4, 5, 6])
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, STORE_SUBSCR_LIST));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  List instance(&scope, mainModuleAt(runtime_, "instance"));
+  Function deopt_caller(&scope, createTrampolineFunction1(thread_, instance));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_EQ(*result, NoneType::object());
+  EXPECT_TRUE(isIntEqualsWord(instance.at(0), 123));
+}
+
 }  // namespace testing
 }  // namespace py

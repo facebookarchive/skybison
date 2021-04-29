@@ -2558,6 +2558,7 @@ bool isSupportedInJIT(Bytecode bc) {
     case BINARY_ADD_SMALLINT:
     case BINARY_AND_SMALLINT:
     case BINARY_OR_SMALLINT:
+    case BINARY_SUBSCR_LIST:
     case BINARY_SUB_SMALLINT:
     case COMPARE_EQ_SMALLINT:
     case COMPARE_GE_SMALLINT:
@@ -2578,6 +2579,7 @@ bool isSupportedInJIT(Bytecode bc) {
     case RETURN_VALUE:
     case ROT_TWO:
     case STORE_FAST_REVERSE:
+    case STORE_SUBSCR_LIST:
     case UNARY_NOT:
       return true;
     default:
