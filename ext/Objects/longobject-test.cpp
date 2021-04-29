@@ -899,8 +899,205 @@ TEST_F(LongExtensionApiTest, FromDoubleRaisesAndReturnsNull) {
   EXPECT_EQ(pylong, nullptr);
 }
 
+TEST_F(LongExtensionApiTest, LshiftWithZeroReturnsZero) {
+  PyObjectPtr result(_PyLong_Lshift(_PyLong_Zero, 10));
+  EXPECT_TRUE(isLongEqualsLong(result, 0));
+}
+
+TEST_F(LongExtensionApiTest, LshiftWithNonzeroShiftsBits) {
+  PyObjectPtr pos_result(_PyLong_Lshift(_PyLong_One, 10));
+  EXPECT_TRUE(isLongEqualsLong(pos_result, 1024));
+
+  PyObjectPtr neg(PyLong_FromLong(-5));
+  PyObjectPtr neg_result(_PyLong_Lshift(neg, 4));
+  EXPECT_TRUE(isLongEqualsLong(neg_result, -80));
+}
+
 TEST_F(LongExtensionApiTest, OneIsOne) {
   EXPECT_TRUE(isLongEqualsLong(_PyLong_One, 1));
+}
+
+TEST_F(LongExtensionApiTest, RshiftWithZeroReturnsZero) {
+  PyObjectPtr result(_PyLong_Rshift(_PyLong_Zero, 10));
+  EXPECT_TRUE(isLongEqualsLong(result, 0));
+}
+
+TEST_F(LongExtensionApiTest, RshiftWithNonzeroShiftsBits) {
+  PyObjectPtr pos(PyLong_FromLong(257));
+  PyObjectPtr pos_result(_PyLong_Rshift(pos, 3));
+  EXPECT_TRUE(isLongEqualsLong(pos_result, 32));
+
+  PyObjectPtr neg(PyLong_FromLong(-17));
+  PyObjectPtr neg_result(_PyLong_Rshift(neg, 2));
+  EXPECT_TRUE(isLongEqualsLong(neg_result, -5));
+}
+
+TEST_F(LongExtensionApiTest, SizeTConverterWithNonIntRaisesTypeError) {
+  size_t ignored;
+  PyObjectPtr tuple(PyTuple_New(0));
+  EXPECT_EQ(_PyLong_Size_t_Converter(tuple, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(LongExtensionApiTest, SizeTConverterWithNegativeRaisesValueError) {
+  size_t ignored;
+  PyObjectPtr negative(PyLong_FromLong(-10));
+  EXPECT_EQ(_PyLong_Size_t_Converter(negative, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(LongExtensionApiTest, SizeTConverterWithLargeIntRaisesOverflowError) {
+  size_t ignored;
+  PyObjectPtr large(PyLong_FromString("10000000000000002", nullptr, 16));
+  EXPECT_EQ(_PyLong_Size_t_Converter(large, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(LongExtensionApiTest, SizeTConverterSetsSizeT) {
+  size_t result;
+  PyObjectPtr num(PyLong_FromLong(42));
+  EXPECT_EQ(_PyLong_Size_t_Converter(num, &result), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, static_cast<unsigned>(42));
+}
+
+TEST_F(LongExtensionApiTest, UnsignedIntConverterWithNonIntRaisesTypeError) {
+  unsigned int ignored;
+  PyObjectPtr tuple(PyTuple_New(0));
+  EXPECT_EQ(_PyLong_UnsignedInt_Converter(tuple, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(LongExtensionApiTest, UnsignedIntConverterWithNegativeRaisesValueError) {
+  unsigned int ignored;
+  PyObjectPtr negative(PyLong_FromLong(-10));
+  EXPECT_EQ(_PyLong_UnsignedInt_Converter(negative, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(LongExtensionApiTest,
+       UnsignedIntConverterWithLargeIntRaisesOverflowError) {
+  unsigned int ignored;
+  PyObjectPtr large(PyLong_FromString("10000000000000002", nullptr, 16));
+  EXPECT_EQ(_PyLong_UnsignedInt_Converter(large, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(LongExtensionApiTest, UnsignedIntConverterSetsUnsignedInt) {
+  unsigned int result;
+  PyObjectPtr num(PyLong_FromLong(42));
+  EXPECT_EQ(_PyLong_UnsignedInt_Converter(num, &result), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, static_cast<unsigned>(42));
+}
+
+TEST_F(LongExtensionApiTest, UnsignedLongConverterWithNonIntRaisesTypeError) {
+  unsigned long ignored;
+  PyObjectPtr tuple(PyTuple_New(0));
+  EXPECT_EQ(_PyLong_UnsignedLong_Converter(tuple, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(LongExtensionApiTest,
+       UnsignedLongConverterWithNegativeRaisesValueError) {
+  unsigned long ignored;
+  PyObjectPtr negative(PyLong_FromLong(-10));
+  EXPECT_EQ(_PyLong_UnsignedLong_Converter(negative, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(LongExtensionApiTest,
+       UnsignedLongConverterWithLargeIntRaisesOverflowError) {
+  unsigned long ignored;
+  PyObjectPtr large(PyLong_FromString("10000000000000002", nullptr, 16));
+  EXPECT_EQ(_PyLong_UnsignedLong_Converter(large, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(LongExtensionApiTest, UnsignedLongConverterSetsUnsignedLong) {
+  unsigned long result;
+  PyObjectPtr num(PyLong_FromLong(42));
+  EXPECT_EQ(_PyLong_UnsignedLong_Converter(num, &result), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, static_cast<unsigned>(42));
+}
+
+TEST_F(LongExtensionApiTest,
+       UnsignedLongLongConverterWithNonIntRaisesTypeError) {
+  unsigned long long ignored;
+  PyObjectPtr tuple(PyTuple_New(0));
+  EXPECT_EQ(_PyLong_UnsignedLongLong_Converter(tuple, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(LongExtensionApiTest,
+       UnsignedLongLongConverterWithNegativeRaisesValueError) {
+  unsigned long long ignored;
+  PyObjectPtr negative(PyLong_FromLong(-10));
+  EXPECT_EQ(_PyLong_UnsignedLongLong_Converter(negative, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(LongExtensionApiTest,
+       UnsignedLongLongConverterWithLargeIntRaisesOverflowError) {
+  unsigned long long ignored;
+  PyObjectPtr large(PyLong_FromString("10000000000000002", nullptr, 16));
+  EXPECT_EQ(_PyLong_UnsignedLongLong_Converter(large, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(LongExtensionApiTest, UnsignedLongLongConverterSetsUnsignedLongLong) {
+  unsigned long long result;
+  PyObjectPtr num(PyLong_FromLong(42));
+  EXPECT_EQ(_PyLong_UnsignedLongLong_Converter(num, &result), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, static_cast<unsigned>(42));
+}
+
+TEST_F(LongExtensionApiTest, UnsignedShortConverterWithNonIntRaisesTypeError) {
+  unsigned short ignored;
+  PyObjectPtr tuple(PyTuple_New(0));
+  EXPECT_EQ(_PyLong_UnsignedShort_Converter(tuple, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(LongExtensionApiTest,
+       UnsignedShortConverterWithNegativeRaisesValueError) {
+  unsigned short ignored;
+  PyObjectPtr negative(PyLong_FromLong(-10));
+  EXPECT_EQ(_PyLong_UnsignedShort_Converter(negative, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_ValueError));
+}
+
+TEST_F(LongExtensionApiTest,
+       UnsignedShortConverterWithLargeIntRaisesOverflowError) {
+  unsigned short ignored;
+  PyObjectPtr large(PyLong_FromString("10000000000000002", nullptr, 16));
+  EXPECT_EQ(_PyLong_UnsignedShort_Converter(large, &ignored), 0);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_OverflowError));
+}
+
+TEST_F(LongExtensionApiTest, UnsignedShortConverterSetsUnsignedShort) {
+  unsigned short result;
+  PyObjectPtr num(PyLong_FromLong(42));
+  EXPECT_EQ(_PyLong_UnsignedShort_Converter(num, &result), 1);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  EXPECT_EQ(result, static_cast<unsigned>(42));
 }
 
 TEST_F(LongExtensionApiTest, ZeroIsZero) {
