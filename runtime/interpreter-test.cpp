@@ -7552,5 +7552,41 @@ def foo(obj):
   EXPECT_EQ(*result, Bool::falseObj());
 }
 
+TEST_F(JitTest, BinaryAddSmallintWithNonSmallintDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  // Don't use compileAndCallJITFunction2 in this function because we want to
+  // test deoptimizing back into the interpreter. This requires valid bytecode.
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(left, right):
+  return left + right
+
+# Rewrite BINARY_OP_ANAMORPHIC to BINARY_ADD_SMALLINT
+foo(1, 1)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BINARY_ADD_SMALLINT));
+  Object left_int(&scope, SmallInt::fromWord(5));
+  Object right_int(&scope, SmallInt::fromWord(10));
+  void* entry_before = function.entryAsm();
+  Function caller(&scope,
+                  createTrampolineFunction2(thread_, left_int, right_int));
+  compileFunction(thread_, function);
+  Object result(&scope, Interpreter::call0(thread_, caller));
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Object left_str(&scope, SmallStr::fromCStr("hello"));
+  Object right_str(&scope, SmallStr::fromCStr(" world"));
+  Function deopt_caller(
+      &scope, createTrampolineFunction2(thread_, left_str, right_str));
+  result = Interpreter::call0(thread_, deopt_caller);
+  EXPECT_TRUE(containsBytecode(function, BINARY_OP_MONOMORPHIC));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "hello world"));
+  EXPECT_EQ(function.entryAsm(), entry_before);
+}
+
 }  // namespace testing
 }  // namespace py

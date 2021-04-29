@@ -7,6 +7,7 @@
 
 #include "assembler-x64.h"
 #include "bytecode.h"
+#include "event.h"
 #include "frame.h"
 #include "ic.h"
 #include "interpreter.h"
@@ -212,6 +213,10 @@ class JitEnv : public EmitEnv {
   void setCurrentOp(BytecodeOp op) { current_op_ = op; }
 
   View<RegisterAssignment> jit_handler_assignment = kNoRegisterAssignment;
+
+  View<RegisterAssignment> deopt_assignment = kNoRegisterAssignment;
+
+  Label deopt_handler;
 
  private:
   Function function_;
@@ -739,6 +744,17 @@ void emitAttrWithOffset(EmitEnv* env, void (Assembler::*asm_op)(Address),
   __ jmp(next, Assembler::kNearJump);
 }
 
+void emitJumpToDeopt(EmitEnv* env) {
+  DCHECK(env->in_jit, "deopt not supported for non-JIT assembly");
+  JitEnv* jenv = static_cast<JitEnv*>(env);
+  // Set the PC to what would be in a normal opcode handler. We may not have
+  // set it if the JIT handler did not need the PC.
+  env->register_state.assign(&env->pc, kPCReg);
+  __ movq(env->pc, Immediate(jenv->virtualPC()));
+  env->register_state.check(jenv->deopt_assignment);
+  __ jmp(&jenv->deopt_handler, Assembler::kFarJump);
+}
+
 template <>
 void emitHandler<BINARY_ADD_SMALLINT>(EmitEnv* env) {
   ScratchReg r_right(env);
@@ -759,6 +775,10 @@ void emitHandler<BINARY_ADD_SMALLINT>(EmitEnv* env) {
   __ bind(&slow_path);
   __ pushq(r_left);
   __ pushq(r_right);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   __ movq(kArgRegs[0], env->thread);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   emitCurrentCacheIndex(env, kArgRegs[2]);
@@ -786,6 +806,10 @@ void emitHandler<BINARY_AND_SMALLINT>(EmitEnv* env) {
   __ bind(&slow_path);
   __ pushq(r_left);
   __ pushq(r_right);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   __ movq(kArgRegs[0], env->thread);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   emitCurrentCacheIndex(env, kArgRegs[2]);
@@ -815,6 +839,10 @@ void emitHandler<BINARY_SUB_SMALLINT>(EmitEnv* env) {
   __ bind(&slow_path);
   __ pushq(r_left);
   __ pushq(r_right);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   __ movq(kArgRegs[0], env->thread);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   emitCurrentCacheIndex(env, kArgRegs[2]);
@@ -842,6 +870,10 @@ void emitHandler<BINARY_OR_SMALLINT>(EmitEnv* env) {
   __ bind(&slow_path);
   __ pushq(r_left);
   __ pushq(r_right);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   __ movq(kArgRegs[0], env->thread);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   emitCurrentCacheIndex(env, kArgRegs[2]);
@@ -889,6 +921,10 @@ void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
   __ bind(&slow_path);
   __ pushq(r_container);
   __ pushq(r_key);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   __ movq(kArgRegs[0], env->thread);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   emitCurrentCacheIndex(env, kArgRegs[1]);
@@ -924,6 +960,10 @@ void emitHandler<BINARY_SUBSCR_MONOMORPHIC>(EmitEnv* env) {
   __ bind(&slow_path);
   __ pushq(r_receiver);
   __ pushq(r_key);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   emitJumpToGenericHandler(env);
 }
 
@@ -967,6 +1007,10 @@ void emitHandler<STORE_SUBSCR_LIST>(EmitEnv* env) {
   __ bind(&slow_path_non_list);
   __ pushq(r_container);
   __ pushq(r_key);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   __ movq(kArgRegs[0], env->thread);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   emitCurrentCacheIndex(env, kArgRegs[1]);
@@ -994,6 +1038,10 @@ void emitHandler<LOAD_ATTR_INSTANCE>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_base);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   emitJumpToGenericHandler(env);
 }
 
@@ -1015,6 +1063,10 @@ void emitHandler<LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_base);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   emitJumpToGenericHandler(env);
 }
 
@@ -1045,6 +1097,7 @@ void emitHandler<LOAD_ATTR_POLYMORPHIC>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_base);
+  // Don't deopt because this won't rewrite.
   emitJumpToGenericHandler(env);
 }
 
@@ -1070,6 +1123,10 @@ void emitHandler<LOAD_ATTR_INSTANCE_PROPERTY>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_base);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   emitJumpToGenericHandler(env);
 }
 
@@ -1133,6 +1190,10 @@ void emitHandler<LOAD_DEREF>(EmitEnv* env) {
 
   // Handle unbound cells in the generic handler.
   __ bind(&slow_path);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   emitJumpToGenericHandler(env);
 }
 
@@ -1156,6 +1217,10 @@ void emitHandler<LOAD_METHOD_INSTANCE_FUNCTION>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_base);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   emitJumpToGenericHandler(env);
 }
 
@@ -1179,6 +1244,7 @@ void emitHandler<LOAD_METHOD_POLYMORPHIC>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_base);
+  // Don't deopt because this won't rewrite.
   emitJumpToGenericHandler(env);
 }
 
@@ -1201,6 +1267,10 @@ void emitHandler<STORE_ATTR_INSTANCE>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_base);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   emitJumpToGenericHandler(env);
 }
 
@@ -1230,6 +1300,10 @@ void emitHandler<STORE_ATTR_INSTANCE_OVERFLOW>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_base);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   emitJumpToGenericHandler(env);
 }
 
@@ -1253,6 +1327,7 @@ void emitHandler<STORE_ATTR_POLYMORPHIC>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_base);
+  // Don't deopt because this won't rewrite.
   emitJumpToGenericHandler(env);
 }
 
@@ -1772,6 +1847,10 @@ void emitHandler<FOR_ITER_LIST>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_iter);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   emitGenericHandler(env, FOR_ITER_ANAMORPHIC);
 }
 
@@ -1826,6 +1905,10 @@ void emitHandler<FOR_ITER_RANGE>(EmitEnv* env) {
 
   __ bind(&slow_path);
   __ pushq(r_iter);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   emitGenericHandler(env, FOR_ITER_ANAMORPHIC);
 }
 
@@ -1963,6 +2046,10 @@ void emitJumpIfBoolOrPop(EmitEnv* env, bool jump_value) {
 
   __ bind(&slow_path);
   __ pushq(r_scratch);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   emitJumpToGenericHandler(env);
 }
 
@@ -2092,6 +2179,10 @@ static void emitCompareOpSmallIntHandler(EmitEnv* env, Condition cond) {
   __ bind(&slow_path);
   __ pushq(r_left);
   __ pushq(r_right);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   __ movq(kArgRegs[0], env->thread);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   emitCurrentCacheIndex(env, kArgRegs[2]);
@@ -2161,6 +2252,10 @@ void emitHandler<INPLACE_ADD_SMALLINT>(EmitEnv* env) {
   __ bind(&slow_path);
   __ pushq(r_left);
   __ pushq(r_right);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   __ movq(kArgRegs[0], env->thread);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   emitCurrentCacheIndex(env, kArgRegs[2]);
@@ -2189,6 +2284,10 @@ void emitHandler<INPLACE_SUB_SMALLINT>(EmitEnv* env) {
   __ bind(&slow_path);
   __ pushq(r_left);
   __ pushq(r_right);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
   __ movq(kArgRegs[0], env->thread);
   emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
   emitCurrentCacheIndex(env, kArgRegs[2]);
@@ -2417,6 +2516,7 @@ void jitEmitHandler<LOAD_FAST_REVERSE>(JitEnv* env) {
   emitNextOpcode(env);
 
   __ bind(&slow_path);
+  // Don't deopt because this won't rewrite.
   emitJumpToGenericHandler(env);
 }
 
@@ -2705,7 +2805,19 @@ void* X64Interpreter::entryAsm(const Function& function) {
 
 }  // namespace
 
+static void deoptimizeCurrentFunction(Thread* thread) {
+  EVENT(DEOPT_FUNCTION);
+  Frame* frame = thread->currentFrame();
+  // Reset the PC because we're about to jump back into the assembly
+  // interpreter and we want to re-try the current opcode.
+  frame->setVirtualPC(frame->virtualPC() - kCodeUnitSize);
+  HandleScope scope(thread);
+  Function function(&scope, frame->function());
+  thread->runtime()->populateEntryAsm(function);
+}
+
 void compileFunction(Thread* thread, const Function& function) {
+  EVENT(COMPILE_FUNCTION);
   HandleScope scope(thread);
   MutableBytes code(&scope, function.rewrittenBytecode());
   word num_opcodes = rewrittenBytecodeLength(code);
@@ -2765,6 +2877,13 @@ void compileFunction(Thread* thread, const Function& function) {
   };
   env->do_return_assignment = do_return_assignment;
 
+  RegisterAssignment deopt_assignment[] = {
+      {&env->thread, kThreadReg},
+      {&env->frame, kFrameReg},
+      {&env->pc, kPCReg},
+  };
+  env->deopt_assignment = deopt_assignment;
+
   DCHECK(function.isInterpreted(), "function must be interpreted");
   DCHECK(function.hasSimpleCall(),
          "function must have a simple calling convention");
@@ -2809,6 +2928,19 @@ void compileFunction(Thread* thread, const Function& function) {
   // functions jump to, instead of one per function.
   env->register_state.resetTo(env->call_interpreted_slow_path_assignment);
   emitCallInterpretedSlowPath(env);
+
+  if (!env->deopt_handler.isUnused()) {
+    // Handle deoptimization by resetting the entrypoint to an assembly
+    // entrypoint and then jumping back into the interpreter.
+    __ bind(&env->deopt_handler);
+    env->register_state.resetTo(env->deopt_assignment);
+    __ movq(kArgRegs[0], env->thread);
+    emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+    emitCall<void (*)(Thread*)>(env, deoptimizeCurrentFunction);
+    // Jump back into the interpreter.
+    emitRestoreInterpreterState(env, kAllState);
+    emitNextOpcodeImpl(env);
+  }
 
   // Finalize the code.
   word jit_size = Utils::roundUp(env->as.codeSize(), kBitsPerByte);
