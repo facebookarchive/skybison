@@ -281,6 +281,11 @@ int32_t heapObjectDisp(int32_t offset) {
 }
 
 void emitCurrentCacheIndex(EmitEnv* env, Register dst) {
+  if (env->in_jit) {
+    JitEnv* jenv = static_cast<JitEnv*>(env);
+    __ movq(dst, Immediate(static_cast<word>(jenv->currentOp().cache)));
+    return;
+  }
   __ movzwq(dst, Address(env->bytecode, env->pc, TIMES_1,
                          heapObjectDisp(-kCodeUnitSize + 2)));
 }
@@ -2571,6 +2576,7 @@ bool isSupportedInJIT(Bytecode bc) {
     case DUP_TOP:
     case INPLACE_ADD_SMALLINT:
     case INPLACE_SUB_SMALLINT:
+    case LOAD_ATTR_INSTANCE:
     case LOAD_BOOL:
     case LOAD_CONST:
     case LOAD_FAST_REVERSE:
@@ -2914,7 +2920,7 @@ void compileFunction(Thread* thread, const Function& function) {
     env->current_op = op.bc;
     env->setCurrentOp(op);
     env->setVirtualPC(i * kCodeUnitSize);
-    env->register_state.resetTo(env->handler_assignment);
+    env->register_state.resetTo(env->jit_handler_assignment);
     __ bind(env->opcodeAtByteOffset(current_pc));
     switch (op.bc) {
 #define BC(name, _0, _1)                                                       \

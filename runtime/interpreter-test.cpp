@@ -7797,5 +7797,66 @@ instance = C(12)
   EXPECT_TRUE(isIntEqualsWord(intUnderlying(*result), 11));
 }
 
+TEST_F(JitTest, LoadAttrInstanceWithInstanceReturnsAttribute) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self, value):
+    self.foo = value
+
+def foo(obj):
+  return obj.foo
+
+# Rewrite LOAD_ATTR_ANAMORPHIC to LOAD_ATTR_INSTANCE
+foo(C(4))
+instance = C(10)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_ATTR_INSTANCE));
+  Object obj(&scope, mainModuleAt(runtime_, "instance"));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, obj));
+  EXPECT_TRUE(isIntEqualsWord(*result, 10));
+}
+
+TEST_F(JitTest, LoadAttrInstanceWithNewTypeDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self, value):
+    self.foo = value
+
+class D:
+  def __init__(self, value):
+    self.foo = value
+
+def foo(obj):
+  return obj.foo
+
+# Rewrite LOAD_ATTR_ANAMORPHIC to LOAD_ATTR_INSTANCE
+foo(C(4))
+instance = D(10)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_ATTR_INSTANCE));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  Function deopt_caller(&scope, createTrampolineFunction1(thread_, instance));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_TRUE(containsBytecode(function, LOAD_ATTR_POLYMORPHIC));
+  EXPECT_TRUE(isIntEqualsWord(*result, 10));
+  EXPECT_EQ(function.entryAsm(), entry_before);
+}
+
 }  // namespace testing
 }  // namespace py
