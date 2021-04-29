@@ -13488,6 +13488,62 @@ class TypeTests(unittest.TestCase):
         m.attr = "bar"
         self.assertEqual(m.attr, "bar")
 
+    def test_type_new_sets_name_on_attributes(self):
+        class Descriptor:
+            def __set_name__(self, owner, name):
+                self.owner = owner
+                self.name = name
+
+        class A:
+            d = Descriptor()
+
+        self.assertEqual(A.d.name, "d")
+        self.assertIs(A.d.owner, A)
+
+    def test_type_new_propagates_set_name_error(self):
+        class Descriptor:
+            def __set_name__(self, owner, name):
+                raise Exception("I prefer to remain unnamed.")
+
+        with self.assertRaises(RuntimeError) as context:
+
+            class A:
+                d = Descriptor()
+
+        self.assertIn("A", str(context.exception))
+        self.assertIn("Descriptor", str(context.exception))
+
+    def test_type_new_with_metaclass_sets_name(self):
+        class Meta(type):
+            def __new__(metacls, name, bases, ns):
+                ret = super().__new__(metacls, name, bases, ns)
+                self.assertEqual(ret.d.name, "d")
+                self.assertIs(ret.d.owner, ret)
+                return 0
+
+        class Descriptor:
+            def __set_name__(self, owner, name):
+                self.owner = owner
+                self.name = name
+
+        class A(metaclass=Meta):
+            d = Descriptor()
+
+        self.assertEqual(A, 0)
+
+    def test_type_new_with_set_name_raising_error_propagates_exception(self):
+        class SetNameDescriptor:
+            def __get__(self, instance, owner):
+                raise ValueError("Don't call, please.")
+
+        class Descriptor:
+            __set_name__ = SetNameDescriptor()
+
+        with self.assertRaises(ValueError):
+
+            class A:
+                d = Descriptor()
+
     def test_non_type_with_type_getattribute(self):
         class C:
             __getattribute__ = type.__getattribute__

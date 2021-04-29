@@ -784,6 +784,44 @@ static RawObject getModuleNameAtFrame(Thread* thread, int depth) {
   return moduleAtById(thread, module, ID(__name__));
 }
 
+static RawObject typeSetNames(Thread* thread, const Type& type,
+                              const Dict& dict) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object key(&scope, NoneType::object());
+  Object value(&scope, NoneType::object());
+  Object result(&scope, NoneType::object());
+  Object set_name(&scope, NoneType::object());
+
+  for (word i = 0; dictNextItem(dict, &i, &key, &value);) {
+    // If a method is looked up during bootstrapping (which we do during
+    // typeNew(), there is a chance that the MRO won't be present yet. This
+    // check allows dealing with that case gracefully.
+    if (runtime->typeOf(*value).mro().isNoneType()) {
+      continue;
+    }
+
+    set_name = Interpreter::lookupMethod(thread, value, ID(__set_name__));
+    if (set_name.isError()) {
+      if (set_name.isErrorException()) {
+        return *set_name;
+      }
+      DCHECK(set_name.isErrorNotFound(), "expected not found");
+      continue;
+    }
+
+    result = Interpreter::callMethod3(thread, set_name, value, type, key);
+    if (result.isErrorException()) {
+      Str type_name(&scope, type.name());
+      return thread->raiseWithFmtChainingPendingAsCause(
+          LayoutId::kRuntimeError,
+          "Error calling __set_name__ on '%T' instance in %S", &value,
+          &type_name);
+    }
+  }
+  return NoneType::object();
+}
+
 RawObject typeNew(Thread* thread, const Type& metaclass, const Str& name,
                   const Tuple& bases, const Dict& dict, word flags,
                   bool inherit_slots, bool add_instance_dict) {
@@ -992,6 +1030,9 @@ RawObject typeNew(Thread* thread, const Type& metaclass, const Str& name,
 
   result = typeComputeLayout(thread, type, fixed_attr_base, add_instance_dict,
                              slots_obj);
+  if (result.isErrorException()) return *result;
+
+  result = typeSetNames(thread, type, dict);
   if (result.isErrorException()) return *result;
 
   return *type;

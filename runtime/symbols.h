@@ -240,6 +240,7 @@ class Runtime;
   V(__self__)                                                                  \
   V(__self_class__)                                                            \
   V(__set__)                                                                   \
+  V(__set_name__)                                                              \
   V(__setattr__)                                                               \
   V(__setitem__)                                                               \
   V(__slots__)                                                                 \
