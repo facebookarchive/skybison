@@ -2621,6 +2621,8 @@ bool isSupportedInJIT(Bytecode bc) {
     case JUMP_IF_FALSE_OR_POP:
     case JUMP_IF_TRUE_OR_POP:
     case LOAD_ATTR_INSTANCE:
+    case LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD:
+    case LOAD_ATTR_POLYMORPHIC:
     case LOAD_BOOL:
     case LOAD_CONST:
     case LOAD_FAST_REVERSE:
@@ -2632,6 +2634,9 @@ bool isSupportedInJIT(Bytecode bc) {
     case POP_TOP:
     case RETURN_VALUE:
     case ROT_TWO:
+    case STORE_ATTR_INSTANCE:
+    case STORE_ATTR_INSTANCE_OVERFLOW:
+    case STORE_ATTR_POLYMORPHIC:
     case STORE_FAST_REVERSE:
     case STORE_SUBSCR_LIST:
     case UNARY_NOT:

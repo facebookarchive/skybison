@@ -8271,5 +8271,341 @@ instance = C()
   EXPECT_EQ(function.entryAsm(), entry_before);
 }
 
+TEST_F(JitTest, LoadAttrInstanceTypeBoundMethodWithInstanceReturnsBoundMethod) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def foo(self):
+    pass
+
+def foo(obj):
+  return obj.foo
+
+# Rewrite LOAD_ATTR_ANAMORPHIC to LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD
+foo(C())
+instance = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD));
+  Object obj(&scope, mainModuleAt(runtime_, "instance"));
+  Object result_obj(&scope, compileAndCallJITFunction1(thread_, function, obj));
+  ASSERT_TRUE(result_obj.isBoundMethod());
+  BoundMethod result(&scope, *result_obj);
+  EXPECT_EQ(result.self(), *obj);
+}
+
+TEST_F(JitTest, LoadAttrInstanceTypeBoundMethodWithNewTypeDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def foo(self):
+    pass
+
+class D:
+  def foo(self):
+    pass
+
+def foo(obj):
+  return obj.foo
+
+# Rewrite LOAD_ATTR_ANAMORPHIC to LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD
+foo(C())
+instance = D()
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  Function deopt_caller(&scope, createTrampolineFunction1(thread_, instance));
+  Object result_obj(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_TRUE(containsBytecode(function, LOAD_ATTR_POLYMORPHIC));
+  ASSERT_TRUE(result_obj.isBoundMethod());
+  BoundMethod result(&scope, *result_obj);
+  EXPECT_EQ(result.self(), *instance);
+  EXPECT_EQ(function.entryAsm(), entry_before);
+}
+
+TEST_F(JitTest, LoadAttrPolymorphicWithCacheHitReturnsAttribute) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self, value):
+    self.value = value
+
+class D(C):
+  pass
+
+def foo(obj):
+  return obj.value
+
+# Rewrite LOAD_ATTR_ANAMORPHIC to LOAD_ATTR_INSTANCE
+foo(C(1))
+# Rewrite LOAD_ATTR_INSTANCE to LOAD_ATTR_POLYMORPHIC
+foo(D(2))
+instance = C(3)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_ATTR_POLYMORPHIC));
+  Object obj(&scope, mainModuleAt(runtime_, "instance"));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, obj));
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
+}
+
+TEST_F(JitTest, LoadAttrPolymorphicWithCacheMissReturnsAttribute) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self, value):
+    self.value = value
+
+class D(C):
+  pass
+
+class E(C):
+  pass
+
+def foo(obj):
+  return obj.value
+
+# Rewrite LOAD_ATTR_ANAMORPHIC to LOAD_ATTR_INSTANCE
+foo(C(1))
+# Rewrite LOAD_ATTR_INSTANCE to LOAD_ATTR_POLYMORPHIC
+foo(D(2))
+instance = E(3)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_ATTR_POLYMORPHIC));
+  compileFunction(thread_, function);
+  // Can't use compileAndCallJITFunction1 because the doLoadAttrPolymorphic
+  // fallback needs to read the cache index off the bytecode.
+  void* entry_jit = function.entryAsm();
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  Function deopt_caller(&scope, createTrampolineFunction1(thread_, instance));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_TRUE(containsBytecode(function, LOAD_ATTR_POLYMORPHIC));
+  EXPECT_TRUE(isIntEqualsWord(*result, 3));
+  EXPECT_EQ(function.entryAsm(), entry_jit);
+}
+
+TEST_F(JitTest, StoreAttrInstanceWithInstanceStoresAttribute) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self, value):
+    self.foo = value
+
+def foo(obj):
+  obj.foo = 17
+  return obj.foo
+
+# Rewrite STORE_ATTR_ANAMORPHIC to STORE_ATTR_INSTANCE
+foo(C(4))
+instance = C(10)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, STORE_ATTR_INSTANCE));
+  Object obj(&scope, mainModuleAt(runtime_, "instance"));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, obj));
+  EXPECT_TRUE(isIntEqualsWord(*result, 17));
+}
+
+TEST_F(JitTest, StoreAttrInstanceWithNewTypeDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self, value):
+    self.foo = value
+
+class D:
+  def __init__(self, value):
+    self.foo = value
+
+def foo(obj):
+  obj.foo = 17
+  return obj.foo
+
+# Rewrite STORE_ATTR_ANAMORPHIC to STORE_ATTR_INSTANCE
+foo(C(4))
+instance = D(10)
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, STORE_ATTR_INSTANCE));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  Function deopt_caller(&scope, createTrampolineFunction1(thread_, instance));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_TRUE(containsBytecode(function, STORE_ATTR_POLYMORPHIC));
+  EXPECT_TRUE(isIntEqualsWord(*result, 17));
+  EXPECT_EQ(function.entryAsm(), entry_before);
+}
+
+TEST_F(JitTest, StoreAttrPolymorphicWithCacheHitReturnsAttribute) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self, value):
+    self.value = value
+
+class D(C):
+  pass
+
+def foo(obj):
+  obj.value = 17
+  return obj.value
+
+# Rewrite STORE_ATTR_ANAMORPHIC to STORE_ATTR_INSTANCE
+foo(C(1))
+# Rewrite STORE_ATTR_INSTANCE to STORE_ATTR_POLYMORPHIC
+foo(D(2))
+instance = C(3)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, STORE_ATTR_POLYMORPHIC));
+  Object obj(&scope, mainModuleAt(runtime_, "instance"));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, obj));
+  EXPECT_TRUE(isIntEqualsWord(*result, 17));
+}
+
+TEST_F(JitTest, StoreAttrPolymorphicWithCacheMissReturnsAttribute) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self, value):
+    self.value = value
+
+class D(C):
+  pass
+
+class E(C):
+  pass
+
+def foo(obj):
+  obj.value = 17
+  return obj.value
+
+# Rewrite STORE_ATTR_ANAMORPHIC to STORE_ATTR_INSTANCE
+foo(C(1))
+# Rewrite STORE_ATTR_INSTANCE to STORE_ATTR_POLYMORPHIC
+foo(D(2))
+instance = E(3)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, STORE_ATTR_POLYMORPHIC));
+  compileFunction(thread_, function);
+  // Can't use compileAndCallJITFunction1 because the doStoreAttrPolymorphic
+  // fallback needs to read the cache index off the bytecode.
+  void* entry_jit = function.entryAsm();
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  Function deopt_caller(&scope, createTrampolineFunction1(thread_, instance));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_TRUE(containsBytecode(function, STORE_ATTR_POLYMORPHIC));
+  EXPECT_TRUE(isIntEqualsWord(*result, 17));
+  EXPECT_EQ(function.entryAsm(), entry_jit);
+}
+
+TEST_F(JitTest, StoreAttrInstanceOverflowWithInstanceStoresAttribute) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  pass
+
+def foo(obj):
+  obj.foo = 17
+  return obj.foo
+
+# Rewrite STORE_ATTR_ANAMORPHIC to STORE_ATTR_INSTANCE_OVERFLOW
+obj1 = C()
+obj1.foo = 1
+foo(obj1)
+instance = C()
+instance.foo = 1
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, STORE_ATTR_INSTANCE_OVERFLOW));
+  Object obj(&scope, mainModuleAt(runtime_, "instance"));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, obj));
+  EXPECT_TRUE(isIntEqualsWord(*result, 17));
+}
+
+TEST_F(JitTest, StoreAttrInstanceOverflowWithNewTypeDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  pass
+
+class D:
+  pass
+
+def foo(obj):
+  obj.foo = 17
+  return obj.foo
+
+# Rewrite STORE_ATTR_ANAMORPHIC to STORE_ATTR_INSTANCE_OVERFLOW
+obj1 = C()
+obj1.foo = 1
+foo(obj1)
+instance = D()
+instance.foo = 2
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, STORE_ATTR_INSTANCE_OVERFLOW));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  Function deopt_caller(&scope, createTrampolineFunction1(thread_, instance));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_TRUE(containsBytecode(function, STORE_ATTR_POLYMORPHIC));
+  EXPECT_TRUE(isIntEqualsWord(*result, 17));
+  EXPECT_EQ(function.entryAsm(), entry_before);
+}
+
 }  // namespace testing
 }  // namespace py
