@@ -2558,6 +2558,13 @@ void jitEmitHandler<LOAD_FAST_REVERSE>(JitEnv* env) {
 }
 
 template <>
+void jitEmitHandler<LOAD_FAST_REVERSE_UNCHECKED>(JitEnv* env) {
+  word arg = env->currentOp().arg;
+  word frame_offset = arg * kWordSize + Frame::kSize;
+  __ pushq(Address(env->frame, frame_offset));
+}
+
+template <>
 void jitEmitHandler<JUMP_FORWARD>(JitEnv* env) {
   jitEmitJumpForward(env);
 }
