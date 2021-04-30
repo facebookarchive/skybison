@@ -1417,9 +1417,13 @@ RawObject METH(str, __repr__)(Thread* thread, Arguments args) {
 }
 
 bool METH(str, _mod_convert_number_int_intrinsic)(Thread* thread) {
-  Runtime* runtime = thread->runtime();
   RawObject arg = thread->stackTop();
-  if (runtime->isInstanceOfInt(arg)) {
+  if (arg.isBool()) {
+    thread->stackDrop(2);
+    thread->stackSetTop(convertBoolToInt(arg));
+    return true;
+  }
+  if (arg.isInt()) {
     thread->stackDrop(2);
     thread->stackSetTop(arg);
     return true;
@@ -1428,9 +1432,13 @@ bool METH(str, _mod_convert_number_int_intrinsic)(Thread* thread) {
 }
 
 bool METH(str, _mod_convert_number_index_intrinsic)(Thread* thread) {
-  Runtime* runtime = thread->runtime();
   RawObject arg = thread->stackTop();
-  if (runtime->isInstanceOfInt(arg)) {
+  if (arg.isBool()) {
+    thread->stackDrop(2);
+    thread->stackSetTop(convertBoolToInt(arg));
+    return true;
+  }
+  if (arg.isInt()) {
     thread->stackDrop(2);
     thread->stackSetTop(arg);
     return true;

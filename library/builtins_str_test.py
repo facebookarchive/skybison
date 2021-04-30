@@ -1755,6 +1755,22 @@ class StrModTests(unittest.TestCase):
             str.__mod__("%c", (C(),))
         self.assertEqual(str(context.exception), "%c requires int or char")
 
+    def test_d_format_returns_string_of_integer_value(self):
+        self.assertEqual(str.__mod__("%d", (1,)), "1")
+
+    def test_d_format_returns_string_of_boolean_value(self):
+        self.assertEqual(str.__mod__("%d", (True,)), "1")
+
+    def test_d_format_returns_string_of_integer_subclass(self):
+        class C(int):
+            def __str__(self):
+                return "C"
+
+            def __repr__(self):
+                return "C"
+
+        self.assertEqual(str.__mod__("%d", (C(),)), "0")
+
     def test_s_format_returns_string(self):
         self.assertEqual(str.__mod__("%s", ("foo",)), "foo")
 
@@ -1912,9 +1928,20 @@ class StrModTests(unittest.TestCase):
         self.assertEqual(str.__mod__("%x", (0,)), "0")
         self.assertEqual(str.__mod__("%x", (-123,)), "-7b")
         self.assertEqual(str.__mod__("%x", (42,)), "2a")
+        self.assertEqual(str.__mod__("%x", (True,)), "1")
         self.assertEqual(str.__mod__("%X", (0,)), "0")
         self.assertEqual(str.__mod__("%X", (-123,)), "-7B")
         self.assertEqual(str.__mod__("%X", (42,)), "2A")
+
+    def test_xX_format_with_int_subclass_returns_string(self):
+        class C(int):
+            def __str__(self):
+                return "C"
+
+            def __repr__(self):
+                return "C"
+
+        self.assertEqual(str.__mod__("%x", (C(),)), "0")
 
     def test_xX_format_with_largeint_returns_string(self):
         self.assertEqual(
