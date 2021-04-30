@@ -2659,7 +2659,10 @@ bool isSupportedInJIT(Bytecode bc) {
     case STORE_ATTR_POLYMORPHIC:
     case STORE_FAST_REVERSE:
     case STORE_SUBSCR_LIST:
+    case UNARY_INVERT:
+    case UNARY_NEGATIVE:
     case UNARY_NOT:
+    case UNARY_POSITIVE:
       return true;
     default:
       return false;

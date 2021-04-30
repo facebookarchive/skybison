@@ -8865,5 +8865,68 @@ TEST_F(JitTest, RotThreeRotatesStackElements) {
   EXPECT_PYLIST_EQ(result, {3, 1, 2});
 }
 
+TEST_F(JitTest, UnaryNegativeCallsDunderNeg) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __neg__(self):
+    return 5
+def foo(obj):
+  return -obj
+instance = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, UNARY_NEGATIVE));
+  Object obj(&scope, mainModuleAt(runtime_, "instance"));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, obj));
+  EXPECT_TRUE(isIntEqualsWord(*result, 5));
+}
+
+TEST_F(JitTest, UnaryPositiveCallsDunderPos) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __pos__(self):
+    return 5
+def foo(obj):
+  return +obj
+instance = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, UNARY_POSITIVE));
+  Object obj(&scope, mainModuleAt(runtime_, "instance"));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, obj));
+  EXPECT_TRUE(isIntEqualsWord(*result, 5));
+}
+
+TEST_F(JitTest, UnaryInvertCallsDunderInvert) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __invert__(self):
+    return 5
+def foo(obj):
+  return ~obj
+instance = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, UNARY_INVERT));
+  Object obj(&scope, mainModuleAt(runtime_, "instance"));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, obj));
+  EXPECT_TRUE(isIntEqualsWord(*result, 5));
+}
+
 }  // namespace testing
 }  // namespace py
