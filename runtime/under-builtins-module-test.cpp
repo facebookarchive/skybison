@@ -667,6 +667,87 @@ TEST_F(UnderBuiltinsModuleTest, UnderBytesJoinWithMemoryViewReturnsBytes) {
   EXPECT_TRUE(isBytesEqualsCStr(result, "hello world"));
 }
 
+TEST_F(UnderBuiltinsModuleTest, UnderCallerLocalsDoesNotReturnInternalObjects) {
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def bar():
+  a = 23
+  b = 13
+  l = locals()
+  c = 0
+  d = 0
+  e = 0
+  f = 0
+  g = 0
+  return l
+)")
+                   .isError());
+  // Push arbitrary values to the stack
+  Thread* thread = Thread::current();
+  for (int a = 0; a < 20; a++) {
+    for (int i = 0; i < 5; i++) {
+      thread->stackPush(Unbound::object());
+    }
+    thread->stackPush(Error::notFound());
+    thread->stackPush(runtime_->newMutableBytesUninitialized(1));
+    thread->stackPush(runtime_->newMutableTuple(1));
+    thread->stackPush(NoneType::object());
+  }
+  // Reset the stack pointer
+  thread->stackDrop(9 * 20);
+
+  /*
+   * When locals is called in bar we expect the stack to look like below
+   Function bar
+   --- Locals ----
+   int 23 -> assigned to a
+   int 13 -> assigned to b
+   _Unbound -> assigned to l
+   _Unbound -> assigned to c
+   Error::notFound -> assigned to d
+   _mutablebytes -> assigned to e
+   _mutable_tuple -> assigned to f
+   NoneType::object -> assigned to g
+  */
+
+  HandleScope scope(thread);
+  Object bar_object(&scope, mainModuleAt(runtime_, "bar"));
+  EXPECT_TRUE(bar_object.isFunction());
+  Function bar(&scope, *bar_object);
+  Tuple args(&scope, runtime_->emptyTuple());
+  Object result(&scope, callFunction(bar, args));
+  EXPECT_TRUE(result.isDict());
+  Dict locals(&scope, *result);
+
+  Str a(&scope, runtime_->newStrFromCStr("a"));
+  Object a_val(&scope, dictAtByStr(thread_, locals, a));
+  EXPECT_TRUE(isIntEqualsWord(*a_val, 23));
+
+  Str b(&scope, runtime_->newStrFromCStr("b"));
+  Object b_val(&scope, dictAtByStr(thread_, locals, b));
+  EXPECT_TRUE(isIntEqualsWord(*b_val, 13));
+
+  Str c(&scope, runtime_->newStrFromCStr("c"));
+  Object c_val(&scope, dictAtByStr(thread_, locals, c));
+  EXPECT_TRUE(c_val.isErrorNotFound());
+
+  Str d(&scope, runtime_->newStrFromCStr("d"));
+  Object d_val(&scope, dictAtByStr(thread_, locals, d));
+  EXPECT_TRUE(d_val.isErrorNotFound());
+
+  Str e(&scope, runtime_->newStrFromCStr("e"));
+  Object e_val(&scope, dictAtByStr(thread_, locals, e));
+  EXPECT_TRUE(e_val.isErrorNotFound());
+
+  Str f(&scope, runtime_->newStrFromCStr("f"));
+  Object f_val(&scope, dictAtByStr(thread_, locals, f));
+  EXPECT_TRUE(f_val.isErrorNotFound());
+
+  Str g(&scope, runtime_->newStrFromCStr("g"));
+  Object g_val(&scope, dictAtByStr(thread_, locals, g));
+  // TODO(T89882231) Expect g_val to be ErrorNotFound
+  EXPECT_TRUE(g_val.isNoneType());
+}
+
 TEST_F(UnderBuiltinsModuleTest, UnderCodeSetFilenameSetsFilename) {
   HandleScope scope(thread_);
   Code code(&scope, testing::newEmptyCode());

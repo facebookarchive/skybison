@@ -55,12 +55,18 @@ RawObject frameLocals(Thread* thread, Frame* frame) {
   for (word i = 0; i < var_names_length; ++i) {
     name = var_names.at(i);
     value = frame->local(i);
+    // TODO(T89882231) Remove check when we can verify locals have been
+    // initialized
+    if (value.isInternal()) continue;
     dictAtPutByStr(thread, result, name, value);
   }
   for (word i = 0, j = var_names_length; i < freevar_names_length; ++i, ++j) {
     name = freevar_names.at(i);
     DCHECK(frame->local(j).isCell(), "freevar must be Cell");
     value = Cell::cast(frame->local(j)).value();
+    // TODO(T89882231) Remove check when we can verify locals have been
+    // initialized
+    if (value.isInternal()) continue;
     dictAtPutByStr(thread, result, name, value);
   }
   for (word i = 0, j = var_names_length + freevar_names_length;
@@ -68,6 +74,9 @@ RawObject frameLocals(Thread* thread, Frame* frame) {
     name = cellvar_names.at(i);
     DCHECK(frame->local(j).isCell(), "cellvar must be Cell");
     value = Cell::cast(frame->local(j)).value();
+    // TODO(T89882231) Remove check when we can verify locals have been
+    // initialized
+    if (value.isInternal()) continue;
     dictAtPutByStr(thread, result, name, value);
   }
   return *result;

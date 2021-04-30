@@ -294,6 +294,7 @@ class RawObject {
   // Getters and setters.
   uword raw() const;
   bool isObject() const;
+  bool isInternal() const;
   LayoutId layoutId() const;
 
   // Immediate objects
@@ -4055,6 +4056,12 @@ inline bool RawObject::isHeapObject() const {
 inline bool RawObject::isHeapObjectWithLayout(LayoutId layout_id) const {
   return isHeapObject() &&
          RawHeapObject::cast(*this).header().layoutId() == layout_id;
+}
+
+inline bool RawObject::isInternal() const {
+  // Test whether an object is unsafe to expose to managed code
+  return isError() || isMutableBytes() || isMutableTuple() || isLayout() ||
+         isUnbound();
 }
 
 inline bool RawObject::isImmediateObjectNotSmallInt() const {
