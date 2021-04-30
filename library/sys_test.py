@@ -4,7 +4,7 @@ import sys
 import unittest
 from _io import StringIO, TextIOWrapper
 
-from test_support import pyro_only
+from test_support import pyro_only, cpython_only
 
 
 # Tests for traceback printing in sys.excepthook
@@ -393,6 +393,8 @@ class SysTests(unittest.TestCase):
         self.assertEqual(sys.stdin.buffer.fileno(), sys._stdin_fd)
         self.assertEqual(sys.stdout.buffer.fileno(), sys._stdout_fd)
 
+    # TODO(T89882231) enable test for Pyro
+    @cpython_only
     def test_under_getframe_returns_frame(self):
         from types import ModuleType
 
@@ -411,6 +413,8 @@ class SysTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             sys._getframe(None)
 
+    # TODO(T89882231) enable test for Pyro
+    @cpython_only
     def test_under_getframe_returns_frame_with_locals(self):
         def baz():
             return sys._getframe(1).f_locals
