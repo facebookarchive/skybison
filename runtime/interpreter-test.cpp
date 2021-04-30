@@ -8145,5 +8145,131 @@ TEST_F(JitTest, JumpIfFalseOrPopPopsIfTrue) {
   EXPECT_EQ(*result, NoneType::object());
 }
 
+TEST_F(JitTest, ForIterListIteratesOverList) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(obj):
+  result = 0
+  for item in obj:
+    result += item
+  return result
+
+# Rewrite FOR_ITER_ANAMORPHIC with FOR_ITER_LIST
+foo([1, 2, 3])
+instance = [4, 5, 6]
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, FOR_ITER_LIST));
+  List list(&scope, mainModuleAt(runtime_, "instance"));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, list));
+  EXPECT_TRUE(isIntEqualsWord(*result, 15));
+}
+
+TEST_F(JitTest, ForIterListWithNonListDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class D:
+  def __next__(self):
+    raise StopIteration
+
+class C:
+  def __iter__(self):
+    return D()
+
+def foo(obj):
+  result = 0
+  for item in obj:
+    result += item
+  return result
+
+# Rewrite FOR_ITER_ANAMORPHIC to FOR_ITER_LIST
+foo([1, 2, 3])
+instance = C()
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, FOR_ITER_LIST));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  Function deopt_caller(&scope, createTrampolineFunction1(thread_, instance));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_TRUE(containsBytecode(function, FOR_ITER_MONOMORPHIC));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+  EXPECT_EQ(function.entryAsm(), entry_before);
+}
+
+TEST_F(JitTest, ForIterRangeIteratesOverRange) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(obj):
+  result = 0
+  for item in obj:
+    result += item
+  return result
+
+# Rewrite FOR_ITER_ANAMORPHIC with FOR_ITER_RANGE
+foo(range(1, 4))
+instance = range(4, 7)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, FOR_ITER_RANGE));
+  Range range(&scope, mainModuleAt(runtime_, "instance"));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, range));
+  EXPECT_TRUE(isIntEqualsWord(*result, 15));
+}
+
+TEST_F(JitTest, ForIterRangeWithNonRangeDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class D:
+  def __next__(self):
+    raise StopIteration
+
+class C:
+  def __iter__(self):
+    return D()
+
+def foo(obj):
+  result = 0
+  for item in obj:
+    result += item
+  return result
+
+# Rewrite FOR_ITER_ANAMORPHIC to FOR_ITER_RANGE
+foo(range(1, 4))
+instance = C()
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, FOR_ITER_RANGE));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  Function deopt_caller(&scope, createTrampolineFunction1(thread_, instance));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_TRUE(containsBytecode(function, FOR_ITER_MONOMORPHIC));
+  EXPECT_TRUE(isIntEqualsWord(*result, 0));
+  EXPECT_EQ(function.entryAsm(), entry_before);
+}
+
 }  // namespace testing
 }  // namespace py

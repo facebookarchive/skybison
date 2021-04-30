@@ -2477,13 +2477,19 @@ void emitInterpreter(EmitEnv* env) {
   env->register_state.reset();
 }
 
-template <Bytecode bc>
-void jitEmitGenericHandler(JitEnv* env) {
+// Used when transitioning from a JIT handler to an interpreter handler.
+void jitEmitGenericHandlerSetup(JitEnv* env) {
   word arg = env->currentOp().arg;
   env->register_state.assign(&env->oparg, kOpargReg);
   __ movq(env->oparg, Immediate(arg));
   env->register_state.assign(&env->pc, kPCReg);
   __ movq(env->pc, Immediate(env->virtualPC()));
+  env->register_state.check(env->handler_assignment);
+}
+
+template <Bytecode bc>
+void jitEmitGenericHandler(JitEnv* env) {
+  jitEmitGenericHandlerSetup(env);
   emitHandler<bc>(env);
 }
 
@@ -2537,14 +2543,16 @@ void jitEmitHandler<LOAD_FAST_REVERSE>(JitEnv* env) {
   Label slow_path;
   ScratchReg r_scratch(env);
 
-  __ movq(r_scratch, Address(env->frame, env->oparg, TIMES_8, Frame::kSize));
+  word arg = env->currentOp().arg;
+  word frame_offset = arg * kWordSize + Frame::kSize;
+  __ movq(r_scratch, Address(env->frame, frame_offset));
   __ cmpl(r_scratch, Immediate(Error::notFound().raw()));
-  env->register_state.check(env->handler_assignment);
   __ jcc(EQUAL, &slow_path, Assembler::kNearJump);
   __ pushq(r_scratch);
   emitNextOpcode(env);
 
   __ bind(&slow_path);
+  jitEmitGenericHandlerSetup(env);
   // Don't deopt because this won't rewrite.
   emitJumpToGenericHandler(env);
 }
@@ -2603,6 +2611,9 @@ bool isSupportedInJIT(Bytecode bc) {
     case COMPARE_LT_SMALLINT:
     case COMPARE_NE_SMALLINT:
     case DUP_TOP:
+    case FOR_ITER_LIST:
+    case FOR_ITER_RANGE:
+    case GET_ITER:
     case INPLACE_ADD_SMALLINT:
     case INPLACE_SUB_SMALLINT:
     case JUMP_ABSOLUTE:
