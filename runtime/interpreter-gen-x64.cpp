@@ -2627,6 +2627,7 @@ bool isSupportedInJIT(Bytecode bc) {
     case COMPARE_LT_SMALLINT:
     case COMPARE_NE_SMALLINT:
     case DUP_TOP:
+    case DUP_TOP_TWO:
     case FORMAT_VALUE:
     case FOR_ITER_LIST:
     case FOR_ITER_RANGE:
@@ -2650,6 +2651,8 @@ bool isSupportedInJIT(Bytecode bc) {
     case POP_JUMP_IF_TRUE:
     case POP_TOP:
     case RETURN_VALUE:
+    case ROT_FOUR:
+    case ROT_THREE:
     case ROT_TWO:
     case STORE_ATTR_INSTANCE:
     case STORE_ATTR_INSTANCE_OVERFLOW:

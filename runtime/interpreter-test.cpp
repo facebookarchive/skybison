@@ -8787,5 +8787,83 @@ def foo(obj):
   EXPECT_TRUE(isStrEqualsCStr(*result, "foo123bar"));
 }
 
+TEST_F(JitTest, DupTopTwoDuplicatesTwoTwoStackElements) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        LOAD_CONST, 0, LOAD_CONST,   1, DUP_TOP_TWO, 0,
+        BUILD_LIST, 4, RETURN_VALUE, 0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object left(&scope, SmallInt::fromWord(1));
+    Object right(&scope, SmallInt::fromWord(2));
+    code.setConsts(runtime_->newTupleWith2(left, right));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_PYLIST_EQ(result, {1, 2, 1, 2});
+}
+
+TEST_F(JitTest, RotFourRotatesStackElements) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST,   2, LOAD_CONST, 3,
+        ROT_FOUR,   0, BUILD_LIST, 4, RETURN_VALUE, 0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object obj1(&scope, SmallInt::fromWord(1));
+    Object obj2(&scope, SmallInt::fromWord(2));
+    Object obj3(&scope, SmallInt::fromWord(3));
+    Object obj4(&scope, SmallInt::fromWord(4));
+    code.setConsts(runtime_->newTupleWith4(obj1, obj2, obj3, obj4));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_PYLIST_EQ(result, {4, 1, 2, 3});
+}
+
+TEST_F(JitTest, RotThreeRotatesStackElements) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST,   2,
+        ROT_THREE,  0, BUILD_LIST, 3, RETURN_VALUE, 0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object obj1(&scope, SmallInt::fromWord(1));
+    Object obj2(&scope, SmallInt::fromWord(2));
+    Object obj3(&scope, SmallInt::fromWord(3));
+    code.setConsts(runtime_->newTupleWith3(obj1, obj2, obj3));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_PYLIST_EQ(result, {3, 1, 2});
+}
+
 }  // namespace testing
 }  // namespace py
