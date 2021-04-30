@@ -443,12 +443,17 @@ void emitHandleContinue(EmitEnv* env, SaveRestoreFlags flags) {
   emitNextOpcode(env);
 
   __ bind(&handle_flow);
-  __ shll(r_result, Immediate(kHandlerSizeShift));
-  __ leaq(r_result, Address(env->handlers_base, r_result, TIMES_1,
-                            -Interpreter::kNumContinues * kHandlerSize));
-  env->register_state.check(env->return_handler_assignment);
-  __ jmp(r_result);
-  env->register_state.reset();
+  if (env->in_jit) {
+    // The JIT should never get here; it should always deopt beforehand.
+    __ ud2();
+  } else {
+    __ shll(r_result, Immediate(kHandlerSizeShift));
+    __ leaq(r_result, Address(env->handlers_base, r_result, TIMES_1,
+                              -Interpreter::kNumContinues * kHandlerSize));
+    env->register_state.check(env->return_handler_assignment);
+    __ jmp(r_result);
+    env->register_state.reset();
+  }
 }
 
 void emitHandleContinueIntoInterpreter(EmitEnv* env, SaveRestoreFlags flags) {
@@ -500,10 +505,6 @@ void emitJumpToGenericHandler(EmitEnv* env) {
   if (env->in_jit) {
     // Just generate the jump to generic handler inline. No side table.
     emitGenericHandler(env, env->current_op);
-    // Then jump to the next opcode, as emitJumpToGenericHandler can be called
-    // from the middle of an opcode and is commonly used in a slow path,
-    // anyway.
-    emitNextOpcode(env);
     return;
   }
   env->register_state.check(env->handler_assignment);
@@ -1809,6 +1810,36 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
   __ jmp(&env->call_handler, Assembler::kFarJump);
 }
 
+void jitEmitJumpForward(EmitEnv* env) {
+  DCHECK(env->in_jit, "not supported for non-JIT");
+  JitEnv* jenv = static_cast<JitEnv*>(env);
+  __ jmp(jenv->opcodeAtByteOffset(jenv->virtualPC() +
+                                  jenv->currentOp().arg * kCodeUnitScale),
+         Assembler::kFarJump);
+}
+
+void emitJumpForward(EmitEnv* env, Label* next) {
+  if (env->in_jit) {
+    jitEmitJumpForward(env);
+    return;
+  }
+  static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
+  __ leaq(env->pc, Address(env->pc, env->oparg, TIMES_2, 0));
+  __ jmp(next, Assembler::kNearJump);
+}
+
+void emitJumpAbsolute(EmitEnv* env) {
+  if (env->in_jit) {
+    JitEnv* jenv = static_cast<JitEnv*>(env);
+    __ jmp(jenv->opcodeAtByteOffset(jenv->currentOp().arg * kCodeUnitScale),
+           Assembler::kFarJump);
+    return;
+  }
+  static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
+  env->register_state.assign(&env->pc, kPCReg);
+  __ leaq(env->pc, Address(env->oparg, TIMES_2, 0));
+}
+
 template <>
 void emitHandler<FOR_ITER_LIST>(EmitEnv* env) {
   ScratchReg r_iter(env);
@@ -1845,10 +1876,7 @@ void emitHandler<FOR_ITER_LIST>(EmitEnv* env) {
   }
 
   __ bind(&terminate);
-  // frame->setVirtualPC(frame->virtualPC()+arg*2);
-  static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
-  __ leaq(env->pc, Address(env->pc, env->oparg, TIMES_2, 0));
-  __ jmp(&next_opcode, Assembler::kNearJump);
+  emitJumpForward(env, &next_opcode);
 
   __ bind(&slow_path);
   __ pushq(r_iter);
@@ -1903,10 +1931,7 @@ void emitHandler<FOR_ITER_RANGE>(EmitEnv* env) {
 
   __ bind(&terminate);
   // length == 0.
-  // frame->setVirtualPC(frame->virtualPC()+arg*2);
-  static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
-  __ leaq(env->pc, Address(env->pc, env->oparg, TIMES_2, 0));
-  __ jmp(&next_opcode, Assembler::kNearJump);
+  emitJumpForward(env, &next_opcode);
 
   __ bind(&slow_path);
   __ pushq(r_iter);
@@ -2011,12 +2036,14 @@ static void emitPopJumpIfBool(EmitEnv* env, bool jump_value) {
   __ jcc(EQUAL, false_target, Assembler::kNearJump);
   // Fall back to C++ for other types.
   __ pushq(r_scratch);
-  emitJumpToGenericHandler(env);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+  } else {
+    emitJumpToGenericHandler(env);
+  }
 
   __ bind(&jump);
-  env->register_state.assign(&env->pc, kPCReg);
-  static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
-  __ leaq(env->pc, Address(env->oparg, TIMES_2, 0));
+  emitJumpAbsolute(env);
   __ bind(&next);
   emitNextOpcodeFallthrough(env);
 }
@@ -2043,9 +2070,7 @@ void emitJumpIfBoolOrPop(EmitEnv* env, bool jump_value) {
   __ cmpl(r_scratch, boolImmediate(jump_value));
   __ jcc(NOT_EQUAL, &slow_path, Assembler::kNearJump);
   __ pushq(r_scratch);
-  env->register_state.assign(&env->pc, kPCReg);
-  static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
-  __ leaq(env->pc, Address(env->oparg, TIMES_2, 0));
+  emitJumpAbsolute(env);
   __ bind(&next);
   emitNextOpcode(env);
 
@@ -2070,14 +2095,13 @@ void emitHandler<JUMP_IF_TRUE_OR_POP>(EmitEnv* env) {
 
 template <>
 void emitHandler<JUMP_ABSOLUTE>(EmitEnv* env) {
-  env->register_state.assign(&env->pc, kPCReg);
-  static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
-  __ leaq(env->pc, Address(env->oparg, TIMES_2, 0));
+  emitJumpAbsolute(env);
   emitNextOpcodeFallthrough(env);
 }
 
 template <>
 void emitHandler<JUMP_FORWARD>(EmitEnv* env) {
+  DCHECK(!env->in_jit, "JUMP_FORWARD should have its own JIT handler");
   static_assert(kCodeUnitScale == 2, "expect to multiply arg by 2");
   __ leaq(env->pc, Address(env->pc, env->oparg, TIMES_2, 0));
   emitNextOpcodeFallthrough(env);
@@ -2526,6 +2550,11 @@ void jitEmitHandler<LOAD_FAST_REVERSE>(JitEnv* env) {
 }
 
 template <>
+void jitEmitHandler<JUMP_FORWARD>(JitEnv* env) {
+  jitEmitJumpForward(env);
+}
+
+template <>
 void jitEmitHandler<RETURN_VALUE>(JitEnv* env) {
   ScratchReg r_return_value(env);
 
@@ -2576,6 +2605,10 @@ bool isSupportedInJIT(Bytecode bc) {
     case DUP_TOP:
     case INPLACE_ADD_SMALLINT:
     case INPLACE_SUB_SMALLINT:
+    case JUMP_ABSOLUTE:
+    case JUMP_FORWARD:
+    case JUMP_IF_FALSE_OR_POP:
+    case JUMP_IF_TRUE_OR_POP:
     case LOAD_ATTR_INSTANCE:
     case LOAD_BOOL:
     case LOAD_CONST:
@@ -2583,6 +2616,8 @@ bool isSupportedInJIT(Bytecode bc) {
     case LOAD_FAST_REVERSE_UNCHECKED:
     case LOAD_GLOBAL_CACHED:
     case LOAD_IMMEDIATE:
+    case POP_JUMP_IF_FALSE:
+    case POP_JUMP_IF_TRUE:
     case POP_TOP:
     case RETURN_VALUE:
     case ROT_TWO:

@@ -7858,5 +7858,292 @@ instance = D(10)
   EXPECT_EQ(function.entryAsm(), entry_before);
 }
 
+TEST_F(JitTest, JumpAbsoluteJumps) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        JUMP_ABSOLUTE, 4,  // to LOAD_CONST, 1
+        LOAD_CONST,    0, LOAD_CONST, 1, RETURN_VALUE, 0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object none(&scope, NoneType::object());
+    Object one(&scope, SmallInt::fromWord(1));
+    code.setConsts(runtime_->newTupleWith2(none, one));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+}
+
+TEST_F(JitTest, JumpForwardJumps) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        JUMP_FORWARD, 2,  // to LOAD_CONST, 1
+        LOAD_CONST,   0, LOAD_CONST, 1, RETURN_VALUE, 0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object none(&scope, NoneType::object());
+    Object one(&scope, SmallInt::fromWord(1));
+    code.setConsts(runtime_->newTupleWith2(none, one));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+}
+
+TEST_F(JitTest, PopJumpIfTrueJumpsIfTrue) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        LOAD_CONST, 2, POP_JUMP_IF_TRUE, 8,  // to LOAD_CONST, 1
+        LOAD_CONST, 0, JUMP_FORWARD,     2,  // to RETURN_VALUE
+        LOAD_CONST, 1, RETURN_VALUE,     0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object none(&scope, NoneType::object());
+    Object one(&scope, SmallInt::fromWord(1));
+    Object truthy(&scope, Bool::trueObj());
+    code.setConsts(runtime_->newTupleWith3(none, one, truthy));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+}
+
+TEST_F(JitTest, PopJumpIfTrueJumpsIfTrueNonBool) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        LOAD_CONST, 2, POP_JUMP_IF_TRUE, 8,  // to LOAD_CONST, 1
+        LOAD_CONST, 0, JUMP_FORWARD,     2,  // to RETURN_VALUE
+        LOAD_CONST, 1, RETURN_VALUE,     0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object none(&scope, NoneType::object());
+    Object one(&scope, SmallInt::fromWord(1));
+    Object truthy(&scope, runtime_->newTupleWith1(one));
+    code.setConsts(runtime_->newTupleWith3(none, one, truthy));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Function caller(&scope, createTrampolineFunction(thread_));
+  compileFunction(thread_, function);
+  Object result(&scope, Interpreter::call0(thread_, caller));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+}
+
+TEST_F(JitTest, PopJumpIfTrueDoesNotJumpIfFalse) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        LOAD_CONST, 2, POP_JUMP_IF_TRUE, 8,  // to LOAD_CONST, 1
+        LOAD_CONST, 0, JUMP_FORWARD,     2,  // to RETURN_VALUE
+        LOAD_CONST, 1, RETURN_VALUE,     0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object none(&scope, NoneType::object());
+    Object one(&scope, SmallInt::fromWord(1));
+    Object falsy(&scope, Bool::falseObj());
+    code.setConsts(runtime_->newTupleWith3(none, one, falsy));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_EQ(*result, NoneType::object());
+}
+
+TEST_F(JitTest, PopJumpIfFalseJumpsIfFalse) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        LOAD_CONST, 2, POP_JUMP_IF_FALSE, 8,  // to LOAD_CONST, 1
+        LOAD_CONST, 0, JUMP_FORWARD,      2,  // to RETURN_VALUE
+        LOAD_CONST, 1, RETURN_VALUE,      0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object none(&scope, NoneType::object());
+    Object one(&scope, SmallInt::fromWord(1));
+    Object falsy(&scope, Bool::falseObj());
+    code.setConsts(runtime_->newTupleWith3(none, one, falsy));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_TRUE(isIntEqualsWord(*result, 1));
+}
+
+TEST_F(JitTest, PopJumpIfFalseDoesNotJumpIfTrue) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        LOAD_CONST, 2, POP_JUMP_IF_FALSE, 8,  // to LOAD_CONST, 1
+        LOAD_CONST, 0, JUMP_FORWARD,      2,  // to RETURN_VALUE
+        LOAD_CONST, 1, RETURN_VALUE,      0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object none(&scope, NoneType::object());
+    Object one(&scope, SmallInt::fromWord(1));
+    Object truthy(&scope, Bool::trueObj());
+    code.setConsts(runtime_->newTupleWith3(none, one, truthy));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_EQ(*result, NoneType::object());
+}
+
+TEST_F(JitTest, JumpIfTrueOrPopJumpsIfTrue) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        LOAD_CONST, 1, JUMP_IF_TRUE_OR_POP, 6,  // to RETURN_VALUE
+        LOAD_CONST, 0, RETURN_VALUE,        0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object none(&scope, NoneType::object());
+    Object truthy(&scope, Bool::trueObj());
+    code.setConsts(runtime_->newTupleWith2(none, truthy));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_EQ(*result, Bool::trueObj());
+}
+
+TEST_F(JitTest, JumpIfTrueOrPopPopsIfFalse) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        LOAD_CONST, 1, JUMP_IF_TRUE_OR_POP, 6,  // to RETURN_VALUE
+        LOAD_CONST, 0, RETURN_VALUE,        0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object none(&scope, NoneType::object());
+    Object falsy(&scope, Bool::falseObj());
+    code.setConsts(runtime_->newTupleWith2(none, falsy));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_EQ(*result, NoneType::object());
+}
+
+TEST_F(JitTest, JumpIfFalseOrPopJumpsIfFalse) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        LOAD_CONST, 1, JUMP_IF_FALSE_OR_POP, 6,  // to RETURN_VALUE
+        LOAD_CONST, 0, RETURN_VALUE,         0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object none(&scope, NoneType::object());
+    Object falsy(&scope, Bool::falseObj());
+    code.setConsts(runtime_->newTupleWith2(none, falsy));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_EQ(*result, Bool::falseObj());
+}
+
+TEST_F(JitTest, JumpIfFalseOrPopPopsIfTrue) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        LOAD_CONST, 1, JUMP_IF_FALSE_OR_POP, 6,  // to RETURN_VALUE
+        LOAD_CONST, 0, RETURN_VALUE,         0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object none(&scope, NoneType::object());
+    Object truthy(&scope, Bool::trueObj());
+    code.setConsts(runtime_->newTupleWith2(none, truthy));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_EQ(*result, NoneType::object());
+}
+
 }  // namespace testing
 }  // namespace py
