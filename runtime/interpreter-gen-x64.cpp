@@ -2602,6 +2602,15 @@ bool isSupportedInJIT(Bytecode bc) {
     case BINARY_OR_SMALLINT:
     case BINARY_SUBSCR_LIST:
     case BINARY_SUB_SMALLINT:
+    case BUILD_LIST:
+    case BUILD_LIST_UNPACK:
+    case BUILD_MAP:
+    case BUILD_MAP_UNPACK:
+    case BUILD_SET:
+    case BUILD_SET_UNPACK:
+    case BUILD_STRING:
+    case BUILD_TUPLE:
+    case BUILD_TUPLE_UNPACK:
     case COMPARE_EQ_SMALLINT:
     case COMPARE_GE_SMALLINT:
     case COMPARE_GT_SMALLINT:
@@ -2611,6 +2620,7 @@ bool isSupportedInJIT(Bytecode bc) {
     case COMPARE_LT_SMALLINT:
     case COMPARE_NE_SMALLINT:
     case DUP_TOP:
+    case FORMAT_VALUE:
     case FOR_ITER_LIST:
     case FOR_ITER_RANGE:
     case GET_ITER:

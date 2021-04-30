@@ -8607,5 +8607,185 @@ instance.foo = 2
   EXPECT_EQ(function.entryAsm(), entry_before);
 }
 
+TEST_F(JitTest, BuildListReturnsList) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  return [1, 2, 3]
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BUILD_LIST));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3});
+}
+
+TEST_F(JitTest, BuildListUnpackReturnsList) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  a = [2, 3]
+  return [1, *a]
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BUILD_LIST_UNPACK));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_PYLIST_EQ(result, {1, 2, 3});
+}
+
+TEST_F(JitTest, BuildMapReturnsDict) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  return {"hello": "world"}
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BUILD_MAP));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  ASSERT_TRUE(result.isDict());
+  EXPECT_EQ(Dict::cast(*result).numItems(), 1);
+}
+
+TEST_F(JitTest, BuildMapUnpackReturnsDict) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  a = {"goodbye": "world"}
+  return {"hello": "world", **a}
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BUILD_MAP_UNPACK));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  ASSERT_TRUE(result.isDict());
+  EXPECT_EQ(Dict::cast(*result).numItems(), 2);
+}
+
+TEST_F(JitTest, BuildSetReturnsSet) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  return {"hello", "world"}
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BUILD_SET));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  ASSERT_TRUE(result.isSet());
+  EXPECT_EQ(Set::cast(*result).numItems(), 2);
+}
+
+TEST_F(JitTest, BuildSetUnpackReturnsSet) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  a = {"goodbye", "world"}
+  return {"hello", "world", *a}
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BUILD_SET_UNPACK));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  ASSERT_TRUE(result.isSet());
+  EXPECT_EQ(Set::cast(*result).numItems(), 3);
+}
+
+TEST_F(JitTest, BuildTupleReturnsTuple) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  a = 1
+  return (a, 2)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BUILD_TUPLE));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  ASSERT_TRUE(result.isTuple());
+  EXPECT_EQ(Tuple::cast(*result).length(), 2);
+}
+
+TEST_F(JitTest, BuildTupleUnpackReturnsTuple) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  a = (2, 3)
+  return (1, *a)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BUILD_TUPLE_UNPACK));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  ASSERT_TRUE(result.isTuple());
+  EXPECT_EQ(Tuple::cast(*result).length(), 3);
+}
+
+TEST_F(JitTest, BuildStringReturnsString) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  HandleScope scope(thread_);
+  Code code(&scope, newEmptyCode());
+  {
+    byte code_bytes[] = {
+        LOAD_CONST, 0, LOAD_CONST, 1, BUILD_STRING, 2, RETURN_VALUE, 0,
+    };
+    code.setCode(runtime_->newBytesWithAll(code_bytes));
+    Object left(&scope, SmallStr::fromCStr("hello"));
+    Object right(&scope, SmallStr::fromCStr(" world"));
+    code.setConsts(runtime_->newTupleWith2(left, right));
+  }
+  Str qualname(&scope, SmallStr::fromCStr("foo"));
+  Module module(&scope, findMainModule(runtime_));
+  Function function(
+      &scope, runtime_->newFunctionWithCode(thread_, qualname, code, module));
+  moduleAtPutByCStr(thread_, module, "foo", function);
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "hello world"));
+}
+
+TEST_F(JitTest, FormatValueReturnsString) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo(obj):
+  return f"foo{obj}bar"
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, FORMAT_VALUE));
+  Object obj(&scope, SmallInt::fromWord(123));
+  Object result(&scope, compileAndCallJITFunction1(thread_, function, obj));
+  EXPECT_TRUE(isStrEqualsCStr(*result, "foo123bar"));
+}
+
 }  // namespace testing
 }  // namespace py
