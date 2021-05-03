@@ -1503,9 +1503,7 @@ c = C(33)
   EXPECT_EQ(PyUnicode_CompareWithASCIIString(result, "0x21"), 0);
 }
 
-// TODO(T86150154): Remove the Pyro suffix from this test once CPython is
-// on 3.8.
-TEST_F(AbstractExtensionApiTest, PyNumberToBaseWithInvalidBaseRaisesPyro) {
+TEST_F(AbstractExtensionApiTest, PyNumberToBaseWithInvalidBaseRaises) {
   PyObjectPtr x(PyLong_FromLong(0xdeadbeef));
   PyObjectPtr result(PyNumber_ToBase(x, 15));
   ASSERT_NE(PyErr_Occurred(), nullptr);
