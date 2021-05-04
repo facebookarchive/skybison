@@ -77,7 +77,6 @@ from _builtins import (
     _code_check,
     _code_guard,
     _code_new,
-    _code_set_posonlyargcount,
     _compile_flags_mask,
     _complex_check,
     _complex_checkexact,
@@ -308,15 +307,6 @@ def _init():
 
     if not _sys.flags.no_site:
         import site  # noqa: F401
-
-
-# TODO(T59042197): Remove in favor of Python 3.8 parameter syntax
-def _positional_only(value):
-    def _positional_only_decorator(func):
-        _code_set_posonlyargcount(func.__code__, value)
-        return func
-
-    return _positional_only_decorator
 
 
 def __build_class__(func, name, *bases, metaclass=_Unbound, bootstrap=False, **kwargs):
@@ -3325,8 +3315,7 @@ class dict(bootstrap=True):
 
     __hash__ = None
 
-    @_positional_only(2)
-    def __init__(self, other=_Unbound, **kwargs):
+    def __init__(self, other=_Unbound, /, **kwargs):
         dict.update(self, other, **kwargs)
 
     def __iter__(self):
@@ -3395,8 +3384,7 @@ class dict(bootstrap=True):
             return default
         return value
 
-    @_positional_only(2)
-    def update(self, iterable=_Unbound, **kwargs):
+    def update(self, iterable=_Unbound, /, **kwargs):
         if _dict_update(self, iterable, kwargs) is not _Unbound:
             return
 
@@ -5632,8 +5620,7 @@ class module_proxy(bootstrap=True):
     def setdefault(self, key, default=None):
         _builtin()
 
-    @_positional_only(2)
-    def update(self, other=_Unbound, **kwargs):
+    def update(self, other=_Unbound, /, **kwargs):
         _module_proxy_guard(self)
         if _dict_check_exact(other):
             for key, value in other.items():
@@ -6486,8 +6473,7 @@ class str(bootstrap=True):
             end = _index(end)
         return _str_find(self, sub, start, end)
 
-    @_positional_only(1)
-    def format(self, *args, **kwargs):  # noqa: B902
+    def format(self, /, *args, **kwargs):  # noqa: B902
         _str_guard(self)
 
         global _formatter

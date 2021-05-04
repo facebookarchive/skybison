@@ -2250,20 +2250,6 @@ RawObject FUNC(_builtins, _code_set_filename)(Thread* thread, Arguments args) {
   return NoneType::object();
 }
 
-RawObject FUNC(_builtins, _code_set_posonlyargcount)(Thread* thread,
-                                                     Arguments args) {
-  HandleScope scope(thread);
-  Object code_obj(&scope, args.get(0));
-  CHECK(code_obj.isCode(), "Expected code to be a Code");
-  Code code(&scope, *code_obj);
-  Object posonlyargcount_obj(&scope, args.get(1));
-  CHECK(posonlyargcount_obj.isSmallInt(), "Expected value to be a SmallInt");
-  word posonlyargcount = SmallInt::cast(*posonlyargcount_obj).value();
-  CHECK_BOUND(posonlyargcount, code.argcount());
-  code.setPosonlyargcount(posonlyargcount);
-  return NoneType::object();
-}
-
 RawObject FUNC(_builtins, _complex_check)(Thread* thread, Arguments args) {
   return Bool::fromBool(thread->runtime()->isInstanceOfComplex(args.get(0)));
 }

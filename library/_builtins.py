@@ -332,10 +332,6 @@ def _code_set_filename(code, filename):
     _builtin()
 
 
-def _code_set_posonlyargcount(code, value):
-    _builtin()
-
-
 def _complex_check(obj):
     "$intrinsic$"
     _builtin()
