@@ -65,6 +65,14 @@ class Context(bootstrap=True):
 
 
 class ContextVar(bootstrap=True):
+    @classmethod
+    def __class_getitem__(cls, item):
+        if cls is not ContextVar:
+            raise TypeError(
+                f"descriptor '__class_getitem__' requires a subtype of 'ContextVar' but received '{cls.__name__}'"
+            )
+        return cls
+
     @staticmethod
     def __new__(cls, name, default=_Unbound):
         _builtin()

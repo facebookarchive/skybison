@@ -4,6 +4,21 @@ import unittest
 
 
 class ContextTests(unittest.TestCase):
+    def test_class_getitem_returns_cls(self):
+        self.assertIs(
+            contextvars.ContextVar.__class_getitem__(int), contextvars.ContextVar
+        )
+
+    def test_class_getitem_with_wrong_cls_raises_type_error(self):
+        class C:
+            m = contextvars.ContextVar.__dict__["__class_getitem__"]
+
+        with self.assertRaisesRegex(
+            TypeError,
+            "descriptor '__class_getitem__' requires a subtype of 'ContextVar' but received 'C'",
+        ):
+            C.m(None)
+
     def test_dunder_contains_with_invalid_self(self):
         with self.assertRaises(TypeError):
             contextvars.Context.__contains__(None, None)
