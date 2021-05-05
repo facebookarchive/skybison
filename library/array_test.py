@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import array
+import sys
 import unittest
 from unittest.mock import Mock
 
@@ -138,6 +139,49 @@ class ArrayTest(unittest.TestCase):
         self.assertEqual(int_array[0], 1)
         self.assertEqual(int_array[1], 2)
 
+    def test_dunder_mul_with_str_raises_type_error(self):
+        int_array = array.array("i")
+        with self.assertRaises(TypeError) as ctx:
+            int_array.__mul__("hello")
+        self.assertEqual(
+            str(ctx.exception), "'str' object cannot be interpreted as an integer"
+        )
+
+    def test_dunder_mul_with_subclass_returns_array(self):
+        class ArraySub(array.array):
+            pass
+
+        int_array = ArraySub("i", [1, 2, 3])
+        new_array = int_array.__mul__(3)
+        self.assertEqual(int_array.__len__(), 3)
+        self.assertEqual(type(new_array), array.array)
+        self.assertEqual(new_array.__len__(), 9)
+        self.assertEqual(list(new_array), [1, 2, 3, 1, 2, 3, 1, 2, 3])
+
+    def test_dunder_mul_with_maxsize_raises_memory_error(self):
+        int_array = array.array("i", [1, 2, 3])
+        with self.assertRaises(MemoryError):
+            int_array.__mul__(sys.maxsize)
+
+    def test_dunder_mul_with_int_returns_array(self):
+        int_array = array.array("i", [1, 2, 3])
+        new_array = int_array.__mul__(3)
+        self.assertEqual(int_array.__len__(), 3)
+        self.assertEqual(new_array.__len__(), 9)
+        self.assertEqual(list(new_array), [1, 2, 3, 1, 2, 3, 1, 2, 3])
+
+    def test_dunder_mul_with_index_returns_array(self):
+        class Num:
+            def __index__(self):
+                return 3
+
+        num = Num()
+        int_array = array.array("i", [1, 2, 3])
+        new_array = int_array.__mul__(num)
+        self.assertEqual(int_array.__len__(), 3)
+        self.assertEqual(new_array.__len__(), 9)
+        self.assertEqual(list(new_array), [1, 2, 3, 1, 2, 3, 1, 2, 3])
+
     def test_extend_with_iterable_can_resize_past_length_hint(self):
         class Iterator:
             def __length_hint__(self):
@@ -177,6 +221,7 @@ class ArrayTest(unittest.TestCase):
             __setitem__ = Mock(name="__setitem__", return_value=None)
 
         int_array = ArraySub("i", [3, 2, 1])
+        self.assertEqual(int_array.__len__(), 3)
         self.assertEqual(int_array[0], 3)
         self.assertEqual(int_array[1], 2)
         self.assertEqual(int_array[2], 1)

@@ -51,6 +51,10 @@ def _array_setitem(obj, index, value):
     _builtin()
 
 
+def _array_repeat(self, count):
+    _builtin()
+
+
 def _array_value(typecode, value):
     if typecode == "f" or typecode == "d":
         return _float(value)
@@ -72,6 +76,12 @@ class array(bootstrap=True):
 
     def __len__(self):
         _builtin()
+
+    def __mul__(self, other):
+        result = _array_repeat(self, other)
+        if result is not _Unbound:
+            return result
+        return _array_repeat(self, _index(other))
 
     @staticmethod
     def __new__(cls, typecode, initializer=None):

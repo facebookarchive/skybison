@@ -387,6 +387,37 @@ RawObject FUNC(array, _array_append)(Thread* thread, Arguments args) {
   return *result;
 }
 
+RawObject FUNC(array, _array_repeat)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object self_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfArray(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(array));
+  }
+  Array self(&scope, args.get(0));
+  Object count_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*count_obj)) {
+    return Unbound::object();
+  }
+  word count = intUnderlying(*count_obj).asWordSaturated();
+  word byte_length = arrayByteLength(*self);
+  word new_capacity;
+  if (__builtin_mul_overflow(byte_length, count, &new_capacity) ||
+      !SmallInt::isValid(new_capacity)) {
+    return thread->raiseWithFmt(LayoutId::kMemoryError,
+                                "repeated array is too long");
+  }
+  Bytes buffer(&scope, self.buffer());
+  MutableBytes new_buffer(
+      &scope, runtime->bytesRepeat(thread, buffer, byte_length, count));
+  Layout layout(&scope, runtime->layoutAt(LayoutId::kArray));
+  Array result(&scope, runtime->newInstance(layout));
+  result.setTypecode(self.typecode());
+  result.setBuffer(*new_buffer);
+  result.setLength(self.length() * count);
+  return *result;
+}
+
 RawObject METH(array, __len__)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
