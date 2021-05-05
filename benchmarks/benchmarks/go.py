@@ -331,7 +331,7 @@ class UCTNode:
         self.parent = None
 
     def play(self, board):
-        """ uct tree search """
+        """uct tree search"""
         color = board.color
         node = self
         path = collections.deque([node])
@@ -354,7 +354,7 @@ class UCTNode:
         self.update_path(board, color, path)
 
     def select(self, board):
-        """ select move; unexplored children first, then according to uct value """
+        """select move; unexplored children first, then according to uct value"""
         if self.unexplored:
             i = random.randrange(len(self.unexplored))
             pos = self.unexplored[i]
@@ -367,14 +367,14 @@ class UCTNode:
             return PASS
 
     def random_playout(self, board):
-        """ random play until both players pass """
+        """random play until both players pass"""
         for _x in range(MAXMOVES):  # XXX while not self.finished?
             if board.finished:
                 break
             board.move(board.random_move())
 
     def update_path(self, board, color, path):
-        """ update win/loss count along path """
+        """update win/loss count along path"""
         wins = board.score(BLACK) >= board.score(WHITE)
         for node in path:
             if color == BLACK:
