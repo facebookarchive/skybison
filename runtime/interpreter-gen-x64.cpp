@@ -859,6 +859,40 @@ void emitHandler<BINARY_SUB_SMALLINT>(EmitEnv* env) {
 }
 
 template <>
+void emitHandler<BINARY_MUL_SMALLINT>(EmitEnv* env) {
+  ScratchReg r_right(env);
+  ScratchReg r_left(env);
+  ScratchReg r_result(env);
+  Label slow_path;
+
+  __ popq(r_right);
+  __ popq(r_left);
+  emitJumpIfNotBothSmallInt(env, r_left, r_right, r_result, &slow_path);
+  // Preserve argument values in case of overflow.
+  __ movq(r_result, r_left);
+  emitConvertFromSmallInt(env, r_result);
+  __ imulq(r_result, r_right);
+  __ jcc(YES_OVERFLOW, &slow_path, Assembler::kNearJump);
+  __ pushq(r_result);
+  emitNextOpcode(env);
+
+  __ bind(&slow_path);
+  __ pushq(r_left);
+  __ pushq(r_right);
+  if (env->in_jit) {
+    emitJumpToDeopt(env);
+    return;
+  }
+  __ movq(kArgRegs[0], env->thread);
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  emitCurrentCacheIndex(env, kArgRegs[2]);
+  CHECK(env->oparg == kArgRegs[1], "oparg expect to be in rsi");
+  emitCall<Interpreter::Continue (*)(Thread*, word, word)>(
+      env, Interpreter::binaryOpUpdateCache);
+  emitHandleContinue(env, kGenericHandler);
+}
+
+template <>
 void emitHandler<BINARY_OR_SMALLINT>(EmitEnv* env) {
   ScratchReg r_right(env);
   ScratchReg r_left(env);
@@ -2606,6 +2640,7 @@ bool isSupportedInJIT(Bytecode bc) {
   switch (bc) {
     case BINARY_ADD_SMALLINT:
     case BINARY_AND_SMALLINT:
+    case BINARY_MUL_SMALLINT:
     case BINARY_OR_SMALLINT:
     case BINARY_SUBSCR_LIST:
     case BINARY_SUB_SMALLINT:
