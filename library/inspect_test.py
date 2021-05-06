@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import inspect
+import math
 import unittest
 
 
@@ -28,6 +29,10 @@ class InspectModuleTest(unittest.TestCase):
         instance = C()
         result = inspect.signature(instance)
         self.assertEqual(str(result), "(arg0, arg1)")
+
+    def test_signature_with_c_function_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            inspect.signature(math.log)
 
     def test_getmodule_with_frame_returns_module(self):
         from types import ModuleType

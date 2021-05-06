@@ -2120,6 +2120,8 @@ def _signature_from_function(cls, func, skip_bound_arg=True):
 
     # Parameter information.
     func_code = func.__code__
+    if not isinstance(func_code, types.CodeType):
+        raise ValueError("No signature found for function {!r}")
     pos_count = func_code.co_argcount
     arg_names = func_code.co_varnames
     posonly_count = func_code.co_posonlyargcount
