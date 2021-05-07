@@ -3948,6 +3948,44 @@ TEST_F(TypeExtensionApiTest, FromSpecWithBasesInheritsNew) {
             empty_new_func);
 }
 
+TEST_F(TypeExtensionApiTest,
+       FromSpecWithMixedBasesSetsExtensionAsDominantBase) {
+  struct ExtensionObject {
+    PyObject_HEAD
+    int native_data;
+  };
+
+  static PyType_Slot extension_slots[2];
+  extension_slots[0] = {0, nullptr};
+
+  unsigned int flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+  static PyType_Spec extension_spec = {
+      "__main__.ExtensionBaseClass",
+      sizeof(ExtensionObject),
+      0,
+      flags,
+      extension_slots,
+  };
+  PyObjectPtr extension_basetype(PyType_FromSpec(&extension_spec));
+  ASSERT_EQ(PyType_CheckExact(extension_basetype), 1);
+  ASSERT_EQ(moduleSet("__main__", "ExtensionBaseClass", extension_basetype), 0);
+
+  PyRun_SimpleString(R"(
+class SimpleManagedBaseClass: pass
+
+class Base(ExtensionBaseClass): pass
+
+class SubClass(SimpleManagedBaseClass, Base): pass
+)");
+
+  PyObjectPtr base(mainModuleGet("Base"));
+  ASSERT_NE(base, nullptr);
+  PyObjectPtr subclass(mainModuleGet("SubClass"));
+  ASSERT_NE(subclass, nullptr);
+  PyObjectPtr subclass_base(PyObject_GetAttrString(subclass, "__base__"));
+  EXPECT_EQ(subclass_base.get(), base.get());
+}
+
 TEST_F(TypeExtensionApiTest, FromSpecWithoutBasicSizeInheritsDefaultBasicSize) {
   static PyType_Slot slots[1];
   slots[0] = {0, nullptr};

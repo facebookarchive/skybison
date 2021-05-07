@@ -31,6 +31,9 @@ static RawObject addBuiltinTypeWithLayout(Thread* thread, const Layout& layout,
   type.setInstanceLayout(*layout);
   type.setInstanceLayoutId(layout.id());
   flags |= superclass.flags() & Type::kInheritableFlags;
+  if (builtin_base == layout.id()) {
+    flags |= Type::Flag::kIsFixedAttributeBase;
+  }
   type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags), builtin_base);
   type.setBases(runtime->newTupleWith1(superclass));
   layout.setDescribedType(*type);
@@ -598,9 +601,6 @@ static RawObject computeFixedAttributeBaseImpl(Thread* thread,
 static RawObject fixedAttributeBaseOfType(Thread* thread, const Type& type) {
   if (type.hasFlag(Type::Flag::kIsFixedAttributeBase)) {
     return *type;
-  }
-  if (!type.hasFlag(Type::Flag::kHasSlots)) {
-    return thread->runtime()->typeAt(type.builtinBase());
   }
   HandleScope scope(thread);
   Tuple bases(&scope, type.bases());

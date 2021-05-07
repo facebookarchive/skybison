@@ -596,7 +596,9 @@ static void addObjectType(Thread* thread) {
   type.setInstanceLayout(*layout);
   type.setInstanceLayoutId(layout.id());
   type.setBases(runtime->emptyTuple());
-  type.setFlagsAndBuiltinBase(Type::Flag::kIsBasetype, LayoutId::kObject);
+  word flags = Type::Flag::kIsBasetype | Type::Flag::kIsFixedAttributeBase;
+  type.setFlagsAndBuiltinBase(static_cast<Type::Flag>(flags),
+                              LayoutId::kObject);
 
   // Manually create `__getattribute__` method to avoid bootstrap problems.
   MutableTuple parameter_names(&scope, runtime->newMutableTuple(2));
