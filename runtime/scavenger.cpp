@@ -16,18 +16,24 @@ class Scavenger : public PointerVisitor {
 
   RawObject scavenge();
 
+  RawObject scavengeIntoImmortal();
+
   void visitPointer(RawObject* pointer, PointerKind kind) override;
 
  private:
+  enum class SaveLocation { kImmortalHeap, kNewSpace };
+
+  void collect(SaveLocation);
+
   void scavengePointer(RawObject* pointer);
 
   RawObject transport(RawObject old_object);
 
-  void processImmortalRoots(Space*);
-
   void processDelayedReferences();
 
   void processGrayObjects();
+
+  uword processGrayObjectsIn(Space*, uword);
 
   void processLayouts();
 
@@ -35,45 +41,104 @@ class Scavenger : public PointerVisitor {
 
   Runtime* runtime_;
   Heap* heap_;
+  Space* immortal_;
   Space* from_;
-  std::unique_ptr<Space> to_;
-  uword scan_;
+  Space* to_;
+  uword to_gray_line_;
+  uword immortal_gray_line_;
   RawMutableTuple layouts_;
   RawMutableTuple layout_type_transitions_;
   RawObject delayed_references_;
   RawObject delayed_callbacks_;
+  SaveLocation save_location_;
 };
 
 Scavenger::Scavenger(Runtime* runtime)
     : runtime_(runtime),
       heap_(runtime->heap()),
+      immortal_(heap_->immortal()),
       from_(heap_->space()),
       to_(nullptr),
       layouts_(MutableTuple::cast(runtime->layouts())),
       layout_type_transitions_(
           MutableTuple::cast(runtime->layoutTypeTransitions())),
       delayed_references_(NoneType::object()),
-      delayed_callbacks_(NoneType::object()) {}
+      delayed_callbacks_(NoneType::object()),
+      save_location_(SaveLocation::kNewSpace) {}
 
-RawObject Scavenger::scavenge() {
-  DCHECK(heap_->verify(), "Heap failed to verify before GC");
-  to_.reset(new Space(from_->size()));
-  scan_ = to_->start();
-  // Nothing should be allocating during a GC.
-  heap_->setSpace(nullptr);
-  if (Space* immortal = heap_->immortal()) {
-    processImmortalRoots(immortal);
-  }
+void Scavenger::collect(SaveLocation copy_into) {
+  save_location_ = copy_into;
+
+  // As we find objects, they become "gray" since we still
+  // need to search their sub-objects.  The gray area extends
+  // from the gray line to the fill mark (invariant).  The
+  // black area extends from the start to the gray line
+  to_gray_line_ = to_->start();
+  immortal_gray_line_ = immortal_->start();
+
+  // We touch all roots.  If we find code objects we will
+  // move them into the immortal partition.
+  immortal_gray_line_ = processGrayObjectsIn(immortal_, immortal_gray_line_);
   runtime_->visitRootsWithoutApiHandles(this);
   visitIncrementedApiHandles(runtime_, this);
+
+  // Gray objects in the immortal space are code objects
+  // All objects in the to_ space are gray. We first want to follow
+  // down the sub-objects of gray code objects and make them
+  // immortal as well.  Then we get rid of gray objects in the to_
+  // space (which may make more immortal code objects).  Repeat
+  // until we've caught everything
   processGrayObjects();
+
+  // We have some other objects to track down
   visitExtensionObjects(runtime_, this, this);
   processGrayObjects();
   visitNotIncrementedBorrowedApiHandles(runtime_, this, this);
   processGrayObjects();
   processDelayedReferences();
   processLayouts();
-  heap_->setSpace(to_.release());
+
+  // One last cleanup
+  processGrayObjects();
+}
+
+RawObject Scavenger::scavenge() {
+  DCHECK(heap_->verify(), "Heap failed to verify before GC");
+
+  // Nothing else should be allocating during a GC.
+  heap_->setSpace(nullptr);
+
+  // Set up a new space for reachable, non-immortal objects
+  to_ = new Space(from_->size());
+
+  // Collect and copy objects into to_
+  collect(SaveLocation::kNewSpace);
+
+  // Swap the new space and and delete the old mortal heap
+  heap_->setSpace(to_);
+  DCHECK(heap_->verify(), "Heap failed to verify after GC");
+  delete from_;
+  return delayed_callbacks_;
+}
+
+RawObject Scavenger::scavengeIntoImmortal() {
+  // Make sure we have enough room
+  // TODO(T89880293) We can try compacting first if there isn't enough room
+  uword immortal_available = immortal_->end() - immortal_->fill();
+  uword heap_used = from_->fill() - from_->start();
+  DCHECK(heap_used < immortal_available,
+         "Immortal heap partition may not be big enough");
+
+  DCHECK(heap_->verify(), "Heap failed to verify before GC");
+  // Nothing should be allocating during a GC.
+  heap_->setSpace(nullptr);
+  to_ = immortal_;
+
+  // Collect and copy objects into immortal partition
+  collect(SaveLocation::kImmortalHeap);
+
+  // Start with a fresh, empty heap
+  heap_->setSpace(new Space(from_->size()));
   DCHECK(heap_->verify(), "Heap failed to verify after GC");
   delete from_;
   return delayed_callbacks_;
@@ -94,44 +159,39 @@ void Scavenger::scavengePointer(RawObject* pointer) {
         to_->contains(object.address()) || heap_->isImmortal(object.address()),
         "object must be in 'from' or 'to' or 'immortal'space");
   } else if (object.isForwarding()) {
-    DCHECK(to_->contains(HeapObject::cast(object.forward()).address()),
-           "transported object must be located in 'to' space");
+    DCHECK(to_->contains(HeapObject::cast(object.forward()).address()) ||
+               heap_->isImmortal(HeapObject::cast(object.forward()).address()),
+           "transported object must be located in 'to' or 'immortal' space");
     *pointer = object.forward();
   } else {
     *pointer = transport(object);
   }
 }
 
-void Scavenger::processImmortalRoots(Space* immortal) {
-  uword scan = immortal->start();
-  while (scan < immortal->fill()) {
-    if (!(*reinterpret_cast<RawObject*>(scan)).isHeader()) {
-      // Skip immediate values for alignment padding or header overflow.
-      scan += kPointerSize;
-    } else {
-      RawHeapObject object = HeapObject::fromAddress(scan + RawHeader::kSize);
-      uword end = object.baseAddress() + object.size();
-      if (!object.isRoot()) {
-        scan = end;
-      } else {
-        for (scan += RawHeader::kSize; scan < end; scan += kPointerSize) {
-          auto pointer = reinterpret_cast<RawObject*>(scan);
-          scavengePointer(pointer);
-        }
-      }
-    }
-  }
-}
-
 bool Scavenger::isWhiteObject(RawHeapObject object) {
-  DCHECK(!to_->contains(object.address()),
+  DCHECK(to_ == immortal_ || !to_->contains(object.address()),
          "must not test objects that have already been visited");
   return !object.isForwarding();
 }
 
 void Scavenger::processGrayObjects() {
-  uword scan = scan_;
-  while (scan < to_->fill()) {
+  SaveLocation saved = save_location_;
+  while (immortal_gray_line_ < immortal_->fill() ||
+         to_gray_line_ < to_->fill()) {
+    // Gray immortal code objects and all reachables
+    save_location_ = SaveLocation::kImmortalHeap;
+    immortal_gray_line_ = processGrayObjectsIn(immortal_, immortal_gray_line_);
+    save_location_ = saved;
+
+    // Objects reachable from gray objects become gray as well
+    to_gray_line_ = (to_ == immortal_)
+                        ? immortal_gray_line_
+                        : processGrayObjectsIn(to_, to_gray_line_);
+  }
+}
+
+uword Scavenger::processGrayObjectsIn(Space* space, uword scan) {
+  while (scan < space->fill()) {
     if (!(*reinterpret_cast<RawObject*>(scan)).isHeader()) {
       // Skip immediate values for alignment padding or header overflow.
       scan += kPointerSize;
@@ -160,7 +220,7 @@ void Scavenger::processGrayObjects() {
       }
     }
   }
-  scan_ = scan;
+  return scan;
 }
 
 // Do a final pass through the Layouts Tuple, treating all non-builtin entries
@@ -191,7 +251,8 @@ void Scavenger::processLayouts() {
   // Post-condition: all entries in the tuple will either be references to
   // to-space or None.
   word length = layout_type_transitions_.length();
-  DCHECK(!to_->contains(layout_type_transitions_.address()),
+  DCHECK(!to_->contains(layout_type_transitions_.address()) ||
+             immortal_->contains(layout_type_transitions_.address()),
          "object should not have been moved");
   for (word i = 0; i < length; i += LayoutTypeTransition::kTransitionSize) {
     RawObject from_obj =
@@ -314,9 +375,23 @@ RawObject Scavenger::transport(RawObject old_object) {
          "objects must be transported from 'from' space");
   DCHECK(from_object.header().isHeader(),
          "object must have a header and must not forward");
+
+  // Code objects get transported to the immortal heap when
+  // they are first discovered during a GC cycle.  Then
+  // objects reachable from those code objects that have not
+  // been processed will also be made immortal.
   word size = from_object.size();
   uword address = 0;
-  to_->allocate(size, &address);
+  if (from_object.isCode() || save_location_ == SaveLocation::kImmortalHeap) {
+    // Allocate these from the immortal partition
+    bool success = immortal_->allocate(size, &address);
+    CHECK(success, "out of memory in immortal space");
+  } else {
+    // Otherwise allocate from the standard partition
+    bool success = to_->allocate(size, &address);
+    DCHECK(success, "GC transport allocation failed in new heap partition");
+  }
+
   auto dst = reinterpret_cast<void*>(address);
   auto src = reinterpret_cast<void*>(from_object.baseAddress());
   std::memcpy(dst, src, size);
@@ -338,10 +413,8 @@ bool isWhiteObject(Scavenger* scavenger, RawHeapObject object) {
 
 RawObject scavenge(Runtime* runtime) { return Scavenger(runtime).scavenge(); }
 
-void scavengeImmortalize(Runtime* runtime) {
-  Heap* heap = runtime->heap();
-  heap->makeImmortal();
-  DCHECK(heap->verify(), "Heap OK");
+RawObject scavengeImmortalize(Runtime* runtime) {
+  return Scavenger(runtime).scavengeIntoImmortal();
 }
 
 }  // namespace py

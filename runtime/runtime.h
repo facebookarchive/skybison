@@ -325,8 +325,14 @@ class Runtime {
   // strings, even when the user did not explicitly intern them.
   static bool isInternedStr(Thread* thread, const Object& str);
 
-  void collectGarbage();
-  void immortalizeCurrentHeapObjects();
+  enum class CompactionDestination { kImmortalPartition, kNewPartition };
+  void collectGarbage() {
+    collectGarbageInto(CompactionDestination::kNewPartition);
+  }
+  void immortalizeCurrentHeapObjects() {
+    collectGarbageInto(CompactionDestination::kImmortalPartition);
+  }
+  void collectGarbageInto(CompactionDestination destination);
 
   // Creates a new thread and adds it to the runtime.
   Thread* newThread();

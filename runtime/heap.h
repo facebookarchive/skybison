@@ -19,11 +19,7 @@ class Heap {
   void collectGarbage();
 
   bool contains(uword address);
-  bool verify() {
-    if (!verifySpace(space_)) return false;
-    if (immortal_ && !verifySpace(immortal_)) return false;
-    return true;
-  }
+  bool verify() { return verifySpace(space_) && verifySpace(immortal_); }
 
   Space* space() { return space_; }
   Space* immortal() { return immortal_; }
@@ -32,13 +28,10 @@ class Heap {
   void makeImmortal();
 
   bool isImmortal(uword address) const {
-    return immortal_ && immortal_->isAllocated(address);
-  }
-  bool isMortal(uword address) const {
-    return space_ && space_->isAllocated(address);
+    return immortal_->isAllocated(address);
   }
   bool inHeap(uword address) const {
-    return isMortal(address) || isImmortal(address);
+    return space_->isAllocated(address) || isImmortal(address);
   }
 
   static int spaceOffset() { return offsetof(Heap, space_); };

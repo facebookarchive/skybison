@@ -11,6 +11,6 @@ bool isWhiteObject(Scavenger* scavenger, RawHeapObject object);
 
 RawObject scavenge(Runtime* runtime);
 
-void scavengeImmortalize(Runtime* runtime);
+RawObject scavengeImmortalize(Runtime* runtime);
 
 }  // namespace py

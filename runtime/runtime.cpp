@@ -1719,10 +1719,12 @@ void Runtime::initializeTypes(Thread* thread) {
                  kNoAttributes, Ellipsis::kSize, /*basetype=*/false);
 }
 
-void Runtime::collectGarbage() {
+void Runtime::collectGarbageInto(CompactionDestination destination) {
   EVENT(CollectGarbage);
   bool run_callback = callbacks_ == NoneType::object();
-  RawObject cb = scavenge(this);
+  RawObject cb = (destination == CompactionDestination::kImmortalPartition)
+                     ? scavengeImmortalize(this)
+                     : scavenge(this);
   callbacks_ = WeakRef::spliceQueue(callbacks_, cb);
   if (run_callback) {
     processCallbacks();
@@ -1730,12 +1732,6 @@ void Runtime::collectGarbage() {
   if (finalizable_references_ != NoneType::object()) {
     processFinalizers();
   }
-}
-
-void Runtime::immortalizeCurrentHeapObjects() {
-  // Last chance to shrink before freezing
-  collectGarbage();
-  scavengeImmortalize(this);
 }
 
 Thread* Runtime::newThread() {

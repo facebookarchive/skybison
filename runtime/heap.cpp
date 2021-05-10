@@ -11,7 +11,7 @@ namespace py {
 
 Heap::Heap(word size) {
   space_ = new Space(size);
-  immortal_ = nullptr;
+  immortal_ = new Space(size);
 }
 
 Heap::~Heap() {
@@ -27,9 +27,6 @@ NEVER_INLINE bool Heap::allocateRetry(word size, uword* address_out) {
 
 bool Heap::allocateImmortal(word size, uword* address_out) {
   DCHECK(Utils::isAligned(size, kPointerSize), "request %ld not aligned", size);
-  if (immortal_ == nullptr) {
-    immortal_ = new Space(space_->size());
-  }
   if (UNLIKELY(!immortal_->allocate(size, address_out))) {
     return allocateRetry(size, address_out);
   }
@@ -37,8 +34,7 @@ bool Heap::allocateImmortal(word size, uword* address_out) {
 }
 
 bool Heap::contains(uword address) {
-  return space_->contains(address) ||
-         (immortal_ && immortal_->contains(address));
+  return space_->contains(address) || immortal_->contains(address);
 }
 
 void Heap::collectGarbage() { Thread::current()->runtime()->collectGarbage(); }
@@ -85,16 +81,8 @@ bool Heap::verifySpace(Space* space) {
   return true;
 }
 
-void Heap::makeImmortal() {
-  if (immortal_ != nullptr) {
-    UNIMPLEMENTED("Immortalizing multiple times not supported yet");
-  }
-  immortal_ = space_;
-  space_ = new Space(immortal_->size());
-}
-
 void Heap::visitAllObjects(HeapObjectVisitor* visitor) {
-  if (immortal_) visitSpace(immortal_, visitor);
+  visitSpace(immortal_, visitor);
   visitSpace(space_, visitor);
 }
 
