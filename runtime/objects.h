@@ -7696,7 +7696,7 @@ inline Frame* RawGeneratorFrame::frame() const {
 }
 
 inline word RawGeneratorFrame::numFrameWords() const {
-  return header().count() - kNumOverheadWords;
+  return headerCountOrOverflow() - kNumOverheadWords;
 }
 
 inline word RawGeneratorFrame::maxStackSize() const {
