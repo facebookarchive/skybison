@@ -62,8 +62,7 @@ DEFAULT_ITERATIONS = 20
 
 
 def to_base64(data):
-    # TODO(bsimmers): When we have bytearray.append, use a bytearray here.
-    result = []
+    result = bytearray()
     length = len(data)
     # Convert every three bytes to 4 ascii characters.
     for i in range(0, length - 2, 3):
@@ -89,8 +88,7 @@ def to_base64(data):
 
 
 def base64_to_bytes(data):
-    # TODO(bsimmers): When we have bytearray.append, use a bytearray here.
-    result = []
+    result = bytearray()
     leftbits = 0  # number of bits decoded, but yet to be appended
     leftdata = 0  # bits decoded, but yet to be appended
 
@@ -122,8 +120,7 @@ def base64_to_bytes(data):
 
 
 def run_one():
-    # TODO(bsimmers): When we have bytearray.append, use a bytearray here.
-    data = []
+    data = bytearray()
     for _ in range(8192):
         data.append(random.randint(97, 122))
     data = bytes(data)
