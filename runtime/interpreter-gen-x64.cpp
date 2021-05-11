@@ -25,7 +25,7 @@
 // Assumptions made throughout this file without static_assert()ing every single
 // time:
 // - PC (as an offset) fits in a uint32_t.
-// - Immediate objects fit in 8 bits.
+// - Immediate objects fit in 8 bytes.
 
 namespace py {
 
