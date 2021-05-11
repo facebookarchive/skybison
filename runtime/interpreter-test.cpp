@@ -7199,6 +7199,48 @@ def foo():
   EXPECT_EQ(*result, NoneType::object());
 }
 
+TEST_F(JitTest, LoadFastReverseLoadsLocal) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  var = 5
+  return var
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_FAST_REVERSE));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_TRUE(isIntEqualsWord(*result, 5));
+}
+
+TEST_F(JitTest, LoadFastReverseWithUnboundNameRaisesUnboundLocalError) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  var = 5
+  del var
+  return var
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, LOAD_FAST_REVERSE));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Function deopt_caller(&scope, createTrampolineFunction(thread_));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_TRUE(raised(*result, LayoutId::kUnboundLocalError));
+  EXPECT_EQ(function.entryAsm(), entry_before);
+}
+
 TEST_F(JitTest, LoadFastReverseUncheckedLoadsParameter) {
   if (useCppInterpreter()) {
     GTEST_SKIP();

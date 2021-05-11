@@ -2586,9 +2586,9 @@ void jitEmitHandler<LOAD_FAST_REVERSE>(JitEnv* env) {
   emitNextOpcode(env);
 
   __ bind(&slow_path);
+  // TODO(T90560373): Instead of deoptimizing, raise UnboundLocalError.
   jitEmitGenericHandlerSetup(env);
-  // Don't deopt because this won't rewrite.
-  emitJumpToGenericHandler(env);
+  emitJumpToDeopt(env);
 }
 
 template <>
@@ -2661,6 +2661,7 @@ bool isSupportedInJIT(Bytecode bc) {
     case COMPARE_LE_SMALLINT:
     case COMPARE_LT_SMALLINT:
     case COMPARE_NE_SMALLINT:
+    case DELETE_FAST:
     case DUP_TOP:
     case DUP_TOP_TWO:
     case FORMAT_VALUE:
