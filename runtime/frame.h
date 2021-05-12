@@ -205,6 +205,7 @@ class Frame {
   // Versions of valueStackTop() and popValue() for a Frame that's had
   // stashStackSize() called on it.
   RawObject* stashedValueStackTop();
+  word stashedStackSize();
   RawObject stashedPopValue();
 
   // Encode value stack size into the "previous frame" field. This
@@ -230,6 +231,11 @@ class Frame {
       kBlockStackDepthReturnModeOffset + kPointerSize;
   static const int kSize =
       kBlockStackOffset + (kMaxBlockStackDepth * kPointerSize);
+
+  static_assert(GeneratorFrame::kFrameSize == kSize, "frame size mismatch");
+  // For stashed frames we save the stack size in previous frame offset.
+  static_assert(GeneratorFrame::kStackSizeFrameOffset == kPreviousFrameOffset,
+                "previous frame / stack size mismatch");
 
   static const int kFunctionOffsetFromLocals = 0;
   static const int kImplicitGlobalsOffsetFromLocals = 1;

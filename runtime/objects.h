@@ -3398,6 +3398,7 @@ class RawGeneratorFrame : public RawInstance {
   RawObject* valueStackTop() const;
   word virtualPC() const;
 
+  word stackSize() const;
   void setStackSize(word size) const;
 
   // Sizing.
@@ -3406,6 +3407,10 @@ class RawGeneratorFrame : public RawInstance {
   // Layout.
   static const int kMaxStackSizeOffset = RawHeapObject::kSize;
   static const int kFrameOffset = kMaxStackSizeOffset + kPointerSize;
+
+  // Size and offsets within frame. Keep in sync with `Frame` class!
+  static const int kFrameSize = 26 * kPointerSize;
+  static const int kStackSizeFrameOffset = 2 * kPointerSize;
 
   // Number of words that aren't the Frame.
   static const int kNumOverheadWords = kFrameOffset / kPointerSize;
@@ -7695,6 +7700,15 @@ inline Frame* RawGeneratorFrame::frame() const {
                                   maxStackSize() * kPointerSize);
 }
 
+inline RawObject RawGeneratorFrame::function() const {
+  return instanceVariableAt(kFrameOffset +
+                            (numFrameWords() - 1) * kPointerSize);
+}
+
+inline word RawGeneratorFrame::numAttributes(word extra_words) {
+  return kNumOverheadWords + kFrameSize / kPointerSize + extra_words;
+}
+
 inline word RawGeneratorFrame::numFrameWords() const {
   return headerCountOrOverflow() - kNumOverheadWords;
 }
@@ -7707,9 +7721,16 @@ inline void RawGeneratorFrame::setMaxStackSize(word offset) const {
   instanceVariableAtPut(kMaxStackSizeOffset, RawSmallInt::fromWord(offset));
 }
 
-inline RawObject RawGeneratorFrame::function() const {
-  return instanceVariableAt(kFrameOffset +
-                            (numFrameWords() - 1) * kPointerSize);
+inline void RawGeneratorFrame::setStackSize(word size) const {
+  word offset =
+      maxStackSize() * kPointerSize + kFrameOffset + kStackSizeFrameOffset;
+  instanceVariableAtPut(offset, RawSmallInt::fromWord(size));
+}
+
+inline word RawGeneratorFrame::stackSize() const {
+  word offset =
+      maxStackSize() * kPointerSize + kFrameOffset + kStackSizeFrameOffset;
+  return RawSmallInt::cast(instanceVariableAt(offset)).value();
 }
 
 // RawCoroutineWrapper

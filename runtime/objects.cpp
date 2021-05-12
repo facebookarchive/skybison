@@ -1139,10 +1139,6 @@ RawObject RawNativeProxy::dequeue(RawObject* tail) {
 
 // RawGeneratorFrame
 
-word RawGeneratorFrame::numAttributes(word extra_words) {
-  return kNumOverheadWords + Frame::kSize / kPointerSize + extra_words;
-}
-
 word RawGeneratorFrame::virtualPC() const { return frame()->virtualPC(); }
 
 void RawGeneratorFrame::setVirtualPC(word value) const {
@@ -1155,10 +1151,6 @@ RawObject* RawGeneratorFrame::valueStackTop() const {
 
 RawObject RawGeneratorFrame::popValue() const {
   return frame()->stashedPopValue();
-}
-
-void RawGeneratorFrame::setStackSize(word size) const {
-  frame()->stashStackSize(size);
 }
 
 }  // namespace py
