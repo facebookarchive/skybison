@@ -4,7 +4,7 @@
 
 #include "bytecode.h"
 #include "globals.h"
-#include "handles.h"
+#include "handles-decl.h"
 #include "objects.h"
 
 namespace py {
@@ -232,9 +232,10 @@ class Frame {
   static const int kSize =
       kBlockStackOffset + (kMaxBlockStackDepth * kPointerSize);
 
-  static_assert(GeneratorFrame::kFrameSize == kSize, "frame size mismatch");
+  static_assert(RawGeneratorFrame::kFrameSize == kSize, "frame size mismatch");
   // For stashed frames we save the stack size in previous frame offset.
-  static_assert(GeneratorFrame::kStackSizeFrameOffset == kPreviousFrameOffset,
+  static_assert(RawGeneratorFrame::kStackSizeFrameOffset ==
+                    kPreviousFrameOffset,
                 "previous frame / stack size mismatch");
 
   static const int kFunctionOffsetFromLocals = 0;
@@ -282,7 +283,7 @@ class Arguments {
 RawObject frameLocals(Thread* thread, Frame* frame);
 
 inline bool Frame::isNative() {
-  return !code().isCode() || Code::cast(code()).isNative();
+  return !code().isCode() || RawCode::cast(code()).isNative();
 }
 
 inline uword Frame::address() { return reinterpret_cast<uword>(this); }
@@ -296,13 +297,13 @@ inline void Frame::atPut(int offset, RawObject value) {
 }
 
 inline word Frame::blockStackDepthReturnMode() {
-  return SmallInt::cast(at(kBlockStackDepthReturnModeOffset))
+  return RawSmallInt::cast(at(kBlockStackDepthReturnModeOffset))
       .asReinterpretedWord();
 }
 
 inline void Frame::setBlockStackDepthReturnMode(word value) {
   atPut(kBlockStackDepthReturnModeOffset,
-        SmallInt::fromReinterpretedWord(value));
+        RawSmallInt::fromReinterpretedWord(value));
 }
 
 inline bool Frame::blockStackEmpty() {
@@ -346,29 +347,29 @@ inline word Frame::returnMode() {
 
 inline RawFunction Frame::function() {
   DCHECK(previousFrame() != nullptr, "must not be called on initial frame");
-  return Function::cast(*(locals() + kFunctionOffsetFromLocals));
+  return RawFunction::cast(*(locals() + kFunctionOffsetFromLocals));
 }
 
 inline word Frame::virtualPC() {
-  return SmallInt::cast(at(kVirtualPCOffset)).asReinterpretedWord();
+  return RawSmallInt::cast(at(kVirtualPCOffset)).asReinterpretedWord();
 }
 
 inline void Frame::setVirtualPC(word pc) {
   // We re-interpret the PC value as a small int. This works because it must
   // be an even number and naturally has the lowest bit cleared.
-  atPut(kVirtualPCOffset, SmallInt::fromReinterpretedWord(pc));
+  atPut(kVirtualPCOffset, RawSmallInt::fromReinterpretedWord(pc));
 }
 
 inline word Frame::localsOffset() {
-  return SmallInt::cast(at(kLocalsOffsetOffset)).asReinterpretedWord();
+  return RawSmallInt::cast(at(kLocalsOffsetOffset)).asReinterpretedWord();
 }
 
 inline void Frame::setLocalsOffset(word locals_offset) {
-  atPut(kLocalsOffsetOffset, SmallInt::fromReinterpretedWord(locals_offset));
+  atPut(kLocalsOffsetOffset, RawSmallInt::fromReinterpretedWord(locals_offset));
 }
 
 inline word Frame::currentPC() {
-  return SmallInt::cast(at(kVirtualPCOffset)).asReinterpretedWord() -
+  return RawSmallInt::cast(at(kVirtualPCOffset)).asReinterpretedWord() -
          kCodeUnitSize;
 }
 
@@ -423,22 +424,22 @@ inline void Frame::setBytecode(RawMutableBytes bytecode) {
 
 inline Frame* Frame::previousFrame() {
   RawObject frame = at(kPreviousFrameOffset);
-  return static_cast<Frame*>(SmallInt::cast(frame).asAlignedCPtr());
+  return static_cast<Frame*>(RawSmallInt::cast(frame).asAlignedCPtr());
 }
 
 inline void Frame::setPreviousFrame(Frame* frame) {
   atPut(kPreviousFrameOffset,
-        SmallInt::fromAlignedCPtr(reinterpret_cast<void*>(frame)));
+        RawSmallInt::fromAlignedCPtr(reinterpret_cast<void*>(frame)));
 }
 
 inline bool Frame::isSentinel() {
   // This is the same as `previousFrame() == nullptr` but will not fail
   // assertion checks if the field is not a SmallInt.
-  return at(kPreviousFrameOffset) == SmallInt::fromWord(0);
+  return at(kPreviousFrameOffset) == RawSmallInt::fromWord(0);
 }
 
 inline RawObject* Frame::stashedValueStackTop() {
-  word depth = SmallInt::cast(at(kPreviousFrameOffset)).value();
+  word depth = RawSmallInt::cast(at(kPreviousFrameOffset)).value();
   return reinterpret_cast<RawObject*>(this) - depth;
 }
 
@@ -446,13 +447,13 @@ inline RawObject Frame::stashedPopValue() {
   RawObject result = *stashedValueStackTop();
   // valueStackTop() contains the stack depth as a RawSmallInt rather than a
   // pointer, so decrement it by 1.
-  word depth = SmallInt::cast(at(kPreviousFrameOffset)).value();
-  atPut(kPreviousFrameOffset, SmallInt::fromWord(depth - 1));
+  word depth = RawSmallInt::cast(at(kPreviousFrameOffset)).value();
+  atPut(kPreviousFrameOffset, RawSmallInt::fromWord(depth - 1));
   return result;
 }
 
 inline void Frame::stashStackSize(word size) {
-  atPut(kPreviousFrameOffset, SmallInt::fromWord(size));
+  atPut(kPreviousFrameOffset, RawSmallInt::fromWord(size));
 }
 
 inline RawObject TryBlock::asSmallInt() const {

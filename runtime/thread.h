@@ -1,5 +1,6 @@
 #pragma once
 
+#include "frame.h"
 #include "globals.h"
 #include "handles-decl.h"
 #include "objects.h"
@@ -479,6 +480,14 @@ inline RawObject* Thread::valueStackBase() {
 
 inline word Thread::valueStackSize() {
   return valueStackBase() - stack_pointer_;
+}
+
+inline Frame* Thread::popFrame() {
+  Frame* frame = current_frame_;
+  DCHECK(!frame->isSentinel(), "cannot pop initial frame");
+  stack_pointer_ = frame->frameEnd();
+  current_frame_ = frame->previousFrame();
+  return current_frame_;
 }
 
 inline void Thread::stackDrop(word count) {

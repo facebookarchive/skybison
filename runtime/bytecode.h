@@ -1,6 +1,6 @@
 #pragma once
 
-#include "handles.h"
+#include "handles-decl.h"
 #include "objects.h"
 
 namespace py {

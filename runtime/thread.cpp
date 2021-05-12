@@ -333,14 +333,6 @@ Frame* Thread::pushInitialFrame() {
   return frame;
 }
 
-Frame* Thread::popFrame() {
-  Frame* frame = current_frame_;
-  DCHECK(!frame->isSentinel(), "cannot pop initial frame");
-  stack_pointer_ = frame->frameEnd();
-  current_frame_ = frame->previousFrame();
-  return current_frame_;
-}
-
 Frame* Thread::popFrameToGeneratorFrame(const GeneratorFrame& generator_frame) {
   word max_stack_size = generator_frame.maxStackSize();
   word stack_size = valueStackSize();
