@@ -167,6 +167,14 @@ class ListTests(unittest.TestCase):
         self.assertIs(orig.__ne__(1), NotImplemented)
         self.assertIs(orig.__ne__({}), NotImplemented)
 
+    def test_dunder_new_ignores_args_and_kwargs(self):
+        instance = list.__new__(list)
+        self.assertEqual(instance, [])
+        instance = list.__new__(list, "one")
+        self.assertEqual(instance, [])
+        instance = list.__new__(list, "one", optional=2)
+        self.assertEqual(instance, [])
+
     def test_dunder_reversed_returns_reversed_iterator(self):
         orig = [1, 2, 3]
         rev_iter = orig.__reversed__()
@@ -1121,6 +1129,16 @@ class ListTests(unittest.TestCase):
         ls = [C(i % 2) for i in range(4)]
         ls.sort(key=lambda x: x.val)
         self.assertEqual(ls, [C(0), C(0), C(1), C(1)])
+
+    def test_subclass_dunder_init_can_take_kwargs(self):
+        class ListSub(list):  # noqa: B903
+            def __init__(self, optional=None):
+                self.opt = optional
+
+        empty = ListSub()
+        self.assertEqual(empty.opt, None)
+        optional_str = ListSub(optional="optional")
+        self.assertEqual(optional_str.opt, "optional")
 
 
 if __name__ == "__main__":

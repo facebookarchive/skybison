@@ -5033,7 +5033,7 @@ class list(bootstrap=True):
         return not eq_result
 
     @_staticmethod
-    def __new__(cls, iterable=()):
+    def __new__(cls, *args, **kwargs):
         _builtin()
 
     def __repr__(self):
