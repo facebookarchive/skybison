@@ -646,6 +646,54 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
   EXPECT_EQ(caches.length(), (num_global + num_attr) * kIcPointersPerEntry);
 }
 
+TEST_F(
+    BytecodeTest,
+    RewriteBytecodeDoesNotRewriteLoadFastAndStoreFastOpcodesWithLargeLocalCount) {
+  HandleScope scope(thread_);
+  Object arg0(&scope, Runtime::internStrFromCStr(thread_, "arg0"));
+  Object var0(&scope, Runtime::internStrFromCStr(thread_, "var0"));
+  Object var1(&scope, Runtime::internStrFromCStr(thread_, "var1"));
+  Tuple varnames(&scope, runtime_->newTupleWith3(arg0, var0, var1));
+  Object freevar0(&scope, Runtime::internStrFromCStr(thread_, "freevar0"));
+  Tuple freevars(&scope, runtime_->newTupleWith1(freevar0));
+  Object cellvar0(&scope, Runtime::internStrFromCStr(thread_, "cellvar0"));
+  Tuple cellvars(&scope, runtime_->newTupleWith1(cellvar0));
+  word argcount = 1;
+  // Set nlocals > 255
+  word nlocals = kMaxByte + 3;
+  byte bytecode[] = {
+      LOAD_FAST,  2, LOAD_FAST,  1, LOAD_FAST,  1,
+      STORE_FAST, 2, STORE_FAST, 1, STORE_FAST, 0,
+  };
+  Bytes code_code(&scope, runtime_->newBytesWithAll(bytecode));
+  Object empty_tuple(&scope, runtime_->emptyTuple());
+  Object empty_string(&scope, Str::empty());
+  Object lnotab(&scope, Bytes::empty());
+  Code code(&scope,
+            runtime_->newCode(argcount, /*posonlyargcount=*/0,
+                              /*kwonlyargcount=*/0, nlocals,
+                              /*stacksize=*/0, /*flags=*/0, code_code,
+                              /*consts=*/empty_tuple, /*names=*/empty_tuple,
+                              varnames, freevars, cellvars,
+                              /*filename=*/empty_string, /*name=*/empty_string,
+                              /*firstlineno=*/0, lnotab));
+  code.setFlags(code.flags() | Code::Flags::kOptimized);
+
+  Module module(&scope, findMainModule(runtime_));
+  Function function(&scope, runtime_->newFunctionWithCode(thread_, empty_string,
+                                                          code, module));
+  // newFunctionWithCode() calls rewriteBytecode().
+
+  byte expected[] = {
+      LOAD_FAST,  2, 0, 0, LOAD_FAST,  1, 0, 0, LOAD_FAST,  1, 0, 0,
+      STORE_FAST, 2, 0, 0, STORE_FAST, 1, 0, 0, STORE_FAST, 0, 0, 0,
+  };
+
+  Object rewritten_bytecode(&scope, function.rewrittenBytecode());
+  EXPECT_TRUE(isMutableBytesEqualsBytes(rewritten_bytecode, expected));
+  EXPECT_TRUE(function.caches().isNoneType());
+}
+
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   HandleScope scope(thread_);
   Object arg0(&scope, Runtime::internStrFromCStr(thread_, "arg0"));

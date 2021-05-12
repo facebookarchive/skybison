@@ -181,7 +181,15 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op,
       CHECK(op.arg < Code::cast(function.code()).nlocals(),
             "unexpected local number");
       word total_locals = function.totalLocals();
+      // Check if the original opcode uses an extended arg
+      if (op.arg > kMaxByte) {
+        break;
+      }
       int32_t reverse_arg = total_locals - op.arg - 1;
+      // Check that the new value fits in a byte
+      if (reverse_arg > kMaxByte) {
+        break;
+      }
       // TODO(T66255738): Use a more complete static analysis to capture all
       // bound local variables other than just arguments.
       return RewrittenOp{
@@ -198,8 +206,16 @@ static RewrittenOp rewriteOperation(const Function& function, BytecodeOp op,
     case STORE_FAST: {
       CHECK(op.arg < Code::cast(function.code()).nlocals(),
             "unexpected local number");
+      // Check if the original opcode uses an extended arg
+      if (op.arg > kMaxByte) {
+        break;
+      }
       word total_locals = function.totalLocals();
       int32_t reverse_arg = total_locals - op.arg - 1;
+      // Check that the new value fits in a byte
+      if (reverse_arg > kMaxByte) {
+        break;
+      }
       return RewrittenOp{STORE_FAST_REVERSE, reverse_arg, false};
     }
     case STORE_SUBSCR:
