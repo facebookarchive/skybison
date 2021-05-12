@@ -499,6 +499,11 @@ RawObject Runtime::newCode(word argcount, word posonlyargcount,
     flags &= ~Code::Flags::kNofree;
   }
 
+  if (!code.isInt()) {
+    Bytes code_bytes(&scope, bytesUnderlying(*code));
+    CHECK(code_bytes.length() <= kMaxUint32, "code objects must fit in 4GB");
+  }
+
   Code result(&scope, newInstanceWithSize(LayoutId::kCode, Code::kSize));
   result.setArgcount(argcount);
   result.setPosonlyargcount(posonlyargcount);

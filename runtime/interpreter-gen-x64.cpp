@@ -21,11 +21,6 @@
 // implementation for all opcodes calls back to the C++ version, with
 // hand-written assembly versions of perf-critical opcodes. More details are
 // inline with the relevant constants and functions.
-//
-// Assumptions made throughout this file without static_assert()ing every single
-// time:
-// - PC (as an offset) fits in a uint32_t.
-// - Immediate objects fit in 8 bytes.
 
 namespace py {
 
