@@ -64,6 +64,57 @@ def foo():
 }
 
 TEST_F(ClassExtensionApiTest,
+       InstanceMethodDunderGetAttrWithNonExistentAttrRaisesAttributeError) {
+  PyRun_SimpleString(R"(
+def foo():
+  pass
+)");
+  PyObjectPtr foo(mainModuleGet("foo"));
+  PyObjectPtr method(PyInstanceMethod_New(foo));
+  ASSERT_NE(method, nullptr);
+  // Call the "__getattr__" method of the instancemethod, check
+  // behavior for requesting a non-existent attribute.
+  PyObjectPtr result(PyObject_GetAttrString(method, "bar"));
+  EXPECT_EQ(result, nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_AttributeError));
+}
+
+TEST_F(ClassExtensionApiTest,
+       InstanceMethodDunderGetAttrReturnsAttributeOfUnderlyingFunction) {
+  PyRun_SimpleString(R"(
+def foo():
+  pass
+foo.bar = 123
+)");
+  PyObjectPtr foo(mainModuleGet("foo"));
+  PyObjectPtr method(PyInstanceMethod_New(foo));
+  ASSERT_NE(method, nullptr);
+  // Call the "__getattr__" method of the instancemethod, check
+  // behavior for requesting an attribute on the underlying function.
+  PyObjectPtr result(PyObject_GetAttrString(method, "bar"));
+  EXPECT_TRUE(isLongEqualsLong(result, 123));
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ClassExtensionApiTest,
+       InstanceMethodDunderGetAttrReturnsAttributeOfInstanceMethod) {
+  PyRun_SimpleString(R"(
+def foo():
+  pass
+)");
+  PyObjectPtr foo(mainModuleGet("foo"));
+  PyObjectPtr method(PyInstanceMethod_New(foo));
+  ASSERT_NE(method, nullptr);
+  // Call the "__getattr__" method of the instancemethod, check
+  // behavior for requesting an attribute on the instancemethod (and
+  // *not* the underlying function).
+  PyObjectPtr result(PyObject_GetAttrString(method, "__func__"));
+  EXPECT_EQ(result, foo);
+  EXPECT_EQ(PyErr_Occurred(), nullptr);
+}
+
+TEST_F(ClassExtensionApiTest,
        InstanceMethodDunderGetWithNonNoneObjectReturnsMethod) {
   PyRun_SimpleString(R"(
 def foo():

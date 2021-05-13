@@ -4416,7 +4416,9 @@ class instancemethod(bootstrap=True):
             return func
         return method(func, obj)
 
-    # TODO(T87960349): Implement __getattribute__
+    def __getattr__(self, name):
+        func = _instancemethod_func(self)
+        return getattr(func, name)
 
     def __gt__(self, other):
         _unimplemented()
