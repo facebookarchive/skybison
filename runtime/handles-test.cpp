@@ -27,7 +27,7 @@ TEST_F(HandlesTest, UpCastTest) {
   USE(h2);
 
   RememberingVisitor visitor;
-  scope.handles()->visitPointers(&visitor);
+  thread_->handles()->visitPointers(&visitor);
   EXPECT_EQ(visitor.count(), 2);
   EXPECT_TRUE(visitor.hasVisited(*h1));
 }
@@ -42,7 +42,7 @@ TEST_F(HandlesTest, DownCastTest) {
   USE(h2);
 
   RememberingVisitor visitor;
-  scope.handles()->visitPointers(&visitor);
+  thread_->handles()->visitPointers(&visitor);
   EXPECT_EQ(visitor.count(), 2);
   EXPECT_TRUE(visitor.hasVisited(i1));
 }
@@ -79,9 +79,8 @@ TEST_F(HandlesTest, VisitNoScopes) {
 }
 
 TEST_F(HandlesTest, VisitEmptyScope) {
-  HandleScope scope(thread_);
   RememberingVisitor visitor;
-  scope.handles()->visitPointers(&visitor);
+  thread_->handles()->visitPointers(&visitor);
   EXPECT_EQ(visitor.count(), 0);
 }
 
@@ -91,7 +90,7 @@ TEST_F(HandlesTest, VisitOneHandle) {
   Object handle(&scope, object);
   USE(handle);
   RememberingVisitor visitor;
-  scope.handles()->visitPointers(&visitor);
+  thread_->handles()->visitPointers(&visitor);
   EXPECT_EQ(visitor.count(), 1);
   EXPECT_TRUE(visitor.hasVisited(object));
 }
@@ -105,7 +104,7 @@ TEST_F(HandlesTest, VisitTwoHandles) {
   RawObject o2{0xFACEFEEDL};
   Object h2(&scope, o2);
   USE(h2);
-  scope.handles()->visitPointers(&visitor);
+  thread_->handles()->visitPointers(&visitor);
   EXPECT_EQ(visitor.count(), 2);
   EXPECT_TRUE(visitor.hasVisited(o1));
   EXPECT_TRUE(visitor.hasVisited(o2));

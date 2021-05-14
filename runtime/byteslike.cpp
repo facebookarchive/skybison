@@ -78,11 +78,11 @@ inline void Byteslike::initWithLargeBytes(HandleScope* scope,
                 "size mismatch");
 
   DCHECK_BOUND(length, bytes.length());
-  Handles* handles = scope->handles();
+  Thread* thread = scope->thread();
   d_.handle.object = bytes;
-  d_.handle.handles = handles;
+  d_.handle.thread = thread;
   Handle<RawObject>* as_handle = reinterpret_cast<Handle<RawObject>*>(this);
-  next_ = handles->push(as_handle);
+  next_ = thread->handles()->push(as_handle);
   length_ = length;
 }
 

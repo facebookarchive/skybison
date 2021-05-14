@@ -37,7 +37,7 @@ class Byteslike {
     uword reference;
     struct {
       RawObject object;
-      Handles* handles;
+      Thread* thread;
     } handle;
     struct {
       uword reference;
@@ -50,7 +50,7 @@ class Byteslike {
 
 inline Byteslike::~Byteslike() {
   if (next_ != nullptr) {
-    d_.handle.handles->pop(next_);
+    d_.handle.thread->handles()->pop(next_);
   }
 }
 

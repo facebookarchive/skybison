@@ -8,12 +8,12 @@ namespace py {
 
 class WARN_UNUSED HandleScope {
  public:
-  explicit HandleScope(Thread* thread) : handles_(thread->handles()) {}
+  explicit HandleScope(Thread* thread) : thread_(thread) {}
 
-  Handles* handles() const { return handles_; }
+  Thread* thread() const { return thread_; }
 
  private:
-  Handles* const handles_;
+  Thread* const thread_;
 
   DISALLOW_COPY_AND_ASSIGN(HandleScope);
 };
@@ -23,8 +23,8 @@ class WARN_UNUSED Handle : public T {
  public:
   Handle(HandleScope* scope, RawObject obj)
       : T(obj.rawCast<T>()),
-        handles_(scope->handles()),
-        next_(handles_->push(pointer())) {
+        thread_(scope->thread()),
+        next_(thread_->handles()->push(pointer())) {
     DCHECK(isValidType(), "Invalid Handle construction");
   }
 
@@ -34,8 +34,8 @@ class WARN_UNUSED Handle : public T {
   Handle(HandleScope*, const Handle<S>&) = delete;
 
   ~Handle() {
-    DCHECK(handles_->head() == pointer(), "unexpected this");
-    handles_->pop(next_);
+    DCHECK(thread_->handles()->head() == pointer(), "unexpected this");
+    thread_->handles()->pop(next_);
   }
 
   Handle<RawObject>* nextHandle() const { return next_; }
@@ -75,7 +75,7 @@ class WARN_UNUSED Handle : public T {
     return reinterpret_cast<Handle<RawObject>*>(this);
   }
 
-  Handles* const handles_;
+  Thread* const thread_;
   Handle<RawObject>* const next_;
 };
 
