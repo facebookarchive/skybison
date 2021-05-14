@@ -910,7 +910,8 @@ RawObject FUNC(_io, _TextIOWrapper_write_UTF8)(Thread* thread, Arguments args) {
                                 "I/O operation on closed file.");
   }
 
-  if (Str::cast(text_io.encoding()) != SmallStr::fromCStr("UTF-8")) {
+  if (text_io.encoding() != SmallStr::fromCStr("utf-8") &&
+      text_io.encoding() != SmallStr::fromCStr("UTF-8")) {
     return Unbound::object();
   }
   Str writenl(&scope, text_io.writenl());
