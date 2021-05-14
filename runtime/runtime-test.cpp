@@ -2485,44 +2485,19 @@ def test(module):
   EXPECT_TRUE(runtime_->attributeAt(thread_, module, attr).isError());
 }
 
-TEST_F(RuntimeIntTest, NewSmallIntWithDigits) {
-  HandleScope scope(thread_);
-
-  Int zero(&scope, runtime_->newIntWithDigits(View<uword>(nullptr, 0)));
-  EXPECT_TRUE(isIntEqualsWord(*zero, 0));
-
-  uword digit = 1;
-  RawObject one = runtime_->newIntWithDigits(View<uword>(&digit, 1));
-  EXPECT_TRUE(isIntEqualsWord(one, 1));
-
-  digit = kMaxUword;
-  RawObject negative_one = runtime_->newIntWithDigits(View<uword>(&digit, 1));
-  EXPECT_TRUE(isIntEqualsWord(negative_one, -1));
-
-  word min_small_int = RawSmallInt::kMaxValue;
-  digit = static_cast<uword>(min_small_int);
-  Int min_smallint(&scope, runtime_->newIntWithDigits(View<uword>(&digit, 1)));
-  EXPECT_TRUE(isIntEqualsWord(*min_smallint, min_small_int));
-
-  word max_small_int = RawSmallInt::kMaxValue;
-  digit = static_cast<uword>(max_small_int);
-  Int max_smallint(&scope, runtime_->newIntWithDigits(View<uword>(&digit, 1)));
-  EXPECT_TRUE(isIntEqualsWord(*max_smallint, max_small_int));
-}
-
 TEST_F(RuntimeIntTest, NewLargeIntWithDigits) {
   HandleScope scope(thread_);
 
   word negative_large_int = RawSmallInt::kMinValue - 1;
   uword digit = static_cast<uword>(negative_large_int);
-  Int negative_largeint(&scope,
-                        runtime_->newIntWithDigits(View<uword>(&digit, 1)));
+  Int negative_largeint(
+      &scope, runtime_->newLargeIntWithDigits(View<uword>(&digit, 1)));
   EXPECT_TRUE(isIntEqualsWord(*negative_largeint, negative_large_int));
 
   word positive_large_int = RawSmallInt::kMaxValue + 1;
   digit = static_cast<uword>(positive_large_int);
-  Int positive_largeint(&scope,
-                        runtime_->newIntWithDigits(View<uword>(&digit, 1)));
+  Int positive_largeint(
+      &scope, runtime_->newLargeIntWithDigits(View<uword>(&digit, 1)));
   EXPECT_TRUE(isIntEqualsWord(*positive_largeint, positive_large_int));
 }
 
@@ -2538,10 +2513,10 @@ TEST_F(RuntimeIntTest, BinaryAndWithLargeInts) {
   HandleScope scope(thread_);
   // {0b00001111, 0b00110000, 0b00000001}
   const uword digits_left[] = {0x0F, 0x30, 0x1};
-  Int left(&scope, newIntWithDigits(runtime_, digits_left));
+  Int left(&scope, runtime_->newLargeIntWithDigits(digits_left));
   // {0b00000011, 0b11110000, 0b00000010, 0b00000111}
   const uword digits_right[] = {0x03, 0xF0, 0x2, 0x7};
-  Int right(&scope, newIntWithDigits(runtime_, digits_right));
+  Int right(&scope, runtime_->newLargeIntWithDigits(digits_right));
   Object result(&scope, runtime_->intBinaryAnd(thread_, left, right));
   // {0b00000111, 0b01110000}
   const uword expected_digits[] = {0x03, 0x30};
@@ -2556,7 +2531,7 @@ TEST_F(RuntimeIntTest, BinaryAndWithNegativeLargeInts) {
 
   Int left(&scope, SmallInt::fromWord(-42));  // 0b11010110
   const uword digits[] = {static_cast<uword>(-1), 0xF0, 0x2, 0x7};
-  Int right(&scope, newIntWithDigits(runtime_, digits));
+  Int right(&scope, runtime_->newLargeIntWithDigits(digits));
   Object result(&scope, runtime_->intBinaryAnd(thread_, left, right));
   const uword expected_digits[] = {static_cast<uword>(-42), 0xF0, 0x2, 0x7};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
@@ -2574,10 +2549,10 @@ TEST_F(RuntimeIntTest, BinaryOrWithLargeInts) {
   HandleScope scope(thread_);
   // {0b00001100, 0b00110000, 0b00000001}
   const uword digits_left[] = {0x0C, 0x30, 0x1};
-  Int left(&scope, newIntWithDigits(runtime_, digits_left));
+  Int left(&scope, runtime_->newLargeIntWithDigits(digits_left));
   // {0b00000011, 0b11010000, 0b00000010, 0b00000111}
   const uword digits_right[] = {0x03, 0xD0, 0x2, 0x7};
-  Int right(&scope, newIntWithDigits(runtime_, digits_right));
+  Int right(&scope, runtime_->newLargeIntWithDigits(digits_right));
   Object result(&scope, runtime_->intBinaryOr(thread_, left, right));
   // {0b00001111, 0b11110000, 0b00000011, 0b00000111}
   const uword expected_digits[] = {0x0F, 0xF0, 0x3, 0x7};
@@ -2593,7 +2568,7 @@ TEST_F(RuntimeIntTest, BinaryOrWithNegativeLargeInts) {
   Int left(&scope, SmallInt::fromWord(-42));  // 0b11010110
   const uword digits[] = {static_cast<uword>(-4), 0xF0, 0x2,
                           static_cast<uword>(-1)};
-  Int right(&scope, newIntWithDigits(runtime_, digits));
+  Int right(&scope, runtime_->newLargeIntWithDigits(digits));
   Object result(&scope, runtime_->intBinaryOr(thread_, left, right));
   EXPECT_TRUE(isIntEqualsWord(*result, -2));
 }
@@ -2610,10 +2585,10 @@ TEST_F(RuntimeIntTest, BinaryXorWithLargeInts) {
   HandleScope scope(thread_);
   // {0b00001100, 0b00110000, 0b00000001}
   const uword digits_left[] = {0x0C, 0x30, 0x1};
-  Int left(&scope, newIntWithDigits(runtime_, digits_left));
+  Int left(&scope, runtime_->newLargeIntWithDigits(digits_left));
   // {0b00000011, 0b11010000, 0b00000010, 0b00000111}
   const uword digits_right[] = {0x03, 0xD0, 0x2, 0x7};
-  Int right(&scope, newIntWithDigits(runtime_, digits_right));
+  Int right(&scope, runtime_->newLargeIntWithDigits(digits_right));
   Object result(&scope, runtime_->intBinaryXor(thread_, left, right));
   // {0b00001111, 0b11100000, 0b00000011, 0b00000111}
   const uword expected_digits[] = {0x0F, 0xE0, 0x3, 0x7};
@@ -2629,7 +2604,7 @@ TEST_F(RuntimeIntTest, BinaryXorWithNegativeLargeInts) {
   Int left(&scope, SmallInt::fromWord(-42));  // 0b11010110
   const uword digits[] = {static_cast<uword>(-1), 0xf0, 0x2,
                           static_cast<uword>(-1)};
-  Int right(&scope, newIntWithDigits(runtime_, digits));
+  Int right(&scope, runtime_->newLargeIntWithDigits(digits));
   Object result(&scope, runtime_->intBinaryXor(thread_, left, right));
   const uword expected_digits[] = {0x29, ~uword{0xF0}, ~uword{0x2}, 0};
   EXPECT_TRUE(isIntEqualsDigits(*result, expected_digits));
@@ -3327,7 +3302,7 @@ i = IntSub(7)
   EXPECT_EQ(Runtime::objectEquals(thread_, *i, SmallInt::fromWord(1)),
             Bool::trueObj());
   const uword digits[] = {1, 2};
-  LargeInt large_int(&scope, runtime_->newIntWithDigits(digits));
+  LargeInt large_int(&scope, runtime_->newLargeIntWithDigits(digits));
   EXPECT_EQ(Runtime::objectEquals(thread_, *i, *large_int), Bool::trueObj());
   EXPECT_EQ(Runtime::objectEquals(thread_, *large_int, *i), Bool::trueObj());
   EXPECT_EQ(Runtime::objectEquals(thread_, *i, Bool::trueObj()),

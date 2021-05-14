@@ -418,7 +418,7 @@ TEST_F(BytearrayBuiltinsTest, DunderImulWithLargeIntRaisesOverflowError) {
   HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
   const uword digits[] = {1, 1};
-  Object count(&scope, runtime_->newIntWithDigits(digits));
+  Object count(&scope, runtime_->newLargeIntWithDigits(digits));
   EXPECT_TRUE(raisedWithStr(runBuiltin(METH(bytearray, __imul__), self, count),
                             LayoutId::kOverflowError,
                             "cannot fit 'int' into an index-sized integer"));
@@ -723,7 +723,7 @@ TEST_F(BytearrayBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
   HandleScope scope(thread_);
   Bytearray self(&scope, runtime_->newBytearray());
   const uword digits[] = {1, 1};
-  Object count(&scope, runtime_->newIntWithDigits(digits));
+  Object count(&scope, runtime_->newLargeIntWithDigits(digits));
   EXPECT_TRUE(raisedWithStr(runBuiltin(METH(bytearray, __mul__), self, count),
                             LayoutId::kOverflowError,
                             "cannot fit 'int' into an index-sized integer"));

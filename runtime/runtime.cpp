@@ -981,12 +981,11 @@ RawObject Runtime::newTupleWithN(word num_items, const Object* item1, ...) {
   return result.becomeImmutable();
 }
 
-RawObject Runtime::newInt(word value) {
-  if (SmallInt::isValid(value)) {
-    return SmallInt::fromWord(value);
-  }
+NEVER_INLINE
+RawObject Runtime::newLargeIntFromWord(word value) {
+  DCHECK(!SmallInt::isValid(value), "value must not fit into SmallInt");
   uword digit[1] = {static_cast<uword>(value)};
-  return newIntWithDigits(digit);
+  return newLargeIntWithDigits(digit);
 }
 
 RawObject Runtime::newIntFromUnsigned(uword value) {
@@ -995,7 +994,7 @@ RawObject Runtime::newIntFromUnsigned(uword value) {
   }
   uword digits[] = {value, 0};
   View<uword> view(digits, digits[0] >> (kBitsPerWord - 1) ? 2 : 1);
-  return newIntWithDigits(view);
+  return newLargeIntWithDigits(view);
 }
 
 RawObject Runtime::newFloat(double value) {
@@ -1010,16 +1009,11 @@ RawObject Runtime::newComplex(double real, double imag) {
   return Complex::cast(Complex::initialize(address, real, imag));
 }
 
-RawObject Runtime::newIntWithDigits(View<uword> digits) {
-  if (digits.length() == 0) {
-    return SmallInt::fromWord(0);
-  }
-  if (digits.length() == 1) {
-    word digit = static_cast<word>(digits.get(0));
-    if (SmallInt::isValid(digit)) {
-      return SmallInt::fromWord(digit);
-    }
-  }
+RawObject Runtime::newLargeIntWithDigits(View<uword> digits) {
+  word length = digits.length();
+  DCHECK(length > 0, "must have at least 1 digit");
+  DCHECK(length > 1 || !SmallInt::isValid(digits.get(0)),
+         "must not fit into a SmallInt");
   HandleScope scope(Thread::current());
   LargeInt result(&scope, createLargeInt(digits.length()));
   for (word i = 0; i < digits.length(); i++) {
@@ -3750,7 +3744,7 @@ RawObject Runtime::intNegate(Thread* thread, const Int& value) {
     // Negating kMinWord results in a number with two digits.
     if (value_word == kMinWord) {
       const uword min_word[] = {static_cast<uword>(kMinWord), 0};
-      return newIntWithDigits(min_word);
+      return newLargeIntWithDigits(min_word);
     }
     return newInt(-value_word);
   }

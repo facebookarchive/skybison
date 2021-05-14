@@ -528,8 +528,16 @@ RawObject Marshal::Reader::readLongObject() {
   }
 
   HandleScope scope(thread_);
-  Object result(&scope, runtime_->newIntWithDigits(
-                            View<uword>(digits.get(), digits_idx)));
+  Object result(&scope, NoneType::object());
+  if (digits_idx == 0) {
+    result = SmallInt::fromWord(0);
+  } else if (digits_idx == 1 &&
+             SmallInt::isValid(static_cast<word>(digits[0]))) {
+    result = SmallInt::fromWord(static_cast<word>(digits[0]));
+  } else {
+    result =
+        runtime_->newLargeIntWithDigits(View<uword>(digits.get(), digits_idx));
+  }
   if (isRef_) {
     addRef(result);
   }

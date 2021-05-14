@@ -540,7 +540,7 @@ TEST_F(DebuggingTests, FormatFunction) {
 TEST_F(DebuggingTests, FormatLargeInt) {
   std::stringstream ss;
   const uword digits[] = {0x12345, kMaxUword};
-  ss << runtime_->newIntWithDigits(digits);
+  ss << runtime_->newLargeIntWithDigits(digits);
   EXPECT_EQ(ss.str(), "largeint([0x0000000000012345, 0xffffffffffffffff])");
 }
 

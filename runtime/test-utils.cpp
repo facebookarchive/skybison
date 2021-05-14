@@ -341,10 +341,6 @@ RawBytearray newBytearrayFromCStr(Thread* thread, const char* str) {
   return *result;
 }
 
-RawObject newIntWithDigits(Runtime* runtime, View<uword> digits) {
-  return runtime->newIntWithDigits(View<uword>(digits.data(), digits.length()));
-}
-
 RawLargeInt newLargeIntWithDigits(View<uword> digits) {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
@@ -775,7 +771,7 @@ RawObject icLookupBinaryOp(RawMutableTuple caches, word index,
     return ::testing::AssertionFailure()
            << "is a '" << typeName(runtime, obj) << "'";
   }
-  Int expected(&scope, newIntWithDigits(runtime, digits));
+  Int expected(&scope, newLargeIntWithDigits(digits));
   Object value_obj(&scope, obj);
   Int value_int(&scope, intUnderlying(*value_obj));
   if (expected.compare(*value_int) != 0) {

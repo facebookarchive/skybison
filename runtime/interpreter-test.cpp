@@ -815,7 +815,7 @@ reference = int.__add__
   Object arg0(&scope, SmallInt::fromWord(34));
   Object arg1(&scope, SmallInt::fromWord(12));
   const uword digits2[] = {0x12345678, 0xabcdef};
-  Object arg_l(&scope, runtime_->newIntWithDigits(digits2));
+  Object arg_l(&scope, runtime_->newLargeIntWithDigits(digits2));
   testBinaryOpRewrite(function, reference, BINARY_ADD_SMALLINT, arg0, arg1,
                       arg_l);
 }
@@ -833,7 +833,7 @@ reference = int.__mul__
   Object arg0(&scope, SmallInt::fromWord(34));
   Object arg1(&scope, SmallInt::fromWord(12));
   const uword digits2[] = {0x12345678, 0xabcdef};
-  Object arg_l(&scope, runtime_->newIntWithDigits(digits2));
+  Object arg_l(&scope, runtime_->newLargeIntWithDigits(digits2));
   testBinaryOpRewrite(function, reference, BINARY_MUL_SMALLINT, arg0, arg1,
                       arg_l);
 }
@@ -851,7 +851,7 @@ reference = int.__sub__
   Object arg0(&scope, SmallInt::fromWord(94));
   Object arg1(&scope, SmallInt::fromWord(21));
   const uword digits2[] = {0x12345678, 0xabcdef};
-  Object arg_l(&scope, runtime_->newIntWithDigits(digits2));
+  Object arg_l(&scope, runtime_->newLargeIntWithDigits(digits2));
   testBinaryOpRewrite(function, reference, BINARY_SUB_SMALLINT, arg0, arg1,
                       arg_l);
 }
@@ -869,7 +869,7 @@ reference = int.__or__
   Object arg0(&scope, SmallInt::fromWord(0xa5));
   Object arg1(&scope, SmallInt::fromWord(0x42));
   const uword digits2[] = {0x12345678, 0xabcdef};
-  Object arg_l(&scope, runtime_->newIntWithDigits(digits2));
+  Object arg_l(&scope, runtime_->newLargeIntWithDigits(digits2));
   testBinaryOpRewrite(function, reference, BINARY_OR_SMALLINT, arg0, arg1,
                       arg_l);
 }
@@ -887,7 +887,7 @@ reference = int.__and__
   Object arg0(&scope, SmallInt::fromWord(0xa5));
   Object arg1(&scope, SmallInt::fromWord(0x42));
   const uword digits2[] = {0x12345678, 0xabcdef};
-  Object arg_l(&scope, runtime_->newIntWithDigits(digits2));
+  Object arg_l(&scope, runtime_->newLargeIntWithDigits(digits2));
   testBinaryOpRewrite(function, reference, BINARY_AND_SMALLINT, arg0, arg1,
                       arg_l);
 }

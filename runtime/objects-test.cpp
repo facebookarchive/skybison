@@ -333,12 +333,12 @@ TEST_F(IntTest, IntTest) {
   EXPECT_TRUE(isIntEqualsWord(*o4, kMinWord));
 
   uword digits[] = {kMaxUword, 0};
-  Int o5(&scope, runtime_->newIntWithDigits(digits));
+  Int o5(&scope, runtime_->newLargeIntWithDigits(digits));
   EXPECT_TRUE(o5.isLargeInt());
   EXPECT_EQ(o5.bitLength(), kBitsPerWord);
 
   uword digits2[] = {kMaxUword, 1};
-  Int o6(&scope, runtime_->newIntWithDigits(digits2));
+  Int o6(&scope, runtime_->newLargeIntWithDigits(digits2));
   EXPECT_TRUE(o6.isLargeInt());
   EXPECT_EQ(o6.bitLength(), kBitsPerWord + 1);
 }
@@ -472,30 +472,30 @@ TEST_F(IntTest, Compare) {
 TEST_F(IntTest, LargeIntCompare) {
   HandleScope scope(thread_);
   const uword digits_great[] = {1, 1};
-  Int great(&scope, newIntWithDigits(runtime_, digits_great));
+  Int great(&scope, runtime_->newLargeIntWithDigits(digits_great));
   const uword digits_small[] = {0, 0, kMaxUword};
-  Int small(&scope, newIntWithDigits(runtime_, digits_small));
+  Int small(&scope, runtime_->newLargeIntWithDigits(digits_small));
   EXPECT_EQ(great.compare(*small), 1);
   EXPECT_EQ(small.compare(*great), -1);
 
   const uword digits_great2[] = {1, 1, 1};
   const uword digits_small2[] = {1, 1};
-  great = newIntWithDigits(runtime_, digits_great2);
-  small = newIntWithDigits(runtime_, digits_small2);
+  great = runtime_->newLargeIntWithDigits(digits_great2);
+  small = runtime_->newLargeIntWithDigits(digits_small2);
   EXPECT_EQ(great.compare(*small), 1);
   EXPECT_EQ(small.compare(*great), -1);
 
   const uword digits_great3[] = {kMaxUword - 1, 1};
   const uword digits_small3[] = {2, 1};
-  great = newIntWithDigits(runtime_, digits_great3);
-  small = newIntWithDigits(runtime_, digits_small3);
+  great = runtime_->newLargeIntWithDigits(digits_great3);
+  small = runtime_->newLargeIntWithDigits(digits_small3);
   EXPECT_EQ(great.compare(*small), 1);
   EXPECT_EQ(small.compare(*great), -1);
 
   const uword digits_great4[] = {kMaxUword - 1, kMaxUword - 1};
   const uword digits_small4[] = {2, kMaxUword - 1};
-  great = newIntWithDigits(runtime_, digits_great4);
-  small = newIntWithDigits(runtime_, digits_small4);
+  great = runtime_->newLargeIntWithDigits(digits_great4);
+  small = runtime_->newLargeIntWithDigits(digits_small4);
   EXPECT_EQ(great.compare(*small), 1);
   EXPECT_EQ(small.compare(*great), -1);
 }
@@ -585,7 +585,7 @@ TEST_F(IntTest, AsIntWithMinWordReturnsInt) {
 TEST_F(IntTest, AsIntWithNegativeLargeIntReturnsUnderflow) {
   HandleScope scope(thread_);
   uword digits[] = {0, kMaxUword};
-  Int negative(&scope, runtime_->newIntWithDigits(digits));
+  Int negative(&scope, runtime_->newLargeIntWithDigits(digits));
   EXPECT_EQ(negative.asInt<word>().error, CastError::Underflow);
   EXPECT_EQ(negative.asInt<uword>().error, CastError::Underflow);
 }

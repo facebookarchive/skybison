@@ -153,10 +153,6 @@ RawObject newWeakRefWithCallback(Runtime* runtime, Thread* thread,
                                  const Object& referent,
                                  const Object& callback);
 
-// Helper to allow construction from initializer list, like
-// newIntFromDigits(runtime, {-1, 1})
-RawObject newIntWithDigits(Runtime* runtime, View<uword> digits);
-
 // Helper to allow construction of a RawLargeInt from an initializer list.
 // May construct an invalid LargeInt depending on the digits so we can test
 // normalizeLargeInt().

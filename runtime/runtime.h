@@ -152,10 +152,12 @@ class Runtime {
   // Create a new Int from an unsigned value.
   RawObject newIntFromUnsigned(uword value);
 
-  // Create a new Int from a sequence of digits, which will be interpreted as a
-  // signed, two's-complement number. The digits must satisfy the invariants
-  // listed on the LargeInt class.
-  RawObject newIntWithDigits(View<uword> digits);
+  RawObject newLargeIntFromWord(word value);
+
+  // Create a new LargeInt from a sequence of digits, which will be interpreted
+  // as a signed, two's-complement number. The digits must satisfy the
+  // invariants listed on the LargeInt class.
+  RawObject newLargeIntWithDigits(View<uword> digits);
 
   RawObject newLayout(LayoutId id);
 
@@ -1038,6 +1040,13 @@ inline RawObject Runtime::internStr(Thread* thread, const Object& str) {
     return *str;
   }
   return internLargeStr(thread, str);
+}
+
+inline RawObject Runtime::newInt(word value) {
+  if (SmallInt::isValid(value)) {
+    return SmallInt::fromWord(value);
+  }
+  return newLargeIntFromWord(value);
 }
 
 inline RawObject Runtime::newMutableBytesUninitialized(word size) {

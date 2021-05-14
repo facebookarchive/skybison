@@ -1027,7 +1027,7 @@ TEST_F(BytesBuiltinsTest, DunderMulWithLargeIntRaisesOverflowError) {
   HandleScope scope(thread_);
   Object self(&scope, Bytes::empty());
   const uword digits[] = {1, 1};
-  Object count(&scope, runtime_->newIntWithDigits(digits));
+  Object count(&scope, runtime_->newLargeIntWithDigits(digits));
   EXPECT_TRUE(raisedWithStr(runBuiltin(METH(bytes, __mul__), self, count),
                             LayoutId::kOverflowError,
                             "cannot fit 'int' into an index-sized integer"));
