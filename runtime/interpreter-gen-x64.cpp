@@ -2931,6 +2931,35 @@ static void deoptimizeCurrentFunction(Thread* thread) {
   thread->runtime()->populateEntryAsm(function);
 }
 
+bool canCompileFunction(Thread* thread, const Function& function) {
+  if (!function.isInterpreted()) {
+    std::fprintf(
+        stderr, "Could not compile '%s' (not interpreted)\n",
+        unique_c_ptr<char>(Str::cast(function.qualname()).toCStr()).get());
+    return false;
+  }
+  if (!function.hasSimpleCall()) {
+    std::fprintf(
+        stderr, "Could not compile '%s' (not simple)\n",
+        unique_c_ptr<char>(Str::cast(function.qualname()).toCStr()).get());
+    return false;
+  }
+  HandleScope scope(thread);
+  MutableBytes code(&scope, function.rewrittenBytecode());
+  word num_opcodes = rewrittenBytecodeLength(code);
+  for (word i = 0; i < num_opcodes;) {
+    BytecodeOp op = nextBytecodeOp(code, &i);
+    if (!isSupportedInJIT(op.bc)) {
+      std::fprintf(
+          stderr, "Could not compile '%s' (%s)\n",
+          unique_c_ptr<char>(Str::cast(function.qualname()).toCStr()).get(),
+          kBytecodeNames[op.bc]);
+      return false;
+    }
+  }
+  return true;
+}
+
 void compileFunction(Thread* thread, const Function& function) {
   EVENT(COMPILE_FUNCTION);
   HandleScope scope(thread);

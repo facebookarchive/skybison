@@ -3390,6 +3390,9 @@ RawObject FUNC(_builtins, _jit)(Thread* thread, Arguments args) {
   }
   CHECK(obj.isFunction(), "_jit with non-function is not supported");
   Function function(&scope, *obj);
+  if (!canCompileFunction(thread, function)) {
+    return *function;
+  }
   compileFunction(thread, function);
   return *function;
 }
