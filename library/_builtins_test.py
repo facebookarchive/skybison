@@ -35,6 +35,46 @@ class UnderBuiltinsTests(unittest.TestCase):
             d[c]
         self.assertEqual(str(context.exception), "ExceptionRaiser.__eq__")
 
+    def test_jit_compiles_function(self):
+        def foo():
+            return 10
+
+        _builtins._jit(foo)
+        self.assertEqual(foo(), 10)
+
+    def test_jit_fromlist_compiles_functions(self):
+        def foo():
+            return 10
+
+        def bar():
+            return 15
+
+        _builtins._jit_fromlist([foo, bar])
+        self.assertEqual(foo(), 10)
+        self.assertEqual(bar(), 15)
+
+    def test_jit_fromtype_compiles_functions(self):
+        class C:
+            def a_function(self):
+                return 1
+
+            @classmethod
+            def a_classmethod(cls):
+                return 2
+
+            @staticmethod
+            def a_staticmethod():
+                return 3
+
+        _builtins._jit_fromtype(C)
+        instance = C()
+        self.assertEqual(instance.a_function(), 1)
+        a_boundmethod = instance.a_function
+        _builtins._jit(a_boundmethod)
+        self.assertEqual(a_boundmethod(), 1)
+        self.assertEqual(C.a_classmethod(), 2)
+        self.assertEqual(C.a_staticmethod(), 3)
+
     def test_list_new_default_fill_returns_list(self):
         self.assertListEqual(_builtins._list_new(-1), [])
         self.assertListEqual(_builtins._list_new(0), [])

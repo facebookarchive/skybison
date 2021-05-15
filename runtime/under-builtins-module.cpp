@@ -3375,7 +3375,21 @@ RawObject FUNC(_builtins, _iter)(Thread* thread, Arguments args) {
 
 RawObject FUNC(_builtins, _jit)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
-  Function function(&scope, args.get(0));
+  Object obj(&scope, args.get(0));
+  if (obj.isStaticMethod()) {
+    obj = StaticMethod::cast(*obj).function();
+  } else if (obj.isClassMethod()) {
+    obj = ClassMethod::cast(*obj).function();
+  } else if (obj.isBoundMethod()) {
+    obj = BoundMethod::cast(*obj).function();
+  } else if (obj.isInstanceMethod()) {
+    obj = InstanceMethod::cast(*obj).function();
+  } else {
+    // TODO(T90869918): Support unpacking property (fget, fset, fdel).
+    return *obj;
+  }
+  CHECK(obj.isFunction(), "_jit with non-function is not supported");
+  Function function(&scope, *obj);
   compileFunction(thread, function);
   return *function;
 }

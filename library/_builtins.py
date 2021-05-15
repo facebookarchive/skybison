@@ -650,6 +650,18 @@ def _jit(func):
     _builtin()
 
 
+def _jit_fromlist(funcs):
+    """Compile a list of function objects to native code."""
+    for func in funcs:
+        _jit(func)
+
+
+def _jit_fromtype(type):
+    _type_guard(type)
+    for item in type.__dict__.values():
+        _jit(item)
+
+
 def _list_append(self, item):
     "$intrinsic$"
     _builtin()
