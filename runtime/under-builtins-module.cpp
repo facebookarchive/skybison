@@ -3373,28 +3373,48 @@ RawObject FUNC(_builtins, _iter)(Thread* thread, Arguments args) {
   return Interpreter::createIterator(thread, object);
 }
 
+static RawObject unpackFunction(const Object& obj) {
+  if (obj.isStaticMethod()) {
+    return StaticMethod::cast(*obj).function();
+  }
+  if (obj.isClassMethod()) {
+    return ClassMethod::cast(*obj).function();
+  }
+  if (obj.isBoundMethod()) {
+    return BoundMethod::cast(*obj).function();
+  }
+  if (obj.isInstanceMethod()) {
+    return InstanceMethod::cast(*obj).function();
+  }
+  return *obj;
+}
+
 RawObject FUNC(_builtins, _jit)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Object obj(&scope, args.get(0));
-  if (obj.isStaticMethod()) {
-    obj = StaticMethod::cast(*obj).function();
-  } else if (obj.isClassMethod()) {
-    obj = ClassMethod::cast(*obj).function();
-  } else if (obj.isBoundMethod()) {
-    obj = BoundMethod::cast(*obj).function();
-  } else if (obj.isInstanceMethod()) {
-    obj = InstanceMethod::cast(*obj).function();
-  } else {
+  obj = unpackFunction(obj);
+  if (!obj.isFunction()) {
     // TODO(T90869918): Support unpacking property (fget, fset, fdel).
-    return *obj;
+    return Bool::falseObj();
   }
-  CHECK(obj.isFunction(), "_jit with non-function is not supported");
   Function function(&scope, *obj);
   if (!canCompileFunction(thread, function)) {
-    return *function;
+    return Bool::falseObj();
   }
   compileFunction(thread, function);
-  return *function;
+  return Bool::trueObj();
+}
+
+RawObject FUNC(_builtins, _jit_iscompiled)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object obj(&scope, args.get(0));
+  obj = unpackFunction(obj);
+  if (!obj.isFunction()) {
+    // TODO(T90869918): Support unpacking property (fget, fset, fdel).
+    return Bool::falseObj();
+  }
+  Function function(&scope, *obj);
+  return Bool::fromBool(function.isCompiled());
 }
 
 RawObject FUNC(_builtins, _list_append)(Thread* thread, Arguments args) {

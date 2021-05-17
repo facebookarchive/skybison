@@ -109,6 +109,8 @@ std::ostream& dumpExtendedFunction(std::ostream& os, RawFunction value) {
   dumpCodeFlags(os, flags);
   if (flags & Function::Flags::kSimpleCall) os << " simple_call";
   if (flags & Function::Flags::kInterpreted) os << " interpreted";
+  if (flags & Function::Flags::kExtension) os << " extension";
+  if (flags & Function::Flags::kCompiled) os << " compiled";
   os << '\n';
 
   os << "  code: ";

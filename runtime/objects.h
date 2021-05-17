@@ -2396,7 +2396,8 @@ class RawFunction : public RawInstance {
     kSimpleCall = RawCode::Flags::kLast << 1,   // Speeds detection of fast call
     kInterpreted = RawCode::Flags::kLast << 2,  // Executable by the interpreter
     kExtension = RawCode::Flags::kLast << 3,    // C-API extension function
-    kLast = kExtension,
+    kCompiled = RawCode::Flags::kLast << 4,     // JIT-compiled
+    kLast = kCompiled,
   };
 
   // Getters and setters.
@@ -2459,6 +2460,9 @@ class RawFunction : public RawInstance {
 
   // Returns true if function has `kExtension` flag set.
   bool isExtension() const;
+
+  // Returns true if function has `kCompiled` flag set.
+  bool isCompiled() const;
 
   // Returns true if the function is a coroutine, a generator, or an async
   // generator.
@@ -6643,6 +6647,10 @@ inline bool RawFunction::isCoroutine() const {
 
 inline bool RawFunction::isExtension() const {
   return flags() & Flags::kExtension;
+}
+
+inline bool RawFunction::isCompiled() const {
+  return flags() & Flags::kCompiled;
 }
 
 inline bool RawFunction::isGeneratorLike() const {

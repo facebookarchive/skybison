@@ -2929,6 +2929,7 @@ static void deoptimizeCurrentFunction(Thread* thread) {
   HandleScope scope(thread);
   Function function(&scope, frame->function());
   thread->runtime()->populateEntryAsm(function);
+  function.setFlags(function.flags() & ~Function::Flags::kCompiled);
 }
 
 bool canCompileFunction(Thread* thread, const Function& function) {
@@ -2941,6 +2942,12 @@ bool canCompileFunction(Thread* thread, const Function& function) {
   if (!function.hasSimpleCall()) {
     std::fprintf(
         stderr, "Could not compile '%s' (not simple)\n",
+        unique_c_ptr<char>(Str::cast(function.qualname()).toCStr()).get());
+    return false;
+  }
+  if (function.isCompiled()) {
+    std::fprintf(
+        stderr, "Could not compile '%s' (already compiled)\n",
         unique_c_ptr<char>(Str::cast(function.qualname()).toCStr()).get());
     return false;
   }
@@ -3098,6 +3105,7 @@ void compileFunction(Thread* thread, const Function& function) {
 
   // Replace the entrypoint.
   function.setEntryAsm(jit_code);
+  function.setFlags(function.flags() | Function::Flags::kCompiled);
 }
 
 Interpreter* createAsmInterpreter() { return new X64Interpreter; }

@@ -39,7 +39,9 @@ class UnderBuiltinsTests(unittest.TestCase):
         def foo():
             return 10
 
+        self.assertFalse(_builtins._jit_iscompiled(foo))
         _builtins._jit(foo)
+        self.assertTrue(_builtins._jit_iscompiled(foo))
         self.assertEqual(foo(), 10)
 
     def test_jit_fromlist_compiles_functions(self):
@@ -49,7 +51,11 @@ class UnderBuiltinsTests(unittest.TestCase):
         def bar():
             return 15
 
+        self.assertFalse(_builtins._jit_iscompiled(foo))
+        self.assertFalse(_builtins._jit_iscompiled(bar))
         _builtins._jit_fromlist([foo, bar])
+        self.assertTrue(_builtins._jit_iscompiled(foo))
+        self.assertTrue(_builtins._jit_iscompiled(bar))
         self.assertEqual(foo(), 10)
         self.assertEqual(bar(), 15)
 
@@ -66,12 +72,14 @@ class UnderBuiltinsTests(unittest.TestCase):
             def a_staticmethod():
                 return 3
 
+        self.assertFalse(_builtins._jit_iscompiled(C.a_function))
+        self.assertFalse(_builtins._jit_iscompiled(C.a_classmethod))
+        self.assertFalse(_builtins._jit_iscompiled(C.a_staticmethod))
         _builtins._jit_fromtype(C)
-        instance = C()
-        self.assertEqual(instance.a_function(), 1)
-        a_boundmethod = instance.a_function
-        _builtins._jit(a_boundmethod)
-        self.assertEqual(a_boundmethod(), 1)
+        self.assertTrue(_builtins._jit_iscompiled(C.a_function))
+        self.assertTrue(_builtins._jit_iscompiled(C.a_classmethod))
+        self.assertTrue(_builtins._jit_iscompiled(C.a_staticmethod))
+        self.assertEqual(C().a_function(), 1)
         self.assertEqual(C.a_classmethod(), 2)
         self.assertEqual(C.a_staticmethod(), 3)
 

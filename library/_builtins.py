@@ -662,6 +662,11 @@ def _jit_fromtype(type):
         _jit(item)
 
 
+def _jit_iscompiled(func):
+    """Return True if the given function is compiled and False otherwise."""
+    _builtin()
+
+
 def _list_append(self, item):
     "$intrinsic$"
     _builtin()
