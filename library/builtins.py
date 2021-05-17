@@ -3295,7 +3295,7 @@ class dict(bootstrap=True):
         _builtin()
 
     def __ge__(self, other):
-        _unimplemented()
+        return NotImplemented
 
     __getattribute__ = object.__getattribute__
 
@@ -3311,7 +3311,7 @@ class dict(bootstrap=True):
         return result
 
     def __gt__(self, other):
-        _unimplemented()
+        return NotImplemented
 
     __hash__ = None
 
@@ -3322,13 +3322,13 @@ class dict(bootstrap=True):
         _builtin()
 
     def __le__(self, other):
-        _unimplemented()
+        return NotImplemented
 
     def __len__(self):
         _builtin()
 
     def __lt__(self, other):
-        _unimplemented()
+        return NotImplemented
 
     def __ne__(self, other):
         eq_result = dict.__eq__(self, other)

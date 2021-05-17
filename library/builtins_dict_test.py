@@ -408,6 +408,26 @@ class DictTests(unittest.TestCase):
         with self.assertRaises(UserWarning):
             dict.update({}, D())
 
+    def test_less_than_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            {} < {}  # noqa: B015
+        self.assertEqual({}.__lt__({}), NotImplemented)
+
+    def test_less_equal_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            {} <= {}  # noqa: B015
+        self.assertEqual({}.__le__({}), NotImplemented)
+
+    def test_greater_than_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            {} > {}  # noqa: B015
+        self.assertEqual({}.__gt__({}), NotImplemented)
+
+    def test_greater_equal_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            {} >= {}  # noqa: B015
+        self.assertEqual({}.__ge__({}), NotImplemented)
+
 
 class DictItemsTests(unittest.TestCase):
     DictItemsType = type({}.items())
