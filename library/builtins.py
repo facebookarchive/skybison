@@ -4408,7 +4408,7 @@ class instancemethod(bootstrap=True):
         _unimplemented()
 
     def __ge__(self, other):
-        _unimplemented()
+        return NotImplemented
 
     def __get__(self, obj, owner):
         func = _instancemethod_func(self)
@@ -4421,7 +4421,7 @@ class instancemethod(bootstrap=True):
         return getattr(func, name)
 
     def __gt__(self, other):
-        _unimplemented()
+        return NotImplemented
 
     # instancemethod is not designed to be subclassed.
     __init__ = None
@@ -4430,10 +4430,10 @@ class instancemethod(bootstrap=True):
     __new__ = None
 
     def __le__(self, other):
-        _unimplemented()
+        return NotImplemented
 
     def __lt__(self, other):
-        _unimplemented()
+        return NotImplemented
 
     def __ne__(self, other):
         _unimplemented()

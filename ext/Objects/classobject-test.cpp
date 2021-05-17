@@ -131,6 +131,58 @@ def foo():
   EXPECT_TRUE(PyMethod_Check(result.get()));
 }
 
+TEST_F(ClassExtensionApiTest, InstanceMethodLessThanRaisesTypeError) {
+  PyRun_SimpleString(R"(
+def foo():
+  return 123
+)");
+  PyObjectPtr foo(mainModuleGet("foo"));
+  PyObjectPtr method(PyInstanceMethod_New(foo));
+  EXPECT_NE(method, nullptr);
+  ASSERT_EQ(PyObject_RichCompare(method, method, Py_LT), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ClassExtensionApiTest, InstanceMethodLessEqualRaisesTypeError) {
+  PyRun_SimpleString(R"(
+def foo():
+  return 123
+)");
+  PyObjectPtr foo(mainModuleGet("foo"));
+  PyObjectPtr method(PyInstanceMethod_New(foo));
+  EXPECT_NE(method, nullptr);
+  ASSERT_EQ(PyObject_RichCompare(method, method, Py_LE), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ClassExtensionApiTest, InstanceMethodGreaterThanRaisesTypeError) {
+  PyRun_SimpleString(R"(
+def foo():
+  return 123
+)");
+  PyObjectPtr foo(mainModuleGet("foo"));
+  PyObjectPtr method(PyInstanceMethod_New(foo));
+  EXPECT_NE(method, nullptr);
+  ASSERT_EQ(PyObject_RichCompare(method, method, Py_GT), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
+TEST_F(ClassExtensionApiTest, InstanceMethodGreaterEqualRaisesTypeError) {
+  PyRun_SimpleString(R"(
+def foo():
+  return 123
+)");
+  PyObjectPtr foo(mainModuleGet("foo"));
+  PyObjectPtr method(PyInstanceMethod_New(foo));
+  EXPECT_NE(method, nullptr);
+  ASSERT_EQ(PyObject_RichCompare(method, method, Py_GE), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_TypeError));
+}
+
 TEST_F(ClassExtensionApiTest, FunctionReturnsFunction) {
   PyRun_SimpleString(R"(
 def foo():
