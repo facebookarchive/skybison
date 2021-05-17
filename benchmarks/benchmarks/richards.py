@@ -410,11 +410,44 @@ def run():
     richards.run(1)
 
 
-if __name__ == "__main__":
-    import sys
-
-    num_iterations = 5
-    if len(sys.argv) > 1:
-        num_iterations = int(sys.argv[1])
+def warmup():
     richards = Richards()
-    richards.run(num_iterations)
+    richards.run(1)
+    try:
+        from _builtins import _jit_fromtype
+
+        _jit_fromtype(Packet)
+        _jit_fromtype(DeviceTaskRec)
+        _jit_fromtype(HandlerTaskRec)
+        _jit_fromtype(WorkerTaskRec)
+        _jit_fromtype(TaskState)
+        _jit_fromtype(TaskWorkArea)
+        _jit_fromtype(Task)
+        _jit_fromtype(DeviceTask)
+        _jit_fromtype(HandlerTask)
+        _jit_fromtype(IdleTask)
+        _jit_fromtype(WorkTask)
+    except ImportError:
+        pass
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "num_iterations",
+        type=int,
+        default=5,
+        nargs="?",
+        help="Number of iterations to run the benchmark",
+    )
+    parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
+    args = parser.parse_args()
+    if args.jit:
+        warmup()
+
+    richards = Richards()
+    richards.run(args.num_iterations)

@@ -619,11 +619,50 @@ def run():
     delta_blue(n)
 
 
-if __name__ == "__main__":
-    import sys
+def warmup():
+    delta_blue(1)
+    try:
+        from _builtins import _jit_fromlist, _jit_fromtype
 
-    num_iterations = 50
-    if len(sys.argv) > 1:
-        num_iterations = int(sys.argv[1])
-    for _ in range(num_iterations):
+        _jit_fromtype(Strength)
+        _jit_fromtype(Constraint)
+        _jit_fromtype(UrnaryConstraint)
+        _jit_fromtype(StayConstraint)
+        _jit_fromtype(EditConstraint)
+        _jit_fromtype(BinaryConstraint)
+        _jit_fromtype(ScaleConstraint)
+        _jit_fromtype(EqualityConstraint)
+        _jit_fromtype(Variable)
+        _jit_fromtype(Planner)
+        _jit_fromtype(Plan)
+        _jit_fromlist(
+            [
+                chain_test,
+                projection_test,
+                change,
+            ]
+        )
+    except ImportError:
+        pass
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "num_iterations",
+        type=int,
+        default=50,
+        nargs="?",
+        help="Number of iterations to run the benchmark",
+    )
+    parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
+    args = parser.parse_args()
+    if args.jit:
+        warmup()
+
+    for _ in range(args.num_iterations):
         run()

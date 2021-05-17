@@ -263,11 +263,49 @@ def run():
     pystones(loops)
 
 
-if __name__ == "__main__":
-    import sys
+def warmup():
+    pystones(1)
+    try:
+        from _builtins import _jit_fromlist, _jit_fromtype
 
-    num_iterations = 2
-    if len(sys.argv) > 1:
-        num_iterations = int(sys.argv[1])
-    for _ in range(num_iterations):
+        _jit_fromtype(Record)
+        _jit_fromlist(
+            [
+                Proc0,
+                Proc1,
+                Proc2,
+                Proc3,
+                Proc4,
+                Proc5,
+                Proc6,
+                Proc7,
+                Proc8,
+                Func1,
+                Func2,
+                Func3,
+            ]
+        )
+    except ImportError:
+        pass
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "num_iterations",
+        type=int,
+        default=2,
+        nargs="?",
+        help="Number of iterations to run the benchmark",
+    )
+    parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
+    args = parser.parse_args()
+    if args.jit:
+        warmup()
+
+    for _ in range(args.num_iterations):
         run()

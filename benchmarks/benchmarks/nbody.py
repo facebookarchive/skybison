@@ -137,11 +137,39 @@ def run():
     bench_nbody(num_loops, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
 
 
+def warmup():
+    bench_nbody(1, DEFAULT_REFERENCE, 1)
+    try:
+        from _builtins import _jit_fromlist
+
+        _jit_fromlist(
+            [
+                combinations,
+                advance,
+                report_energy,
+                offset_momentum,
+            ]
+        )
+    except ImportError:
+        pass
+
+
 if __name__ == "__main__":
-    import sys
+    import argparse
 
-    num_loops = 5
-    if len(sys.argv) > 1:
-        num_loops = int(sys.argv[1])
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "num_iterations",
+        type=int,
+        default=5,
+        nargs="?",
+        help="Number of iterations to run the benchmark",
+    )
+    parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
+    args = parser.parse_args()
+    if args.jit:
+        warmup()
 
-    bench_nbody(num_loops, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)
+    bench_nbody(args.num_iterations, DEFAULT_REFERENCE, DEFAULT_ITERATIONS)

@@ -714,6 +714,59 @@ def run():
     bench_pyflake(DEFAULT_LOOPS, filename)
 
 
+def warmup(filename):
+    bench_pyflake(1, filename)
+    try:
+        from _builtins import _jit_fromlist, _jit_fromtype
+
+        _jit_fromtype(BitfieldBase)
+        _jit_fromtype(Bitfield)
+        _jit_fromtype(RBitfield)
+        _jit_fromtype(HuffmanLength)
+        _jit_fromtype(HuffmanTable)
+        _jit_fromtype(OrderedHuffmanTable)
+        _jit_fromlist(
+            [
+                printbits,
+                reverse_bits,
+                reverse_bytes,
+                code_length_orders,
+                distance_base,
+                length_base,
+                extra_distance_bits,
+                extra_length_bits,
+                move_to_front,
+                bwt_transform,
+                bwt_reverse,
+                compute_used,
+                compute_selectors_list,
+                compute_tables,
+                decode_huffman_block,
+                bzip2_main,
+                gzip_main,
+            ]
+        )
+    except ImportError:
+        pass
+
+
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "num_iterations",
+        type=int,
+        default=DEFAULT_LOOPS,
+        nargs="?",
+        help="Number of iterations to run the benchmark",
+    )
+    parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
+    args = parser.parse_args()
     filename = os.path.join(os.path.dirname(__file__), "data", "interpreter.tar.bz2")
-    bench_pyflake(DEFAULT_LOOPS, filename)
+    if args.jit:
+        warmup(filename)
+
+    bench_pyflake(args.num_iterations, filename)

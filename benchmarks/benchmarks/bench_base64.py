@@ -148,8 +148,38 @@ def run():
     bench_base64(DEFAULT_ITERATIONS)
 
 
+def warmup():
+    bench_base64(1)
+    try:
+        from _builtins import _jit_fromlist
+
+        _jit_fromlist(
+            [
+                to_base64,
+                base64_to_bytes,
+                run_one,
+            ]
+        )
+    except ImportError:
+        pass
+
+
 if __name__ == "__main__":
-    num_iterations = DEFAULT_ITERATIONS
-    if len(sys.argv) > 1:
-        num_iterations = int(sys.argv[1])
-    bench_base64(num_iterations)
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "num_iterations",
+        type=int,
+        default=DEFAULT_ITERATIONS,
+        nargs="?",
+        help="Number of iterations to run the benchmark",
+    )
+    parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
+    args = parser.parse_args()
+    if args.jit:
+        warmup()
+
+    bench_base64(args.num_iterations)

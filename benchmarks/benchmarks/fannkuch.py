@@ -53,12 +53,38 @@ def run():
     fannkuch(arg)
 
 
-if __name__ == "__main__":
-    import sys
+def warmup():
+    fannkuch(1)
+    try:
+        from _builtins import _jit_fromlist
 
-    num_iterations = 1
-    if len(sys.argv) > 1:
-        num_iterations = int(sys.argv[1])
-    for _ in range(num_iterations):
+        _jit_fromlist(
+            [
+                fannkuch,
+            ]
+        )
+    except ImportError:
+        pass
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "num_iterations",
+        type=int,
+        default=1,
+        nargs="?",
+        help="Number of iterations to run the benchmark",
+    )
+    parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
+    args = parser.parse_args()
+    if args.jit:
+        warmup()
+
+    for _ in range(args.num_iterations):
         res = fannkuch(DEFAULT_ARG)
         assert res == 30

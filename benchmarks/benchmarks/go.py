@@ -447,11 +447,43 @@ def run():
     versus_cpu()
 
 
+def warmup():
+    versus_cpu()
+    try:
+        from _builtins import _jit_fromlist, _jit_fromtype
+
+        _jit_fromtype(Square)
+        _jit_fromtype(EmptySet)
+        _jit_fromtype(ZobristHash)
+        _jit_fromtype(Board)
+        _jit_fromtype(UCTNode)
+        _jit_fromlist(
+            [
+                to_pos,
+                to_xy,
+                computer_move,
+            ]
+        )
+    except ImportError:
+        pass
+
+
 if __name__ == "__main__":
-    import sys
+    import argparse
 
-    num_loops = 1
-    if len(sys.argv) > 1:
-        num_loops = int(sys.argv[1])
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "num_iterations",
+        type=int,
+        default=1,
+        nargs="?",
+        help="Number of iterations to run the benchmark",
+    )
+    parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
+    args = parser.parse_args()
+    if args.jit:
+        warmup()
 
-    bench_go(num_loops)
+    bench_go(args.num_iterations)

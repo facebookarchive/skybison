@@ -236,13 +236,6 @@ BENCHMARKS = {
 }
 
 
-def add_cmdline_args(cmd, args):
-    if args.pure_python:
-        cmd.append("--pure-python")
-    cmd.extend(("--protocol", str(args.protocol)))
-    cmd.append(args.benchmark)
-
-
 def run():
     # use pure python
     sys.modules["_pickle"] = None
@@ -260,6 +253,26 @@ def run():
     bench_pickle_dict(DEFAULT_LOOPS_PICKLE_DICT, pickle, protocol)
 
 
+def warmup(pickle, protocol):
+    bench_pickle(1, pickle, protocol)
+    bench_unpickle(1, pickle, protocol)
+    bench_pickle_list(1, pickle, protocol)
+    bench_unpickle_list(1, pickle, protocol)
+    bench_pickle_dict(1, pickle, protocol)
+
+    try:
+        from _builtins import _jit_fromlist
+
+        _jit_fromlist(
+            [
+                pickle.dumps,
+                pickle.loads,
+            ]
+        )
+    except ImportError:
+        pass
+
+
 if __name__ == "__main__":
     # use pure python
     sys.modules["_pickle"] = None
@@ -268,10 +281,27 @@ if __name__ == "__main__":
     if not getattr(pickle.Pickler, "__module__", "<jython>") == "pickle":
         raise RuntimeError("Unexpected C accelerators for pickle")
 
-    protocol = pickle.HIGHEST_PROTOCOL
+    import argparse
 
-    bench_pickle(DEFAULT_LOOPS_PICKLE, pickle, protocol)
-    bench_unpickle(DEFAULT_LOOPS_PICKLE, pickle, protocol)
-    bench_pickle_list(DEFAULT_LOOPS_PICKLE_LIST, pickle, protocol)
-    bench_unpickle_list(DEFAULT_LOOPS_PICKLE_LIST, pickle, protocol)
-    bench_pickle_dict(DEFAULT_LOOPS_PICKLE_DICT, pickle, protocol)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "num_iterations",
+        type=int,
+        default=1,
+        nargs="?",
+        help="Number of iterations to run the benchmark",
+    )
+    parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
+    args = parser.parse_args()
+    protocol = pickle.HIGHEST_PROTOCOL
+    if args.jit:
+        warmup(pickle, protocol)
+
+    for _ in range(args.num_iterations):
+        bench_pickle(DEFAULT_LOOPS_PICKLE, pickle, protocol)
+        bench_unpickle(DEFAULT_LOOPS_PICKLE, pickle, protocol)
+        bench_pickle_list(DEFAULT_LOOPS_PICKLE_LIST, pickle, protocol)
+        bench_unpickle_list(DEFAULT_LOOPS_PICKLE_LIST, pickle, protocol)
+        bench_pickle_dict(DEFAULT_LOOPS_PICKLE_DICT, pickle, protocol)
