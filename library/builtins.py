@@ -3989,7 +3989,8 @@ def format(obj, fmt_spec):
         raise TypeError(
             f"fmt_spec must be str instance, not '{_type(fmt_spec).__name__}'"
         )
-    result = obj.__format__(fmt_spec)
+    format_func = _object_type_getattr(obj, "__format__")
+    result = format_func(fmt_spec)
     if not _str_check(result):
         raise TypeError(
             f"__format__ must return str instance, not '{_type(result).__name__}'"

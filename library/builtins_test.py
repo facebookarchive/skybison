@@ -5537,6 +5537,21 @@ class ExecTests(unittest.TestCase):
         self.assertEqual(exc.exception.args, (v,))
 
 
+class FormatTests(unittest.TestCase):
+    def test_format_calls_types_dunder_format(self):
+        class Format:
+            def __format__(self, str):
+                return "Class"
+
+        template = "{}"
+        self.assertEqual(template.format(1), "1")
+        self.assertEqual(template.format(int), "<class 'int'>")
+        instance = Format()
+        instance.__format__ = lambda *args: "instance"
+        self.assertEqual(template.format(Format()), "Class")
+        self.assertEqual(template.format(instance), "Class")
+
+
 class FrozensetTests(unittest.TestCase):
     def test_deepcopy_with_frozenset_returns_frozenset(self):
         s = frozenset([1, 2, 3])
