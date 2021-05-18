@@ -4290,46 +4290,6 @@ HANDLER_INLINE Continue Interpreter::doDeleteFast(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
-HANDLER_INLINE Continue Interpreter::doStoreAnnotation(Thread* thread,
-                                                       word arg) {
-  Frame* frame = thread->currentFrame();
-  HandleScope scope(thread);
-  Runtime* runtime = thread->runtime();
-  Object names(&scope, Code::cast(frame->code()).names());
-  Object value(&scope, thread->stackPop());
-  Str name(&scope, Tuple::cast(*names).at(arg));
-  Object annotations(&scope, NoneType::object());
-  Object dunder_annotations(&scope,
-                            runtime->symbols()->at(ID(__annotations__)));
-  if (frame->implicitGlobals().isNoneType()) {
-    // Module body
-    Module module(&scope, frame->function().moduleObject());
-    annotations = moduleAt(module, dunder_annotations);
-  } else {
-    // Class body
-    Object implicit_globals(&scope, frame->implicitGlobals());
-    if (implicit_globals.isDict()) {
-      Dict implicit_globals_dict(&scope, *implicit_globals);
-      annotations =
-          dictAtByStr(thread, implicit_globals_dict, dunder_annotations);
-    } else {
-      annotations = objectGetItem(thread, implicit_globals, dunder_annotations);
-      if (annotations.isErrorException()) {
-        return Continue::UNWIND;
-      }
-    }
-  }
-  if (annotations.isDict()) {
-    Dict annotations_dict(&scope, *annotations);
-    dictAtPutByStr(thread, annotations_dict, name, value);
-  } else {
-    if (objectSetItem(thread, annotations, name, value).isErrorException()) {
-      return Continue::UNWIND;
-    }
-  }
-  return Continue::NEXT;
-}
-
 HANDLER_INLINE Continue Interpreter::doRaiseVarargs(Thread* thread, word arg) {
   DCHECK(arg >= 0, "Negative argument to RAISE_VARARGS");
   DCHECK(arg <= 2, "Argument to RAISE_VARARGS too large");

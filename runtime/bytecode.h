@@ -143,7 +143,7 @@ namespace py {
   V(LOAD_FAST, 124, doLoadFast)                                                \
   V(STORE_FAST, 125, doStoreFast)                                              \
   V(DELETE_FAST, 126, doDeleteFast)                                            \
-  V(STORE_ANNOTATION, 127, doStoreAnnotation)                                  \
+  V(UNUSED_BYTECODE_127, 127, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_128, 128, doInvalidBytecode)                               \
   V(UNUSED_BYTECODE_129, 129, doInvalidBytecode)                               \
   V(RAISE_VARARGS, 130, doRaiseVarargs)                                        \
