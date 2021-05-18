@@ -104,7 +104,6 @@ bool RawSmallData::isASCII() const {
 }
 
 word RawSmallData::offsetByCodePoints(word index, word count) const {
-  // TODO(T64961042): operate directly on the word
   const byte* data = smallDataData(this);
   return offset(data, length(), index, count);
 }
