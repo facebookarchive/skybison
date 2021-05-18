@@ -711,6 +711,7 @@ class Runtime;
   V(n_sequence_fields)                                                         \
   V(n_unnamed_fields)                                                          \
   V(name)                                                                      \
+  V(ndim)                                                                      \
   V(neg)                                                                       \
   V(obj)                                                                       \
   V(object)                                                                    \

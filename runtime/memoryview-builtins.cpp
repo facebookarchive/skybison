@@ -21,6 +21,7 @@ static const BuiltinAttribute kMemoryViewAttributes[] = {
     {ID(_memoryview__start), RawMemoryView::kStartOffset,
      AttributeFlags::kHidden},
     {ID(strides), RawMemoryView::kStridesOffset, AttributeFlags::kReadOnly},
+    {ID(ndim), RawMemoryView::kNdimOffset, AttributeFlags::kReadOnly},
 };
 
 void initializeMemoryViewType(Thread* thread) {

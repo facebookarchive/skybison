@@ -7754,6 +7754,10 @@ class MappingProxyTests(unittest.TestCase):
 
 
 class MemoryviewTests(unittest.TestCase):
+    def test_ndim_returns_default_value(self):
+        view = memoryview(b"foobar")
+        self.assertEqual(view.ndim, 1)
+
     def test_strides_returns_default_value(self):
         view = memoryview(b"foobar")
         self.assertEqual(view.strides, (1,))

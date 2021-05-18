@@ -877,6 +877,7 @@ RawObject Runtime::newMemoryView(Thread* thread, const Object& obj,
   Object length_obj(&scope, SmallInt::fromWord(length));
   result.setShape(newTupleWith1(length_obj));
   Object one(&scope, SmallInt::fromWord(1));
+  result.setNdim(*one);
   result.setStrides(newTupleWith1(one));
   return *result;
 }

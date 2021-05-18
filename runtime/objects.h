@@ -2614,6 +2614,11 @@ class RawMemoryView : public RawInstance {
   RawObject object() const;
   void setObject(RawObject object) const;
 
+  // An integer indicating how many dimensions of a multi-dimensional array the
+  // memory represents.
+  RawObject ndim() const;
+  void setNdim(RawObject ndim) const;
+
   // Tuple of integers giving the shape of the memory as an N-dimensional array
   // In the 1-D case, shape will have one value which is equal to the length
   RawObject shape() const;
@@ -2643,7 +2648,8 @@ class RawMemoryView : public RawInstance {
   static const int kShapeOffset = kObjectOffset + kPointerSize;
   static const int kStartOffset = kShapeOffset + kPointerSize;
   static const int kStridesOffset = kStartOffset + kPointerSize;
-  static const int kSize = kStridesOffset + kPointerSize;
+  static const int kNdimOffset = kStridesOffset + kPointerSize;
+  static const int kSize = kNdimOffset + kPointerSize;
 
   RAW_OBJECT_COMMON(MemoryView);
 };
@@ -6909,6 +6915,14 @@ inline RawObject RawMemoryView::object() const {
 
 inline void RawMemoryView::setObject(RawObject object) const {
   instanceVariableAtPut(kObjectOffset, object);
+}
+
+inline RawObject RawMemoryView::ndim() const {
+  return RawMemoryView::instanceVariableAt(kNdimOffset);
+}
+
+inline void RawMemoryView::setNdim(RawObject ndim) const {
+  instanceVariableAtPut(kNdimOffset, ndim);
 }
 
 inline RawObject RawMemoryView::shape() const {
