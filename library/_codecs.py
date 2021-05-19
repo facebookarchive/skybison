@@ -705,9 +705,13 @@ _codec_encode_table = {
 }
 
 
+def backslashreplace_errors(error):
+    _builtin()
+
+
 def strict_errors(error):
     if not isinstance(error, Exception):
-        raise TypeError("codecs must pass exception instance")
+        raise TypeError("codec must pass exception instance")
     raise error
 
 
@@ -830,7 +834,11 @@ def _call_encode_errorhandler(
 
 
 # TODO(T61927696): Support surrogatepass errors for utf-8 decode
-_codec_error_registry = {"strict": strict_errors, "ignore": ignore_errors}
+_codec_error_registry = {
+    "backslashreplace": backslashreplace_errors,
+    "strict": strict_errors,
+    "ignore": ignore_errors,
+}
 
 
 def _bytearray_string_append(dst: bytearray, data: str):

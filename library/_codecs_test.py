@@ -1193,6 +1193,97 @@ class EncodeRawUnicodeEscapeTests(unittest.TestCase):
         self.assertEqual(consumed, 3)
 
 
+class ErrorHandlerTests(unittest.TestCase):
+    def test_backslashreplace_with_non_unicode_error_raises_type_error(self):
+        handler = _codecs.lookup_error("backslashreplace")
+        e = UserWarning()
+        with self.assertRaisesRegex(
+            TypeError, "don't know how to handle UserWarning in error callback"
+        ):
+            handler(e)
+
+    def test_backslashreplace_with_unicode_decode_error_returns_tuple(self):
+        handler = _codecs.lookup_error("backslashreplace")
+        result = handler(UnicodeDecodeError("foo", b"a", 0, 1, "baz"))
+        self.assertIs(type(result), tuple)
+        self.assertEqual(result, ("\\x61", 1))
+        result = handler(
+            UnicodeDecodeError("foo", b"i need \xca\xfe now!", 6, 11, "baz")
+        )
+        self.assertIs(type(result), tuple)
+        self.assertEqual(result, ("\\x20\\xca\\xfe\\x20\\x6e", 11))
+
+    def test_backslashreplace_with_unicode_encode_error_returns_tuple(self):
+        handler = _codecs.lookup_error("backslashreplace")
+        result = handler(UnicodeEncodeError("foo", "a", 0, 1, "baz"))
+        self.assertIs(type(result), tuple)
+        self.assertEqual(result, ("\\x61", 1))
+        result = handler(UnicodeEncodeError("foo", "\xdc", 0, 1, "baz"))
+        self.assertEqual(result, ("\\xdc", 1))
+        result = handler(UnicodeEncodeError("foo", "\u1234", 0, 1, "baz"))
+        self.assertEqual(result, ("\\u1234", 1))
+        result = handler(UnicodeEncodeError("foo", "\U00012345", 0, 1, "baz"))
+        self.assertEqual(result, ("\\U00012345", 1))
+
+        result = handler(
+            UnicodeEncodeError("foo", "hello\xac\u4213\U0001f40dbaz!", 4, 9, "baz")
+        )
+        self.assertIs(type(result), tuple)
+        self.assertEqual(result, ("\\x6f\\xac\\u4213\\U0001f40d\\x62", 9))
+
+    def test_backslashreplace_with_unicode_translate_error_returns_tuple(self):
+        handler = _codecs.lookup_error("backslashreplace")
+        result = handler(UnicodeTranslateError("a", 0, 1, "baz"))
+        self.assertIs(type(result), tuple)
+        self.assertEqual(result, ("\\x61", 1))
+        result = handler(UnicodeTranslateError("\xdc", 0, 1, "baz"))
+        self.assertEqual(result, ("\\xdc", 1))
+        result = handler(UnicodeTranslateError("\u1234", 0, 1, "baz"))
+        self.assertEqual(result, ("\\u1234", 1))
+        result = handler(UnicodeTranslateError("\U00012345", 0, 1, "baz"))
+        self.assertEqual(result, ("\\U00012345", 1))
+
+        result = handler(
+            UnicodeTranslateError("hello\xac\u4213\U0001f40dbaz!", 4, 9, "baz")
+        )
+        self.assertIs(type(result), tuple)
+        self.assertEqual(result, ("\\x6f\\xac\\u4213\\U0001f40d\\x62", 9))
+
+    def test_ignore_with_unicode_encode_error_returns_tuple(self):
+        handler = _codecs.lookup_error("ignore")
+        e = UnicodeEncodeError("foo", "bar", 44, 2, "baz")
+        self.assertEqual(handler(e), ("", 2))
+
+    def test_ignore_with_unicode_decode_error_returns_tuple(self):
+        handler = _codecs.lookup_error("ignore")
+        e = UnicodeDecodeError("foo", b"barbam", 99, 3, "baz")
+        self.assertEqual(handler(e), ("", 3))
+
+    def test_ignore_with_unicode_translate_error_returns_tuple(self):
+        handler = _codecs.lookup_error("ignore")
+        e = UnicodeTranslateError("barbazbam", 99, 5, "baz")
+        self.assertEqual(handler(e), ("", 5))
+
+    def test_ignore_with_non_unicode_error_raises_type_error(self):
+        handler = _codecs.lookup_error("ignore")
+        with self.assertRaisesRegex(
+            TypeError, "don't know how to handle int in error callback"
+        ):
+            handler(42)
+
+    def test_strict_with_exception_raises(self):
+        handler = _codecs.lookup_error("strict")
+        e = UserWarning()
+        with self.assertRaises(UserWarning) as ctx:
+            handler(e)
+        self.assertIs(ctx.exception, e)
+
+    def test_strict_without_exception_raises_type_error(self):
+        handler = _codecs.lookup_error("strict")
+        with self.assertRaisesRegex(TypeError, "codec must pass exception instance"):
+            handler(42)
+
+
 @pyro_only
 class GeneralizedErrorHandlerTests(unittest.TestCase):
     def test_call_decode_error_with_strict_raises_unicode_decode_error(self):

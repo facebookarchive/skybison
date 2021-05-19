@@ -1105,11 +1105,11 @@ RawObject FUNC(_codecs, _raw_unicode_escape_encode)(Thread* thread,
     int32_t codepoint = data.codePointAt(byte_offset, &num_bytes);
     byte_offset += num_bytes;
     // U+0000-U+00ff range: Copy 8-bit characters as-is
-    if (codepoint < 0x100) {
+    if (codepoint <= kMaxByte) {
       bytearrayAdd(thread, runtime, dst, codepoint);
     }
     // U+0100-U+ffff range: Map 16-bit characters to '\uHHHH'
-    else if (codepoint < 0x10000) {
+    else if (codepoint <= kMaxUint16) {
       bytearrayAdd(thread, runtime, dst, '\\');
       bytearrayAdd(thread, runtime, dst, 'u');
       bytearrayAdd(thread, runtime, dst,
@@ -1240,4 +1240,117 @@ RawObject FUNC(_codecs, _raw_unicode_escape_decode)(Thread* thread,
   Object message_obj(&scope, runtime->newStrFromCStr(""));
   return runtime->newTupleWith3(dst_obj, length_obj, message_obj);
 }
+
+RawObject FUNC(_codecs, backslashreplace_errors)(Thread* thread,
+                                                 Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object error(&scope, args.get(0));
+  Object object(&scope, NoneType::object());
+  word start;
+  word end;
+  if (runtime->isInstanceOfUnicodeDecodeError(*error)) {
+    UnicodeErrorBase unicode_error(&scope, *error);
+    start = SmallInt::cast(unicode_error.start()).value();
+    end = SmallInt::cast(unicode_error.end()).value();
+    object = unicode_error.object();
+    if (!runtime->isInstanceOfBytes(*object)) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "object attribute must be bytes");
+    }
+    Bytes bytes(&scope, bytesUnderlying(*object));
+    word length = bytes.length();
+    if (start >= length) start = length - 1;
+    if (start < 0) start = 0;
+    if (end >= length) end = length;
+    if (end < 1) end = 1;
+    word result_size = end - start;
+    if (result_size < 0) {
+      return thread->raiseWithFmt(LayoutId::kValueError, "end before start");
+    }
+    result_size *= 4;
+    MutableBytes result(&scope,
+                        runtime->newMutableBytesUninitialized(result_size));
+    word pos = 0;
+    for (word i = start; i < end; i++) {
+      byte b = bytes.byteAt(i);
+      result.byteAtPut(pos++, '\\');
+      result.byteAtPut(pos++, 'x');
+      result.byteAtPut(pos++, Utils::kHexDigits[(b >> 4) & 0xf]);
+      result.byteAtPut(pos++, Utils::kHexDigits[(b >> 0) & 0xf]);
+    }
+    DCHECK(pos == result.length(), "size mismatch");
+    Object result_str(&scope, result.becomeStr());
+    Object end_obj(&scope, SmallInt::fromWord(end));
+    return runtime->newTupleWith2(result_str, end_obj);
+  }
+
+  if (runtime->isInstanceOfUnicodeEncodeError(*error) ||
+      runtime->isInstanceOfUnicodeTranslateError(*error)) {
+    UnicodeErrorBase unicode_error(&scope, *error);
+    start = SmallInt::cast(unicode_error.start()).value();
+    end = SmallInt::cast(unicode_error.end()).value();
+    object = unicode_error.object();
+    if (!runtime->isInstanceOfStr(*object)) {
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "object attribute must be unicode");
+    }
+    Str str(&scope, strUnderlying(*object));
+
+    if (start < 0) start = 0;
+    if (end < 1) end = 1;
+    if (end < start) {
+      return thread->raiseWithFmt(LayoutId::kValueError, "end before start");
+    }
+    word start_byte = str.offsetByCodePoints(0, start);
+    word end_byte = str.offsetByCodePoints(start_byte, end - start);
+    word result_size = 0;
+    for (word i = start_byte; i < end_byte;) {
+      word num_bytes;
+      int32_t cp = str.codePointAt(i, &num_bytes);
+      i += num_bytes;
+      if (cp > kMaxUint16) {
+        result_size += 10;  // Will replace with `\Uxxxxxxxx`
+      } else if (cp > kMaxByte) {
+        result_size += 6;  // Will replace with `\uxxxx`
+      } else {
+        result_size += 4;  // Will replace with `\xyy`
+      }
+    }
+    MutableBytes result(&scope,
+                        runtime->newMutableBytesUninitialized(result_size));
+    word pos = 0;
+    for (word i = start_byte; i < end_byte;) {
+      word num_bytes;
+      int32_t cp = str.codePointAt(i, &num_bytes);
+      i += num_bytes;
+      result.byteAtPut(pos++, '\\');
+      if (cp > kMaxUint16) {
+        result.byteAtPut(pos++, 'U');
+        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 28) & 0xf]);
+        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 24) & 0xf]);
+        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 20) & 0xf]);
+        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 16) & 0xf]);
+        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 12) & 0xf]);
+        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 8) & 0xf]);
+      } else if (cp > kMaxByte) {
+        result.byteAtPut(pos++, 'u');
+        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 12) & 0xf]);
+        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 8) & 0xf]);
+      } else {
+        result.byteAtPut(pos++, 'x');
+      }
+      result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 4) & 0xf]);
+      result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 0) & 0xf]);
+    }
+    DCHECK(pos == result.length(), "size mismatch");
+    Object result_bytes(&scope, result.becomeStr());
+    Object end_obj(&scope, SmallInt::fromWord(end));
+    return runtime->newTupleWith2(result_bytes, end_obj);
+  }
+  return thread->raiseWithFmt(LayoutId::kTypeError,
+                              "don't know how to handle %T in error callback",
+                              &error);
+}
+
 }  // namespace py
