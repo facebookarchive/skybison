@@ -46,6 +46,7 @@ _weakref.py
 array.py
 array_test.py
 asyncio/tasks.py
+asyncio_test.py
 builtins.py
 builtins_bytearray_test.py
 builtins_bytes_test.py
@@ -141,11 +142,14 @@ sys_test.py
 sysconfig.py
 sysconfig_test.py
 termios_test.py
+test/libregrtest/main.py
+test/libregrtest/setup.py
 test/mapping_tests.py
 test/seq_tests.py
 test/support/__init__.py
 test/test___static__.py
 test/test_asyncgen.py
+test/test_asyncio.py
 test/test_compiler/__init__.py
 test/test_compiler/__main__.py
 test/test_compiler/common.py
@@ -423,6 +427,7 @@ test/test_compiler/testcorpus/96_debug.py
 test/test_coroutines.py
 test/test_dict.py
 test/test_eof.py
+test/test_float.py
 test/test_hmac.py
 test/test_normalization.py
 test/test_peepholer.py
