@@ -287,6 +287,9 @@ class SysTests(unittest.TestCase):
         sys.setrecursionlimit(limit)
         self.assertEqual(sys.getrecursionlimit(), limit)
 
+    def test_gettrace_returns_none(self):
+        self.assertIs(sys.gettrace(), None)
+
     def test_implementation_cache_tag_matches_version_major_minor(self):
         name = sys.implementation.name
         major, minor = sys.version_info.major, sys.version_info.minor
@@ -295,6 +298,10 @@ class SysTests(unittest.TestCase):
 
     def test_implementation_version_matches_module_version_info(self):
         self.assertEqual(sys.implementation.version, sys.version_info)
+
+    def test_settrace_with_none_does_nothing(self):
+        sys.settrace(None)
+        self.assertIs(sys.gettrace(), None)
 
     def test_setrecursionlimit_with_large_limit_raises_overflowerror(self):
         with self.assertRaises(OverflowError) as context:

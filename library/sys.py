@@ -158,8 +158,7 @@ def _getframe(depth=0):
 abiflags = ""
 
 
-def addaudithook(hook):
-    _unimplemented()  # TODO(T86943617): implement
+# TODO(T86943617): Add `addaudithook`.
 
 
 def audit(event, *args):
@@ -283,6 +282,10 @@ def getsizeof(object, default=_Unbound):
     return int(result)
 
 
+def gettrace():
+    return None
+
+
 implementation = _SimpleNamespace(
     cache_tag=f"pyro-{_version.major}{_version.minor}", name="pyro", version=_version
 )
@@ -326,6 +329,12 @@ pycache_prefix = None
 # TODO(T62600497): Enforce the recursion limit
 def setrecursionlimit(limit):
     _builtin()
+
+
+def settrace(function):
+    if function is None:
+        return
+    _unimplemented()
 
 
 stderr = __stderr__
