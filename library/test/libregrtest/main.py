@@ -644,7 +644,8 @@ class Regrtest:
         except SystemExit as exc:
             # bpo-38203: Python can hang at exit in Py_Finalize(), especially
             # on threading._shutdown() call: put a timeout
-            faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
+            # TODO(T91156879): Reenable when function exists.
+            # faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
 
             sys.exit(exc.code)
 

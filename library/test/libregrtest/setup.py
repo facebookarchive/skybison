@@ -31,13 +31,14 @@ def setup_tests(ns):
         faulthandler.enable(all_threads=True, file=stderr_fd)
 
         # Display the Python traceback on SIGALRM or SIGUSR1 signal
-        signals = []
-        if hasattr(signal, 'SIGALRM'):
-            signals.append(signal.SIGALRM)
-        if hasattr(signal, 'SIGUSR1'):
-            signals.append(signal.SIGUSR1)
-        for signum in signals:
-            faulthandler.register(signum, chain=True, file=stderr_fd)
+        # TODO(T91156982) Reenable when faulthandler.register works.
+        # signals = []
+        # if hasattr(signal, 'SIGALRM'):
+        #     signals.append(signal.SIGALRM)
+        # if hasattr(signal, 'SIGUSR1'):
+        #     signals.append(signal.SIGUSR1)
+        # for signum in signals:
+        #     faulthandler.register(signum, chain=True, file=stderr_fd)
 
     replace_stdout()
     support.record_original_stdout(sys.stdout)
