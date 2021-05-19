@@ -98,11 +98,9 @@ static void handleFatalError(FaultHandler* handler) {
   writeCStr(fd, "Fatal Python error: ");
   writeCStr(fd, handler->msg);
   writeCStr(fd, "\n\n");
-  if (fatal_error.all_threads) {
-    UNIMPLEMENTED("all_threads=True");
-  } else {
-    fatal_error.runtime->printTraceback(Thread::current(), fd);
-  }
+  // TODO(T66337218): Print tracebacks for all threads when there is more than
+  // one and`all_threads` is true.
+  fatal_error.runtime->printTraceback(Thread::current(), fd);
 
   errno = saved_errno;
   std::raise(handler->signum);
@@ -193,12 +191,9 @@ RawObject FUNC(faulthandler, dump_traceback)(Thread* thread, Arguments args) {
   Object fileno(&scope, getFileno(thread, file));
   if (fileno.isError()) return *fileno;
   SmallInt fd(&scope, *fileno);
-  Int all_threads_int(&scope, intUnderlying(*all_threads));
-  if (all_threads_int.isZero()) {
-    runtime->printTraceback(thread, fd.value());
-  } else {
-    UNIMPLEMENTED("all_threads=True");
-  }
+  // TODO(T66337218): Dump all threads when there is more than one and
+  // `all_threads` is True.
+  runtime->printTraceback(thread, fd.value());
 
   return runtime->handlePendingSignals(thread);
 }
