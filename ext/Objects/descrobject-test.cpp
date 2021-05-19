@@ -167,11 +167,36 @@ TEST_F(DescrExtensionApiTest, DictProxyNewWithNonMappingReturnsMappingProxy) {
   EXPECT_NE(PyErr_Occurred(), nullptr);
 }
 
-TEST_F(DescrExtensionApiTest, GetSetAsDescriptorReturnsProperty) {
+TEST_F(DescrExtensionApiTest, DescrGetSetCallsGetter) {
   ASSERT_NO_FATAL_FAILURE(createEmptyBarType());
-  getter get = [](PyObject*, void*) { return Py_None; };
-  static PyGetSetDef getset_def;
-  getset_def = {"foo", get, nullptr, nullptr, nullptr};
+  PyObject* self_arg = nullptr;
+  getter get = [](PyObject* self, void* closure) -> PyObject* {
+    PyObject** self_arg_ptr = reinterpret_cast<PyObject**>(closure);
+    Py_INCREF(self);
+    *self_arg_ptr = self;
+    Py_RETURN_NONE;
+  };
+  PyGetSetDef getset_def = {"foo", get, nullptr, nullptr, &self_arg};
+  PyObjectPtr type(mainModuleGet("Bar"));
+  PyObjectPtr descriptor(PyDescr_NewGetSet(type.asTypeObject(), &getset_def));
+  ASSERT_NE(descriptor, nullptr);
+  PyObject_SetAttrString(type, "foo", descriptor);
+  PyObjectPtr instance(PyObject_CallObject(type, nullptr));
+  ASSERT_NE(instance, nullptr);
+  EXPECT_EQ(self_arg, nullptr);
+  PyObjectPtr result(PyObject_GetAttrString(instance, "foo"));
+  EXPECT_EQ(result, Py_None);
+  EXPECT_EQ(self_arg, instance.get());
+  Py_XDECREF(self_arg);
+}
+
+TEST_F(DescrExtensionApiTest, DescrGetSetCallsGetterAndRaises) {
+  ASSERT_NO_FATAL_FAILURE(createEmptyBarType());
+  getter get = [](PyObject*, void*) -> PyObject* {
+    PyErr_SetString(PyExc_UserWarning, "test exception");
+    return nullptr;
+  };
+  PyGetSetDef getset_def = {"foo", get, nullptr, nullptr, nullptr};
   PyObjectPtr type(mainModuleGet("Bar"));
   PyObjectPtr descriptor(PyDescr_NewGetSet(type.asTypeObject(), &getset_def));
   ASSERT_NE(descriptor, nullptr);
@@ -179,7 +204,59 @@ TEST_F(DescrExtensionApiTest, GetSetAsDescriptorReturnsProperty) {
   PyObjectPtr instance(PyObject_CallObject(type, nullptr));
   ASSERT_NE(instance, nullptr);
   PyObjectPtr result(PyObject_GetAttrString(instance, "foo"));
-  ASSERT_EQ(result, Py_None);
+  EXPECT_EQ(result.get(), nullptr);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
+}
+
+TEST_F(DescrExtensionApiTest, DescrGetSetCallsSetter) {
+  ASSERT_NO_FATAL_FAILURE(createEmptyBarType());
+  struct Env {
+    PyObject* self_arg;
+    PyObject* value_arg;
+  };
+  setter set = [](PyObject* self, PyObject* value, void* closure) -> int {
+    Env* env = reinterpret_cast<Env*>(closure);
+    Py_INCREF(self);
+    env->self_arg = self;
+    Py_INCREF(value);
+    env->value_arg = value;
+    return 0;
+  };
+  Env env = {nullptr, nullptr};
+  PyGetSetDef getset_def = {"foo", nullptr, set, nullptr, &env};
+  PyObjectPtr type(mainModuleGet("Bar"));
+  PyObjectPtr descriptor(PyDescr_NewGetSet(type.asTypeObject(), &getset_def));
+  ASSERT_NE(descriptor, nullptr);
+  PyObject_SetAttrString(type, "foo", descriptor);
+  PyObjectPtr instance(PyObject_CallObject(type, nullptr));
+  ASSERT_NE(instance, nullptr);
+  EXPECT_EQ(env.self_arg, nullptr);
+  EXPECT_EQ(env.value_arg, nullptr);
+  PyObjectPtr value(PyLong_FromLong(42));
+  EXPECT_EQ(PyObject_SetAttrString(instance, "foo", value), 0);
+  EXPECT_EQ(env.self_arg, instance.get());
+  EXPECT_EQ(env.value_arg, value.get());
+  Py_XDECREF(env.self_arg);
+  Py_XDECREF(env.value_arg);
+}
+
+TEST_F(DescrExtensionApiTest, DescrGetSetCallsSetterAndRaises) {
+  ASSERT_NO_FATAL_FAILURE(createEmptyBarType());
+  setter set = [](PyObject*, PyObject*, void*) -> int {
+    PyErr_SetString(PyExc_UserWarning, "test exception");
+    return -1;
+  };
+  PyGetSetDef getset_def = {"foo", nullptr, set, nullptr, nullptr};
+  PyObjectPtr type(mainModuleGet("Bar"));
+  PyObjectPtr descriptor(PyDescr_NewGetSet(type.asTypeObject(), &getset_def));
+  ASSERT_NE(descriptor, nullptr);
+  PyObject_SetAttrString(type, "foo", descriptor);
+  PyObjectPtr instance(PyObject_CallObject(type, nullptr));
+  ASSERT_NE(instance, nullptr);
+  EXPECT_EQ(PyObject_SetAttrString(instance, "foo", Py_None), -1);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_UserWarning));
 }
 
 TEST_F(DescrExtensionApiTest, MethodAsDescriptorReturnsFunction) {

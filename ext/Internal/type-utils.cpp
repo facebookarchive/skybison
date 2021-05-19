@@ -49,9 +49,11 @@ RawObject newExtCode(Thread* thread, const Object& name,
 }
 
 static ALIGN_16 RawObject getterWrapper(Thread* thread, Arguments args) {
-  getter func = reinterpret_cast<getter>(getNativeFunc(thread));
+  PyGetSetDef* getset = reinterpret_cast<PyGetSetDef*>(getNativeFunc(thread));
+  getter func = getset->get;
+  void* closure = getset->closure;
   PyObject* self = ApiHandle::newReference(thread->runtime(), args.get(0));
-  PyObject* result = (*func)(self, nullptr);
+  PyObject* result = (*func)(self, closure);
   ApiHandle::fromPyObject(self)->decref();
   return ApiHandle::checkFunctionResult(thread, result);
 }
@@ -63,7 +65,7 @@ static RawObject getSetGetter(Thread* thread, const Object& name,
   Runtime* runtime = thread->runtime();
   Code code(&scope, newExtCode(thread, name, kParamsSelf,
                                /*flags=*/0, getterWrapper,
-                               reinterpret_cast<void*>(def->get)));
+                               reinterpret_cast<void*>(def)));
   Object globals(&scope, NoneType::object());
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, name, code, globals));
@@ -75,11 +77,13 @@ static RawObject getSetGetter(Thread* thread, const Object& name,
 }
 
 static ALIGN_16 RawObject setterWrapper(Thread* thread, Arguments args) {
-  setter func = reinterpret_cast<setter>(getNativeFunc(thread));
+  PyGetSetDef* getset = reinterpret_cast<PyGetSetDef*>(getNativeFunc(thread));
+  setter func = getset->set;
+  void* closure = getset->closure;
   Runtime* runtime = thread->runtime();
   PyObject* self = ApiHandle::newReference(runtime, args.get(0));
   PyObject* value = ApiHandle::newReference(runtime, args.get(1));
-  int result = func(self, value, nullptr);
+  int result = func(self, value, closure);
   ApiHandle::fromPyObject(self)->decref();
   ApiHandle::fromPyObject(value)->decref();
   if (result < 0) return Error::exception();
@@ -93,7 +97,7 @@ static RawObject getSetSetter(Thread* thread, const Object& name,
   Runtime* runtime = thread->runtime();
   Code code(&scope, newExtCode(thread, name, kParamsSelfValue,
                                /*flags=*/0, setterWrapper,
-                               reinterpret_cast<void*>(def->set)));
+                               reinterpret_cast<void*>(def)));
   Object globals(&scope, NoneType::object());
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, name, code, globals));
