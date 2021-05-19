@@ -34,7 +34,7 @@ word strCountSubStrFromTo(const Str& haystack, const Str& needle, word start,
 
 RawObject strEncodeASCII(Thread* thread, const Str& str);
 
-RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj);
+RawObject strEscapeNonASCII(Thread* thread, const Str& str);
 
 // Look for needle in haystack. Return the first index found in that range, or
 // -1 if needle was not found.

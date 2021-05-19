@@ -559,6 +559,7 @@ class Runtime;
   V(async_generator_asend)                                                     \
   V(async_generator_athrow)                                                    \
   V(async_generator_wrapped_value)                                             \
+  V(backslashreplace)                                                          \
   V(big)                                                                       \
   V(bool)                                                                      \
   V(buffer_size)                                                               \

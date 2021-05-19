@@ -5020,7 +5020,7 @@ RawObject FUNC(_builtins, _str_escape_non_ascii)(Thread* thread,
   HandleScope scope(thread);
   CHECK(thread->runtime()->isInstanceOfStr(args.get(0)),
         "_str_escape_non_ascii expected str instance");
-  Str obj(&scope, args.get(0));
+  Str obj(&scope, strUnderlying(args.get(0)));
   return strEscapeNonASCII(thread, obj);
 }
 

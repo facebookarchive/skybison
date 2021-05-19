@@ -47,7 +47,8 @@ class PrintfTransformTests(unittest.TestCase):
 """,
         )
         self.assertEqual(
-            eval(code, locals={"x": 42}), str.__mod__("%a", (42,))  # noqa: P204
+            eval(code, locals={"x": "a\xce"}),  # noqa: P204
+            str.__mod__("%a", ("a\xce",)),
         )
 
     def test_percent_percent(self):

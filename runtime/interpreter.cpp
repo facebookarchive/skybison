@@ -4962,7 +4962,8 @@ HANDLER_INLINE Continue Interpreter::doFormatValue(Thread* thread, word arg) {
                              "__repr__ returned non-string (type %T)", &value);
         return Continue::UNWIND;
       }
-      value = strEscapeNonASCII(thread, value);
+      Str value_str(&scope, strUnderlying(*value));
+      value = strEscapeNonASCII(thread, value_str);
       break;
     }
     case FormatValueConv::kNone:

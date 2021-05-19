@@ -1223,14 +1223,13 @@ class BytesModTests(unittest.TestCase):
 
         class C:
             def __repr__(self):
-                return "repr called"
+                return "repr \t\xc4~\ucafe\U0001f00d called"
 
             __str__ = None
 
-        self.assertEqual(bytes.__mod__(b"%a", (C(),)), b"repr called")
-        # TODO(T39861344, T38702699): We should have a test with some non-ascii
-        # characters here proving that they are escaped. Unfortunately
-        # builtins.ascii() does not work in that case yet.
+        self.assertEqual(
+            bytes.__mod__(b"%a", (C(),)), b"repr \t\\xc4~\\ucafe\\U0001f00d called"
+        )
 
     def test_a_format_propagates_errors(self):
         class C:

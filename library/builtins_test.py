@@ -86,6 +86,24 @@ class AbsTests(unittest.TestCase):
         self.assertTrue(math.isnan(result))
 
 
+class AsciiTests(unittest.TestCase):
+    def test_ascii_calls_dunder_repr(self):
+        class C:
+            def __repr__(self):
+                return "my repr"
+
+            def __str__(self):
+                raise Exception("should not be called")
+
+        self.assertEqual(ascii(C()), "my repr")
+
+    def test_ascii_returns_str(self):
+        self.assertEqual(ascii(42), "42")
+        self.assertEqual(ascii(""), "''")
+        self.assertEqual(ascii("hello"), "'hello'")
+        self.assertEqual(ascii("X\xac\u4213\U0001f40d!"), "'X\\xac\\u4213\\U0001f40d!'")
+
+
 class AsyncGeneratorTests(unittest.TestCase):
     def test_dunder_aiter_with_non_async_generator_raises_type_error(self):
         async def async_gen_func():

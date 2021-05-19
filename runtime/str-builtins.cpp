@@ -172,19 +172,20 @@ RawObject strEncodeASCII(Thread* thread, const Str& str) {
   return bytes.becomeImmutable();
 }
 
-// TODO(T39861344): This can be replaced by a real string codec.
-RawObject strEscapeNonASCII(Thread* thread, const Object& str_obj) {
-  CHECK(str_obj.isStr(), "strEscapeNonASCII cannot currently handle non-str");
+RawObject strEscapeNonASCII(Thread* thread, const Str& str) {
+  if (str.isASCII()) return *str;
+  // Slow implementation using `codecs`.
   HandleScope scope(thread);
-  Str str(&scope, *str_obj);
-  for (word i = 0; i < str.length(); i++) {
-    if (str.byteAt(i) > kMaxASCII) {
-      UNIMPLEMENTED(
-          "Character '%d' at index %ld is not yet escapable in strEscape",
-          str.byteAt(i), i);
-    }
-  }
-  return *str;
+  Runtime* runtime = thread->runtime();
+  Symbols* symbols = runtime->symbols();
+  Object ascii(&scope, symbols->at(ID(ascii)));
+  Object backslashreplace(&scope, symbols->at(ID(backslashreplace)));
+  Bytes result_bytes(
+      &scope, thread->invokeMethod3(str, ID(encode), ascii, backslashreplace));
+  word length = result_bytes.length();
+  MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
+  result.replaceFromWithBytes(0, *result_bytes, length);
+  return result.becomeStr();
 }
 
 RawObject strJoinWithTupleOrList(Thread* thread, const Str& sep,

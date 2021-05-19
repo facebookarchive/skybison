@@ -1820,14 +1820,13 @@ class StrModTests(unittest.TestCase):
 
         class C:
             def __repr__(self):
-                return "repr called"
+                return "repr \xca\r\ucafe\U00015acb called"
 
             __str__ = None
 
-        self.assertEqual(str.__mod__("%a", (C(),)), "repr called")
-        # TODO(T39861344, T38702699): We should have a test with some non-ascii
-        # characters here proving that they are escaped. Unfortunately
-        # builtins.ascii() does not work in that case yet.
+        self.assertEqual(
+            str.__mod__("%a", (C(),)), "repr \\xca\r\\ucafe\\U00015acb called"
+        )
 
     def test_a_format_propagates_errors(self):
         class C:
