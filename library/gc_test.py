@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
+import gc
 import unittest
 
 from test_support import pyro_only
 
 
 class GCModuleTest(unittest.TestCase):
-    @pyro_only
-    def test_gc_immortalize_moves_objects_to_immortal_partition(self):
-        import gc
+    def test_collect_collects_garbage(self):
+        # Can't really test that collection is happening so just call it
+        # to see we don't crash.
+        gc.collect()
 
+    def test_garbage_is_a_list(self):
+        self.assertIsInstance(gc.garbage, list)
+
+    @pyro_only
+    def test_immortalize_moves_objects_to_immortal_partition(self):
         from _builtins import _gc
 
         # make sure that garbage collection has run at least once
