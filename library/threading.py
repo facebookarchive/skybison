@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import weakref as _weakref
 from _thread import RLock as _RLock, allocate_lock as _allocate_lock
 
 from _builtins import _Unbound, _unimplemented
@@ -86,6 +87,7 @@ class Semaphore:
 class Thread:
     def __init__(self, *args, **kwargs):
         if args == ("_main_thread_secret",):
+            _dangling.add(self)
             return
         _unimplemented()
 
@@ -158,6 +160,10 @@ class _ThreadLocal:
 
 
 local = _ThreadLocal
+
+
+_dangling = _weakref.WeakSet()
+
 
 _main_thread = _MainThread("_main_thread_secret")
 
