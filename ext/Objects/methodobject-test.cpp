@@ -50,9 +50,27 @@ TEST_F(PyCFunctionExtensionApiTest,
 TEST_F(PyCFunctionExtensionApiTest,
        GetSelfWithNonCFunctionRaisesBadInternalCall) {
   PyObjectPtr value(PyLong_FromLong(42));
-  EXPECT_EQ(PyCFunction_GetFunction(value), nullptr);
+  EXPECT_EQ(PyCFunction_GetSelf(value), nullptr);
   EXPECT_NE(PyErr_Occurred(), nullptr);
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
+}
+
+TEST_F(PyCFunctionExtensionApiTest, GET_SELFReturnsSelf) {
+  PyObjectPtr self_value(PyUnicode_FromString("baz"));
+  binaryfunc meth = [](PyObject* self, PyObject* arg) {
+    EXPECT_EQ(arg, nullptr);
+    Py_INCREF(self);
+    return self;
+  };
+  static PyMethodDef func_def = {"foo", meth, METH_NOARGS};
+  PyObjectPtr func(PyCFunction_New(&func_def, self_value));
+  ASSERT_NE(func, nullptr);
+  PyObjectPtr result(_PyObject_CallNoArg(func));
+  EXPECT_EQ(result, self_value);
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+
+  EXPECT_TRUE(PyCFunction_Check(func));
+  EXPECT_EQ(PyCFunction_GET_SELF(func.get()), self_value.get());
 }
 
 TEST_F(PyCFunctionExtensionApiTest, NewReturnsCallable) {

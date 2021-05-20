@@ -63,8 +63,8 @@ PY_EXPORT PyObject* PyCFunction_GetSelf(PyObject* obj) {
   return ApiHandle::borrowedReference(thread->runtime(), *self);
 }
 
-PY_EXPORT PyObject* PyCFunction_GET_SELF_Func(PyObject* /* obj */) {
-  UNIMPLEMENTED("PyCFunction_GET_SELF_Func");
+PY_EXPORT PyObject* PyCFunction_GET_SELF_Func(PyObject* obj) {
+  return PyCFunction_GetSelf(obj);
 }
 
 PY_EXPORT PyObject* PyCFunction_Call(PyObject* /* c */, PyObject* /* s */,
