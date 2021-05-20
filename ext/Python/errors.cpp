@@ -410,13 +410,17 @@ PY_EXPORT void PyErr_SetObject(PyObject* exc, PyObject* val) {
     return;
   }
 
+  Type exc_type(&scope, *exc_obj);
   Object val_obj(&scope, val == nullptr
                              ? NoneType::object()
                              : ApiHandle::fromPyObject(val)->asObject());
-  thread->raiseWithType(*exc_obj, *val_obj);
+  val_obj = thread->chainExceptionContext(exc_type, val_obj);
+  if (val_obj.isError()) return;
+  thread->setPendingExceptionType(*exc_obj);
+  thread->setPendingExceptionValue(*val_obj);
   if (runtime->isInstanceOfBaseException(*val_obj)) {
-    thread->setPendingExceptionTraceback(
-        BaseException(&scope, *val_obj).traceback());
+    BaseException val_exc(&scope, *val_obj);
+    thread->setPendingExceptionTraceback(val_exc.traceback());
   }
 }
 

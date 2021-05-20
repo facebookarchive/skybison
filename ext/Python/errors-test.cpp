@@ -48,6 +48,23 @@ TEST_F(ErrorsExtensionApiTest, SetObjectWithNonTypeRaisesSystemError) {
   EXPECT_EQ(PyErr_Occurred(), PyExc_SystemError);
 }
 
+TEST_F(ErrorsExtensionApiTest, SetObjectWithPendingExceptionDoesNotAbort) {
+  ASSERT_EQ(PyErr_Occurred(), nullptr);
+  PyErr_SetObject(PyExc_TypeError, Py_True);
+  PyErr_SetObject(PyExc_UserWarning, Py_False);
+
+  PyObject* type = nullptr;
+  PyObject* value = nullptr;
+  PyObject* traceback = nullptr;
+  PyErr_Fetch(&type, &value, &traceback);
+  EXPECT_EQ(type, PyExc_UserWarning);
+  EXPECT_EQ(value, Py_False);
+  EXPECT_EQ(traceback, nullptr);
+
+  Py_DECREF(type);
+  Py_DECREF(value);
+}
+
 TEST_F(ErrorsExtensionApiTest, ClearClearsExceptionState) {
   // Set the exception state
   Py_INCREF(PyExc_Exception);
