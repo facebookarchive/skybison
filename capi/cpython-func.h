@@ -158,6 +158,8 @@ PyAPI_FUNC_DECL(PyTypeObject* _PyNotImplemented_Type_Ptr(void));
 PyAPI_FUNC_DECL(_PyRuntimeState* _PyRuntime_Ptr(void));
 
 /* Macro helpers */
+PyAPI_FUNC_DECL(int PyAnySet_CheckExact_Func(PyObject*));
+PyAPI_FUNC_DECL(int PyAnySet_Check_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyBool_Check_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyByteArray_CheckExact_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyByteArray_Check_Func(PyObject*));
@@ -1480,6 +1482,8 @@ PyAPI_FUNC_DECL(Py_ssize_t _Py_write_noraise(int, const void*, size_t));
 /* Parentheses around the whole expressions are needed to compile
  * "if PyDict_CheckExact(other) {". Parentheses around "op" are needed for
  * "PyBytes_Check(state = PyTuple_GET_ITEM(args, 0))" */
+#define PyAnySet_Check(op) (PyAnySet_Check_Func((PyObject*)(op)))
+#define PyAnySet_CheckExact(op) (PyAnySet_CheckExact_Func((PyObject*)(op)))
 #define PyBool_Check(op) (PyBool_Check_Func((PyObject*)(op)))
 #define PyByteArray_Check(op) (PyByteArray_Check_Func((PyObject*)(op)))
 #define PyByteArray_CheckExact(op)                                             \

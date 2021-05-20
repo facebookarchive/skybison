@@ -18,6 +18,60 @@ TEST_F(SetExtensionApiTest, AddWithNonSetReturnsNegative) {
   EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_SystemError));
 }
 
+TEST_F(SetExtensionApiTest, AnySetCheckWithNonSetReturnsFalse) {
+  PyObjectPtr set(PyDict_New());
+  EXPECT_FALSE(PyAnySet_Check(set));
+}
+
+TEST_F(SetExtensionApiTest, AnySetCheckWithAnySetSubclassReturnsTrue) {
+  PyRun_SimpleString(R"(
+class FrozenSub(frozenset):
+  pass
+class SetSub(set):
+  pass
+frozen_instance = FrozenSub()
+set_instance = SetSub()
+)");
+  PyObjectPtr frozen(mainModuleGet("frozen_instance"));
+  PyObjectPtr set(mainModuleGet("set_instance"));
+  EXPECT_TRUE(PyAnySet_Check(frozen));
+  EXPECT_TRUE(PyAnySet_Check(set));
+}
+
+TEST_F(SetExtensionApiTest, AnySetCheckWithAnySetReturnsTrue) {
+  PyObjectPtr frozenset(PyFrozenSet_New(nullptr));
+  PyObjectPtr set(PySet_New(nullptr));
+  EXPECT_TRUE(PyAnySet_Check(frozenset));
+  EXPECT_TRUE(PyAnySet_Check(set));
+}
+
+TEST_F(SetExtensionApiTest, AnySetCheckExactWithNonSetReturnsFalse) {
+  PyObjectPtr set(PyDict_New());
+  EXPECT_FALSE(PyAnySet_CheckExact(set));
+}
+
+TEST_F(SetExtensionApiTest, AnySetCheckExactWithAnySetSubclassReturnsFalse) {
+  PyRun_SimpleString(R"(
+class FrozenSub(frozenset):
+  pass
+class SetSub(set):
+  pass
+frozen_instance = FrozenSub()
+set_instance = SetSub()
+)");
+  PyObjectPtr frozen(mainModuleGet("frozen_instance"));
+  PyObjectPtr set(mainModuleGet("set_instance"));
+  EXPECT_FALSE(PyAnySet_CheckExact(frozen));
+  EXPECT_FALSE(PyAnySet_CheckExact(set));
+}
+
+TEST_F(SetExtensionApiTest, AnySetCheckExactWithAnySetReturnsTrue) {
+  PyObjectPtr frozenset(PyFrozenSet_New(nullptr));
+  PyObjectPtr set(PySet_New(nullptr));
+  EXPECT_TRUE(PyAnySet_CheckExact(frozenset));
+  EXPECT_TRUE(PyAnySet_CheckExact(set));
+}
+
 TEST_F(SetExtensionApiTest, FrozenSetCheckWithSetReturnsFalse) {
   PyObjectPtr set(PySet_New(nullptr));
   EXPECT_FALSE(PyFrozenSet_Check(set));

@@ -6,6 +6,20 @@
 
 namespace py {
 
+PY_EXPORT int PyAnySet_Check_Func(PyObject* arg) {
+  DCHECK(arg != nullptr, "obj must not be nullptr");
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  RawObject obj = ApiHandle::fromPyObject(arg)->asObject();
+  return runtime->isInstanceOfSet(obj) || runtime->isInstanceOfFrozenSet(obj);
+}
+
+PY_EXPORT int PyAnySet_CheckExact_Func(PyObject* arg) {
+  DCHECK(arg != nullptr, "obj must not be nullptr");
+  RawObject obj = ApiHandle::fromPyObject(arg)->asObject();
+  return obj.isSet() || obj.isFrozenSet();
+}
+
 PY_EXPORT int PyFrozenSet_Check_Func(PyObject* obj) {
   DCHECK(obj != nullptr, "obj must not be nullptr");
   return Thread::current()->runtime()->isInstanceOfFrozenSet(
