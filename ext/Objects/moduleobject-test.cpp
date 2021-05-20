@@ -742,6 +742,75 @@ static PyObject* init_extra_extra_builtin_module(void) {
   return PyModule_Create(&def);
 }
 
+TEST(ModuleExtensionApiTestNoFixture,
+     PyModuleGetStateReturnsValidStateDuringFinalization) {
+  resetPythonEnv();
+  Py_Initialize();
+
+  struct MyState {
+    int* data_ptr;
+  };
+
+  static PyModuleDef def;
+  def = {
+      PyModuleDef_HEAD_INIT,
+      "mymodule",
+      "doc",
+      sizeof(MyState),
+  };
+
+  PyObject* module = PyModule_Create(&def);
+  ASSERT_NE(module, nullptr);
+  ASSERT_EQ(PyState_AddModule(module, &def), 0);
+  EXPECT_TRUE(PyModule_CheckExact(module));
+
+  void* state = PyModule_GetState(module);
+  ASSERT_NE(state, nullptr);
+  MyState* mod_state = static_cast<MyState*>(state);
+  int data = 0;
+  mod_state->data_ptr = &data;
+
+  struct FooObject {
+    PyObject_HEAD
+    PyObject* dict;
+    PyModuleDef mod_def;
+  };
+
+  destructor dealloc_func = [](PyObject* self) {
+    PyObject* mod =
+        PyState_FindModule(&reinterpret_cast<FooObject*>(self)->mod_def);
+    MyState* module_state = static_cast<MyState*>(PyModule_GetState(mod));
+    *module_state->data_ptr = 42;
+    PyTypeObject* type = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    PyObject_GC_Del(self);
+    Py_DECREF(type);
+  };
+
+  static PyType_Slot slots[2];
+  slots[0] = {Py_tp_dealloc, reinterpret_cast<void*>(dealloc_func)},
+  slots[1] = {0, nullptr};
+  static PyType_Spec spec;
+  spec = {
+      "__main__.Foo",
+      sizeof(FooObject),
+      0,
+      Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+      slots,
+  };
+
+  PyObject* type(PyType_FromSpec(&spec));
+  ASSERT_NE(type, nullptr);
+  ASSERT_EQ(PyType_CheckExact(type), 1);
+  PyObject* instance = _PyObject_CallNoArg(type);
+  reinterpret_cast<FooObject*>(instance)->mod_def = def;
+
+  Py_DECREF(instance);
+
+  Py_FinalizeEx();
+  ASSERT_EQ(data, 42);
+}
+
 TEST(ModuleExtensionApiTestNoFixture, PyImportAppendInittabExtendInittab) {
   resetPythonEnv();
   PyImport_AppendInittab("extra_builtin", init_extra_builtin_module);
