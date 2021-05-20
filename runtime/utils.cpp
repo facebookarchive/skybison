@@ -103,7 +103,7 @@ void Utils::printDebugInfoAndAbort() {
       HandleScope scope(thread);
       Object type(&scope, thread->pendingExceptionType());
       Object value(&scope, thread->pendingExceptionValue());
-      Traceback traceback(&scope, thread->pendingExceptionTraceback());
+      Object traceback_obj(&scope, thread->pendingExceptionTraceback());
       thread->clearPendingException();
 
       std::cerr << "Pending exception\n  Type          : " << type
@@ -112,13 +112,17 @@ void Utils::printDebugInfoAndAbort() {
         BaseException exception(&scope, *value);
         std::cerr << "\n  Exception Args: " << exception.args();
       }
-      std::cerr << "\n  Traceback     : " << traceback << '\n';
+      std::cerr << "\n";
+      if (traceback_obj.isTraceback()) {
+        Traceback traceback(&scope, *traceback_obj);
+        std::cerr << "  Traceback     : " << traceback << '\n';
 
-      ValueCell stderr_cell(&scope, runtime->sysStderr());
-      if (!stderr_cell.isUnbound()) {
-        Object stderr(&scope, stderr_cell.value());
-        CHECK(!tracebackWrite(thread, traceback, stderr).isErrorException(),
-              "failed to print traceback");
+        ValueCell stderr_cell(&scope, runtime->sysStderr());
+        if (!stderr_cell.isUnbound()) {
+          Object stderr(&scope, stderr_cell.value());
+          CHECK(!tracebackWrite(thread, traceback, stderr).isErrorException(),
+                "failed to print traceback");
+        }
       }
     }
   }
