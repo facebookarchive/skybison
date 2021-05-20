@@ -14061,6 +14061,7 @@ class FrameTests(unittest.TestCase):
 
         frame = inner()
         self.assertIsNot(frame, None)
+        self.assertIsNot(frame.f_locals, None)
         # Ensure that frame.clear() exists.
         # TODO(T86451971): Properly test behavior once we implement it. For now, we just test that
         # clear() doesn't raise.

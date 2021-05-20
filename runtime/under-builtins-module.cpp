@@ -5596,6 +5596,7 @@ RawObject FUNC(_builtins, _super_ctor)(Thread* thread, Arguments args) {
 
 RawObject FUNC(_builtins, _traceback_frame_get)(Thread* thread,
                                                 Arguments args) {
+  Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object self_obj(&scope, args.get(0));
   if (!self_obj.isTraceback()) {
@@ -5604,7 +5605,10 @@ RawObject FUNC(_builtins, _traceback_frame_get)(Thread* thread,
   Traceback self(&scope, *self_obj);
   Object function(&scope, self.function());
   Object lasti(&scope, self.lasti());
-  return thread->runtime()->newFrameProxy(thread, function, lasti);
+  FrameProxy new_frame(&scope, runtime->newFrameProxy(thread, function, lasti));
+  // TODO(T91250285): Figure out a way to initialize the frame's locals dict
+  new_frame.setLocals(runtime->newDict());
+  return *new_frame;
 }
 
 RawObject FUNC(_builtins, _traceback_lineno_get)(Thread* thread,
