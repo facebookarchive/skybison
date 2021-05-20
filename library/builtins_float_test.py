@@ -598,6 +598,71 @@ class FloatTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             float.hex("")
 
+    def test_is_integer_with_positive_zero_returns_true(self):
+        self.assertEqual((0.0).is_integer(), True)
+
+    def test_is_integer_with_negative_zero_returns_true(self):
+        self.assertEqual((-0.0).is_integer(), True)
+
+    def test_is_integer_with_positive_infinite_returns_false(self):
+        self.assertEqual(float("inf").is_integer(), False)
+
+    def test_is_integer_with_negative_infinite_returns_false(self):
+        self.assertEqual(float("-inf").is_integer(), False)
+
+    def test_is_integer_with_nan_returns_false(self):
+        self.assertEqual(float("nan").is_integer(), False)
+
+    def test_is_integer_with_positive_integer_returns_true(self):
+        self.assertEqual((3.0).is_integer(), True)
+
+    def test_is_integer_with_positive_non_integer_returns_false(self):
+        self.assertEqual((2.71828).is_integer(), False)
+
+    def test_is_integer_with_negative_integer_returns_true(self):
+        self.assertEqual((-1.0).is_integer(), True)
+
+    def test_is_integer_with_negative_non_integer_returns_false(self):
+        self.assertEqual((-3.14159).is_integer(), False)
+
+    def test_is_integer_with_close_value_returns_false(self):
+        self.assertEqual((-1.000000000000001).is_integer(), False)
+
+    def test_is_integer_with_string_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            float.is_integer("")
+
+    def test_is_integer_with_float_subclass_integer_returns_true(self):
+        class C(float):
+            pass
+
+        self.assertEqual(C(10.0).is_integer(), True)
+
+    def test_is_integer_with_float_subclass_non_integer_returns_false(self):
+        class C(float):
+            pass
+
+        self.assertEqual(C(10.1).is_integer(), False)
+
+    def test_is_integer_with_float_multiple_inheritance_integer_returns_true(self):
+        class NotAfloat:
+            pass
+
+        class Afloat(float):
+            pass
+
+        class TreadingWater(Afloat, NotAfloat):
+            pass
+
+        self.assertEqual(TreadingWater(10.0).is_integer(), True)
+
+    def test_is_integer_with_float_nonsubclass_raises_type_error(self):
+        class NotAFloat:
+            pass
+
+        with self.assertRaises(TypeError):
+            float.is_integer(NotAFloat())
+
     def test_float_with_str_trims_whitespace(self):
         self.assertEqual(float("\t 14.2\n"), 14.2)
         self.assertEqual(float("\t 14"), 14.0)

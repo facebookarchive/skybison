@@ -3978,7 +3978,7 @@ class float(bootstrap=True):
         _unimplemented()
 
     def is_integer(self):
-        _unimplemented()
+        _builtin()
 
     def real(self):
         _unimplemented()

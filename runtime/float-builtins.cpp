@@ -1004,4 +1004,16 @@ RawObject METH(float, hex)(Thread* thread, Arguments args) {
   return formatDoubleHexadecimalSimple(runtime, double_value);
 }
 
+RawObject METH(float, is_integer)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self(&scope, args.get(0));
+  if (!thread->runtime()->isInstanceOfFloat(*self)) {
+    return thread->raiseRequiresType(self, ID(float));
+  }
+
+  double double_value = floatUnderlying(*self).value();
+  return Bool::fromBool(!std::isinf(double_value) &&
+                        std::floor(double_value) == double_value);
+}
+
 }  // namespace py
