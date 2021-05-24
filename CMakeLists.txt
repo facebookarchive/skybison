@@ -185,6 +185,7 @@ foreach(dir
 endforeach()
 if (CMAKE_OSX_SYSROOT)
   set(CPYTHON_CFLAGS "${CPYTHON_CFLAGS} -isysroot ${CMAKE_OSX_SYSROOT}")
+  set(CPYTHON_LDFLAGS "${CPYTHON_LDFLAGS} -isysroot ${CMAKE_OSX_SYSROOT}")
 endif()
 
 # Write commands into a script to avoid quoting problems.
