@@ -574,7 +574,7 @@ class type(bootstrap=True):
 
     def __ror__(self, right):
         _type_guard(self)
-        return Union(self, right)
+        return Union(right, self)
 
     def __setattr__(self, name, value):
         _builtin()
@@ -7123,10 +7123,6 @@ class Union(metaclass=_non_heaptype):
 
     @classmethod
     def _is_unionable(cls, obj):
-        def _get_class_name(obj):
-            obj_type = _type(obj)
-            return getattr(obj_type, "__name__", None)
-
         if obj is None or _type(obj) is Union:
             return True
 
@@ -7135,7 +7131,7 @@ class Union(metaclass=_non_heaptype):
             return True
 
         # Check for _SpecialForm
-        class_name = _get_class_name(obj)
+        class_name = getattr(_type(obj), "__name__", None)
         if class_name in [
             "_SpecialForm",
             "TypeVar",
@@ -7160,29 +7156,35 @@ class Union(metaclass=_non_heaptype):
         return set(self._arguments) == {right}
 
     def __init__(self, left, right):
-        arguments = set()
-
         if not Union._is_unionable(left) or not Union._is_unionable(right):
             raise TypeError
 
-        if _type(right) is Union:
-            arguments = arguments.union(right._arguments)
+        # Replace `None` with `NoneType` and flatten union types.
+        arguments = {}  # Uses dict instead of set to maintain insertion order.
+        if left is None:
+            arguments[NoneType] = None
+        elif _type(left) is Union:
+            for arg in left._arguments:
+                arguments[arg] = None
         else:
-            arguments.add(right)
+            arguments[left] = None
 
-        if _type(left) is Union:
-            arguments = arguments.union(left._arguments)
+        if right is None:
+            arguments[NoneType] = None
+        elif _type(right) is Union:
+            for arg in right._arguments:
+                arguments[arg] = None
         else:
-            arguments.add(left)
+            arguments[right] = None
 
-        self._arguments = tuple(arguments)
+        self._arguments = tuple(arguments.keys())
 
     def __or__(self, right):
         return Union(self, right)
 
     def __repr__(self):
         return " | ".join(
-            [a.__name__ if a is not None else str(a) for a in self._arguments]
+            [a.__name__ if a is not NoneType else "None" for a in self._arguments]
         )
 
     def __ror__(self, right):
@@ -7190,9 +7192,7 @@ class Union(metaclass=_non_heaptype):
 
     def __instancecheck__(self, right):
         for a in self._arguments:
-            if a is None and right is None:
-                return True
-            elif a is not None and isinstance(right, a):
+            if isinstance(right, a):
                 return True
         return False
 

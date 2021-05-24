@@ -13251,6 +13251,34 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(C.__subclasses__(), [])
         self.assertEqual(D.__subclasses__(), [])
 
+    @unittest.skipIf(
+        sys.version_info < (3, 10) and sys.implementation.name != "pyro",
+        "Union requrires CPython 3.10",
+    )
+    def test_dunder_or_returns_union(self):
+        from types import Union
+
+        t = int | float
+        self.assertIs(type(t), Union)
+        self.assertEqual(t.__args__, (int, float))
+        t = float | int
+        self.assertIs(type(t), Union)
+        self.assertEqual(t.__args__, (float, int))
+        t = str | None
+        self.assertIs(type(t), Union)
+        self.assertEqual(t.__args__, (str, type(None)))
+
+    @unittest.skipIf(
+        sys.version_info < (3, 10) and sys.implementation.name != "pyro",
+        "Union requrires CPython 3.10",
+    )
+    def test_dunder_ror_returns_union(self):
+        from types import Union
+
+        t = None | bytes
+        self.assertIs(type(t), Union)
+        self.assertEqual(t.__args__, (type(None), bytes))
+
     def test_dunder_qualname_returns_qualname(self):
         class C:
             __qualname__ = "bar"
@@ -13848,8 +13876,8 @@ class UnderNumberCheckTests(unittest.TestCase):
 
 
 @unittest.skipIf(
-    sys.implementation.name == "cpython" and sys.version_info < (3, 10),
-    "requires at least CPython 3.10",
+    sys.version_info < (3, 10) and sys.implementation.name != "pyro",
+    "Union requrires CPython 3.10",
 )
 class UnionTests(unittest.TestCase):
     def test_or_type_operator(self):
