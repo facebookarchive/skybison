@@ -22,7 +22,11 @@ class DistutilsModuleTest(unittest.TestCase):
 
     def test_build_ext_with_c_file_creates_library(self):
         with tempfile.TemporaryDirectory() as dir_path:
-            file_path = f"{dir_path}/foo.c"
+            source_dir = f"{dir_path}/src"
+            build_dir = f"{dir_path}/build"
+            os.makedirs(source_dir)
+            os.makedirs(build_dir)
+            file_path = f"{source_dir}/foo.c"
             with open(file_path, "w") as fp:
                 fp.write(
                     """\
@@ -48,7 +52,7 @@ PyMODINIT_FUNC PyInit_foo(void) {
 }
 """
                 )
-            self.assertEqual(len(os.listdir(dir_path)), 1)
+            self.assertEqual(len(os.listdir(source_dir)), 1)
 
             # Setup compilation settings
             ext = Extension(name="foo", sources=[file_path])
@@ -58,18 +62,18 @@ PyMODINIT_FUNC PyInit_foo(void) {
             dist = setup(
                 name="test_so_compilation",
                 ext_modules=[ext],
-                script_args=["--quiet", "build_ext"],
-                options={"build_ext": {"build_lib": dir_path}},
+                script_args=["--quiet", "build_ext", "--build-temp", build_dir],
+                options={"build_ext": {"build_lib": source_dir}},
             )
             self.assertIsInstance(dist, Distribution)
 
             # Check directory contents
-            dir_contents = sorted(os.listdir(dir_path))
+            dir_contents = sorted(os.listdir(source_dir))
             self.assertEqual(len(dir_contents), 2)
             self.assertTrue(dir_contents[0].endswith(".c"))
             self.assertTrue(dir_contents[1].endswith(".so"))
 
-            lib_file = f"{dir_path}/{dir_contents[1]}"
+            lib_file = f"{source_dir}/{dir_contents[1]}"
             spec = importlib.machinery.ModuleSpec("foo", None, origin=lib_file)
             module = _imp.create_dynamic(spec)
             self.assertEqual(
@@ -78,7 +82,11 @@ PyMODINIT_FUNC PyInit_foo(void) {
 
     def test_build_ext_with_cpp_file_creates_library(self):
         with tempfile.TemporaryDirectory() as dir_path:
-            file_path = f"{dir_path}/foo.cpp"
+            source_dir = f"{dir_path}/src"
+            build_dir = f"{dir_path}/build"
+            os.makedirs(source_dir)
+            os.makedirs(build_dir)
+            file_path = f"{source_dir}/foo.cpp"
             with open(file_path, "w") as fp:
                 fp.write(
                     """\
@@ -105,7 +113,7 @@ PyMODINIT_FUNC PyInit_foo() {
 }
 """
                 )
-            self.assertEqual(len(os.listdir(dir_path)), 1)
+            self.assertEqual(len(os.listdir(source_dir)), 1)
 
             # Setup compilation settings
             ext = Extension(name="foo", sources=[file_path])
@@ -114,18 +122,18 @@ PyMODINIT_FUNC PyInit_foo() {
             dist = setup(
                 name="test_so_compilation",
                 ext_modules=[ext],
-                script_args=["--quiet", "build_ext"],
-                options={"build_ext": {"build_lib": dir_path}},
+                script_args=["--quiet", "build_ext", "--build-temp", build_dir],
+                options={"build_ext": {"build_lib": source_dir}},
             )
             self.assertIsInstance(dist, Distribution)
 
             # Check directory contents
-            dir_contents = sorted(os.listdir(dir_path))
+            dir_contents = sorted(os.listdir(source_dir))
             self.assertEqual(len(dir_contents), 2)
             self.assertTrue(dir_contents[0].endswith(".cpp"))
             self.assertTrue(dir_contents[1].endswith(".so"))
 
-            lib_file = f"{dir_path}/{dir_contents[1]}"
+            lib_file = f"{source_dir}/{dir_contents[1]}"
             spec = importlib.machinery.ModuleSpec("foo", None, origin=lib_file)
             module = _imp.create_dynamic(spec)
             self.assertEqual(module.greet(), "Hello world")

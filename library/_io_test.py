@@ -1415,10 +1415,12 @@ class FileIOTests(unittest.TestCase):
         def opener(fn, flags):
             return os.open(fn, os.O_CREAT | os.O_WRONLY, 0o666)
 
-        with _io.FileIO("foo", mode="r", opener=opener) as f:
-            self.assertEqual(
-                f.__repr__(), f"<_io.FileIO name='foo' mode='rb' closefd=True>"
-            )
+        with tempfile.TemporaryDirectory() as tempdir:
+            with _io.FileIO(f"{tempdir}/foo", mode="r", opener=opener) as f:
+                self.assertEqual(
+                    f.__repr__(),
+                    f"<_io.FileIO name='{tempdir}/foo' mode='rb' closefd=True>",
+                )
 
     def test_fileno_with_closed_file_raises_value_error(self):
         f = _io.FileIO(_getfd(), mode="r")

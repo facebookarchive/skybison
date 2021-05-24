@@ -20,13 +20,14 @@ class MockSpec:  # noqa: B903
 class UnderImpModuleTest(unittest.TestCase):
     def compile_so(self, name, dir_path, file_path):
         ext = Extension(name=name, sources=[file_path])
-        dist = setup(
-            name="examples",
-            ext_modules=[ext],
-            script_args=["build_ext"],
-            options={"build_ext": {"build_lib": dir_path}},
-        )
-        return dist
+        with tempfile.TemporaryDirectory() as build_temp:
+            dist = setup(
+                name="examples",
+                ext_modules=[ext],
+                script_args=["--quiet", "build_ext", "--build-temp", build_temp],
+                options={"build_ext": {"build_lib": dir_path}},
+            )
+            return dist
 
     def test_create_dynamic_invalid_shared_object_raises_exception(self):
         with tempfile.TemporaryDirectory() as dir_path:
