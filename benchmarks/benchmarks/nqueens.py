@@ -3,6 +3,9 @@
 __author__ = "collinwinter@google.com (Collin Winter)"
 
 
+import argparse
+
+
 # Pure-Python implementation of itertools.permutations().
 def permutations(iterable, r=None):
     """permutations(range(3), 2) --> (0,1) (0,2) (1,0) (1,2) (2,0) (2,1)"""
@@ -77,8 +80,6 @@ def warmup():
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )

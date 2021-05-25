@@ -39,6 +39,7 @@
 #
 # ***** END LICENSE BLOCK *****
 
+import argparse
 import random
 import sys
 
@@ -165,8 +166,6 @@ def warmup():
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )

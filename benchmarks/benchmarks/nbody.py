@@ -14,6 +14,10 @@ http://benchmarksgame.alioth.debian.org/u64q/program.php?test=nbody&lang=python3
 Contributed by Kevin Carson.
 Modified by Tupteq, Fredrik Johansson, and Daniel Nanz.
 """
+
+import argparse
+
+
 __contact__ = "collinwinter@google.com (Collin Winter)"
 DEFAULT_ITERATIONS = 20000
 DEFAULT_REFERENCE = "sun"
@@ -155,8 +159,6 @@ def warmup():
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )

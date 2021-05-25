@@ -1,6 +1,7 @@
 """
 Go board game
 """
+import argparse
 import collections
 import math
 import random
@@ -469,8 +470,6 @@ def warmup():
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )

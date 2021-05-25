@@ -18,6 +18,8 @@ code.google.com/p/v8/source/browse/branches/bleeding_edge/benchmarks/deltablue.j
 # The JS variant implements "OrderedCollection", which basically completely
 # overlaps with ``list``. So we'll cheat. :D
 
+import argparse
+
 
 class OrderedCollection(list):
     pass
@@ -647,8 +649,6 @@ def warmup():
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )

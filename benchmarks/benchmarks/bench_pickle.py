@@ -9,9 +9,18 @@ this isn't equivalent to dumping the dict 10000 times: pickle uses a
 highly-efficient encoding for the n-1 following copies.
 """
 
+import sys
+
+# use pure python
+sys.modules["_pickle"] = None
+import pickle
+
+if not getattr(pickle.Pickler, "__module__", "<jython>") == "pickle":
+    raise RuntimeError("Unexpected C accelerators for pickle")
+
+import argparse
 import datetime
 import random
-import sys
 
 
 __author__ = "collinwinter@google.com (Collin Winter)"
@@ -274,15 +283,6 @@ def warmup(pickle, protocol):
 
 
 if __name__ == "__main__":
-    # use pure python
-    sys.modules["_pickle"] = None
-    import pickle
-
-    if not getattr(pickle.Pickler, "__module__", "<jython>") == "pickle":
-        raise RuntimeError("Unexpected C accelerators for pickle")
-
-    import argparse
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )

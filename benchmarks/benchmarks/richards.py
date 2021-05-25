@@ -10,6 +10,9 @@ based on a Java version:
  Outer loop added by Alex Jacoby
 """
 
+import argparse
+
+
 # Task IDs
 I_IDLE = 1
 I_WORK = 2
@@ -432,8 +435,6 @@ def warmup():
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )

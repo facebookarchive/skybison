@@ -13,6 +13,7 @@ see 'bwt_reverse()'.  Correct output is produced in all test cases
 but ideally the problem would be found...
 """
 
+import argparse
 import hashlib
 import os
 import struct
@@ -751,8 +752,6 @@ def warmup(filename):
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )

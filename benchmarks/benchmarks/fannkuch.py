@@ -4,6 +4,10 @@ The Computer Language Benchmarks Game
 http://benchmarksgame.alioth.debian.org/
 Contributed by Sokolov Yura, modified by Tupteq.
 """
+
+import argparse
+
+
 DEFAULT_ARG = 9
 
 
@@ -68,8 +72,6 @@ def warmup():
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )

@@ -40,6 +40,10 @@ Version History:
                 making the benchmark an integer benchmark again.
 
 """
+
+import argparse
+
+
 LOOPS = 50000
 
 
@@ -290,8 +294,6 @@ def warmup():
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
