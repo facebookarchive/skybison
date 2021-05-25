@@ -121,22 +121,20 @@ RawObject processDefaultArguments(Thread* thread, word nargs,
                                   "missing keyword-only argument");
     }
     Dict kw_defaults(&scope, function.kwDefaults());
-    if (!kw_defaults.isNoneType()) {
-      Tuple formal_names(&scope, code.varnames());
-      word first_kw = argcount;
-      Object name(&scope, NoneType::object());
-      for (word i = 0; i < kwonlyargcount; i++) {
-        name = formal_names.at(first_kw + i);
-        RawObject value = dictAtByStr(thread, kw_defaults, name);
-        if (value.isErrorNotFound()) {
-          thread->stackDrop(nargs + i + 1);
-          return thread->raiseWithFmt(LayoutId::kTypeError,
-                                      "missing keyword-only argument");
-        }
-        thread->stackPush(value);
+    Tuple formal_names(&scope, code.varnames());
+    word first_kw = argcount;
+    Object name(&scope, NoneType::object());
+    for (word i = 0; i < kwonlyargcount; i++) {
+      name = formal_names.at(first_kw + i);
+      RawObject value = dictAtByStr(thread, kw_defaults, name);
+      if (value.isErrorNotFound()) {
+        thread->stackDrop(nargs + i + 1);
+        return thread->raiseWithFmt(LayoutId::kTypeError,
+                                    "missing keyword-only argument");
       }
-      nargs += kwonlyargcount;
+      thread->stackPush(value);
     }
+    nargs += kwonlyargcount;
   }
 
   if (function.hasVarargs()) {
