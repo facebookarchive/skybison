@@ -269,6 +269,8 @@ def warmup(pickle, protocol):
     bench_unpickle_list(1, pickle, protocol)
     bench_pickle_dict(1, pickle, protocol)
 
+
+def jit(pickle):
     try:
         from _builtins import _jit_fromlist
 
@@ -296,8 +298,9 @@ if __name__ == "__main__":
     parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
     args = parser.parse_args()
     protocol = pickle.HIGHEST_PROTOCOL
+    warmup(pickle, protocol)
     if args.jit:
-        warmup(pickle, protocol)
+        jit(pickle)
 
     for _ in range(args.num_iterations):
         bench_pickle(DEFAULT_LOOPS_PICKLE, pickle, protocol)

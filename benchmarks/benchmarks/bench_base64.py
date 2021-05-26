@@ -151,6 +151,9 @@ def run():
 
 def warmup():
     bench_base64(1)
+
+
+def jit():
     try:
         from _builtins import _jit_fromlist
 
@@ -178,7 +181,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
     args = parser.parse_args()
+    warmup()
     if args.jit:
-        warmup()
+        jit()
 
     bench_base64(args.num_iterations)

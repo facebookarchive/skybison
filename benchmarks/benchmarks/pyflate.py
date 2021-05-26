@@ -717,6 +717,9 @@ def run():
 
 def warmup(filename):
     bench_pyflake(1, filename)
+
+
+def jit():
     try:
         from _builtins import _jit_fromlist, _jit_fromtype
 
@@ -765,7 +768,8 @@ if __name__ == "__main__":
     parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
     args = parser.parse_args()
     filename = os.path.join(os.path.dirname(__file__), "data", "interpreter.tar.bz2")
+    warmup(filename)
     if args.jit:
-        warmup(filename)
+        jit()
 
     bench_pyflake(args.num_iterations, filename)

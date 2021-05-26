@@ -450,6 +450,9 @@ def run():
 
 def warmup():
     versus_cpu()
+
+
+def jit():
     try:
         from _builtins import _jit_fromlist, _jit_fromtype
 
@@ -482,7 +485,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
     args = parser.parse_args()
+    warmup()
     if args.jit:
-        warmup()
+        jit()
 
     bench_go(args.num_iterations)

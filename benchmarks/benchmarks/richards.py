@@ -416,6 +416,9 @@ def run():
 def warmup():
     richards = Richards()
     richards.run(1)
+
+
+def jit():
     try:
         from _builtins import _jit_fromtype
 
@@ -447,8 +450,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("--jit", action="store_true", help="Run in JIT mode")
     args = parser.parse_args()
+    warmup()
     if args.jit:
-        warmup()
+        jit()
 
     richards = Richards()
     richards.run(args.num_iterations)
