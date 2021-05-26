@@ -902,7 +902,7 @@ class CodeGenerator(ASTVisitor):
         if opcode:
             gen.emit(opcode, oparg)
 
-        gen.compile_comprehension_generator(node.generators, 0, elt, val, type(node))
+        gen.compile_comprehension_body(node.generators, 0, elt, val, type(node), True)
 
         if not isinstance(node, ast.GeneratorExp):
             gen.emit("RETURN_VALUE")
@@ -943,13 +943,14 @@ class CodeGenerator(ASTVisitor):
             node, sys.intern("<dictcomp>"), node.key, node.value, "BUILD_MAP"
         )
 
-    def compile_comprehension_generator(self, generators, gen_index, elt, val, type):
+    def compile_comprehension_body(self, generators, gen_index, elt, val, type, load_iter_from_dot0=False):
         if generators[gen_index].is_async:
-            self.compile_async_comprehension(generators, gen_index, elt, val, type)
+            self.compile_async_comprehension(generators, gen_index, elt, val, type, load_iter_from_dot0)
         else:
-            self.compile_sync_comprehension(generators, gen_index, elt, val, type)
+            self.compile_sync_comprehension(generators, gen_index, elt, val, type, load_iter_from_dot0)
 
-    def compile_async_comprehension(self, generators, gen_index, elt, val, type):
+    def compile_async_comprehension(self, generators, gen_index, elt, val, type,
+                                    load_iter_from_dot0):
         try_ = self.newBlock("try")
         after_try = self.newBlock("after_try")
         except_ = self.newBlock("except")
@@ -957,7 +958,7 @@ class CodeGenerator(ASTVisitor):
         try_cleanup = self.newBlock("try_cleanup")
 
         gen = generators[gen_index]
-        if gen_index == 0:
+        if load_iter_from_dot0:
             self.loadName(".0")
         else:
             self.visit(gen.iter)
@@ -989,7 +990,7 @@ class CodeGenerator(ASTVisitor):
 
         gen_index += 1
         if gen_index < len(generators):
-            self.compile_comprehension_generator(generators, gen_index, elt, val, type)
+            self.compile_comprehension_body(generators, gen_index, elt, val, type)
         elif type is ast.GeneratorExp:
             self.visit(elt)
             self.emit("YIELD_VALUE")
@@ -1016,14 +1017,14 @@ class CodeGenerator(ASTVisitor):
         self.emit("POP_EXCEPT")  # for SETUP_EXCEPT
         self.emit("POP_TOP")
 
-    def compile_sync_comprehension(self, generators, gen_index, elt, val, type):
+    def compile_sync_comprehension(self, generators, gen_index, elt, val, type, load_iter_from_dot0):
         start = self.newBlock("start")
         skip = self.newBlock("skip")
         if_cleanup = self.newBlock("if_cleanup")
         anchor = self.newBlock("anchor")
 
         gen = generators[gen_index]
-        if gen_index == 0:
+        if load_iter_from_dot0:
             self.loadName(".0")
         else:
             self.visit(gen.iter)
@@ -1040,7 +1041,7 @@ class CodeGenerator(ASTVisitor):
 
         gen_index += 1
         if gen_index < len(generators):
-            self.compile_comprehension_generator(generators, gen_index, elt, val, type)
+            self.compile_comprehension_body(generators, gen_index, elt, val, type)
         else:
             if type is ast.GeneratorExp:
                 self.visit(elt)
@@ -2558,13 +2559,13 @@ class Python38CodeGenerator(Python37CodeGenerator):
 
         self.emit("RETURN_VALUE")
 
-    def compile_async_comprehension(self, generators, gen_index, elt, val, type):
+    def compile_async_comprehension(self, generators, gen_index, elt, val, type, load_iter_from_dot0):
         start = self.newBlock("start")
         except_ = self.newBlock("except")
         if_cleanup = self.newBlock("if_cleanup")
 
         gen = generators[gen_index]
-        if gen_index == 0:
+        if load_iter_from_dot0:
             self.loadName(".0")
         else:
             self.visit(gen.iter)
@@ -2585,7 +2586,7 @@ class Python38CodeGenerator(Python37CodeGenerator):
 
         gen_index += 1
         if gen_index < len(generators):
-            self.compile_comprehension_generator(generators, gen_index, elt, val, type)
+            self.compile_comprehension_body(generators, gen_index, elt, val, type)
         elif type is ast.GeneratorExp:
             self.visit(elt)
             self.emit("YIELD_VALUE")
