@@ -281,6 +281,38 @@ TEST(AssemblerTest, RIPRelativeLea) {
   EXPECT_TRUE(assemblerContainsBytes(&as, expected));
 }
 
+TEST(AssemblerTest, RIPRelativeLeaWithNonRax) {
+  // 48 8d 0d 03 00 00 00    leaq $0x3(%rip),%rcx
+  // 48 33 d2                xorq %rdx, %rdx
+  // 48 33 d2                xorq %rdx, %rdx
+  const byte expected[] = {0x48, 0x8d, 0x0d, 0x03, 0x00, 0x00, 0x00,
+                           0x48, 0x33, 0xd2, 0x48, 0x33, 0xd2};
+
+  Assembler as;
+  Label label;
+  as.leaq(RCX, &label);
+  as.xorq(RDX, RDX);
+  as.bind(&label);
+  as.xorq(RDX, RDX);
+  EXPECT_TRUE(assemblerContainsBytes(&as, expected));
+}
+
+TEST(AssemblerTest, RIPRelativeLeaWithSixtyFourBitRegister) {
+  // 4c 8d 35 03 00 00 00    leaq $0x3(%rip),%r14
+  // 48 33 d2                xorq %rdx, %rdx
+  // 48 33 d2                xorq %rdx, %rdx
+  const byte expected[] = {0x4c, 0x8d, 0x35, 0x03, 0x00, 0x00, 0x00,
+                           0x48, 0x33, 0xd2, 0x48, 0x33, 0xd2};
+
+  Assembler as;
+  Label label;
+  as.leaq(R14, &label);
+  as.xorq(RDX, RDX);
+  as.bind(&label);
+  as.xorq(RDX, RDX);
+  EXPECT_TRUE(assemblerContainsBytes(&as, expected));
+}
+
 }  // namespace testing
 }  // namespace x64
 }  // namespace py
