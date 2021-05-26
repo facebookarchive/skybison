@@ -70,8 +70,9 @@ class Interpreter {
     UNWIND,
     RETURN,
     YIELD,
+    DEOPT,
   };
-  static const word kNumContinues = 4;
+  static const word kNumContinues = 5;
 
   using OpcodeHandler = Continue (*)(Thread* thread, word arg);
 

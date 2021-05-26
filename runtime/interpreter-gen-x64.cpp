@@ -427,6 +427,17 @@ void emitCallReg(EmitEnv* env, Register function) {
   env->register_state.clobber(kCallerSavedRegs);
 }
 
+void emitJumpToDeopt(EmitEnv* env) {
+  DCHECK(env->in_jit, "deopt not supported for non-JIT assembly");
+  JitEnv* jenv = static_cast<JitEnv*>(env);
+  // Set the PC to what would be in a normal opcode handler. We may not have
+  // set it if the JIT handler did not need the PC.
+  env->register_state.assign(&env->pc, kPCReg);
+  __ movq(env->pc, Immediate(jenv->virtualPC()));
+  env->register_state.check(jenv->deopt_assignment);
+  __ jmp(&jenv->deopt_handler, Assembler::kFarJump);
+}
+
 void emitHandleContinue(EmitEnv* env, SaveRestoreFlags flags) {
   ScratchReg r_result(env, kReturnRegs[0]);
 
@@ -442,18 +453,33 @@ void emitHandleContinue(EmitEnv* env, SaveRestoreFlags flags) {
   emitRestoreInterpreterState(env, flags);
   emitNextOpcode(env);
 
+  // TODO(T91195773): Decide if this special-case here makes sense or if it is
+  // worth duplicating the pseudo-handlers / exposing their address via some
+  // API so that we can jump directly into the DEOPT one. Would rather not have
+  // a separate pseudo-handler per function.
   __ bind(&handle_flow);
   if (env->in_jit) {
+    Label deopt;
+    __ cmpb(r_result,
+            Immediate(static_cast<byte>(Interpreter::Continue::DEOPT)));
+    __ jcc(EQUAL, &deopt, Assembler::kNearJump);
     // The JIT should never get here; it should always deopt beforehand.
     __ ud2();
+
+    __ bind(&deopt);
+    // TODO(T91195826): See if we can get this data statically instead of off
+    // the frame object.
+    emitRestoreInterpreterState(env, kGenericHandler);
+    emitJumpToDeopt(env);
   } else {
     __ shll(r_result, Immediate(kHandlerSizeShift));
     __ leaq(r_result, Address(env->handlers_base, r_result, TIMES_1,
                               -Interpreter::kNumContinues * kHandlerSize));
     env->register_state.check(env->return_handler_assignment);
     __ jmp(r_result);
-    env->register_state.reset();
   }
+
+  env->register_state.reset();
 }
 
 void emitHandleContinueIntoInterpreter(EmitEnv* env, SaveRestoreFlags flags) {
@@ -748,17 +774,6 @@ void emitAttrWithOffset(EmitEnv* env, void (Assembler::*asm_op)(Address),
   __ notq(r_offset);
   (env->as.*asm_op)(Address(r_scratch, r_offset, TIMES_8, heapObjectDisp(0)));
   __ jmp(next, Assembler::kNearJump);
-}
-
-void emitJumpToDeopt(EmitEnv* env) {
-  DCHECK(env->in_jit, "deopt not supported for non-JIT assembly");
-  JitEnv* jenv = static_cast<JitEnv*>(env);
-  // Set the PC to what would be in a normal opcode handler. We may not have
-  // set it if the JIT handler did not need the PC.
-  env->register_state.assign(&env->pc, kPCReg);
-  __ movq(env->pc, Immediate(jenv->virtualPC()));
-  env->register_state.check(jenv->deopt_assignment);
-  __ jmp(&jenv->deopt_handler, Assembler::kFarJump);
 }
 
 template <>
@@ -1153,6 +1168,16 @@ void emitHandler<LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD>(EmitEnv* env) {
   emitJumpToGenericHandler(env);
 }
 
+// Used when transitioning from a JIT handler to an interpreter handler.
+void jitEmitGenericHandlerSetup(JitEnv* env) {
+  word arg = env->currentOp().arg;
+  env->register_state.assign(&env->oparg, kOpargReg);
+  __ movq(env->oparg, Immediate(arg));
+  env->register_state.assign(&env->pc, kPCReg);
+  __ movq(env->pc, Immediate(env->virtualPC()));
+  env->register_state.check(env->handler_assignment);
+}
+
 template <>
 void emitHandler<LOAD_ATTR_POLYMORPHIC>(EmitEnv* env) {
   ScratchReg r_base(env);
@@ -1181,6 +1206,9 @@ void emitHandler<LOAD_ATTR_POLYMORPHIC>(EmitEnv* env) {
   __ bind(&slow_path);
   __ pushq(r_base);
   // Don't deopt because this won't rewrite.
+  if (env->in_jit) {
+    jitEmitGenericHandlerSetup(static_cast<JitEnv*>(env));
+  }
   emitJumpToGenericHandler(env);
 }
 
@@ -2584,16 +2612,6 @@ void emitInterpreter(EmitEnv* env) {
   env->register_state.reset();
 }
 
-// Used when transitioning from a JIT handler to an interpreter handler.
-void jitEmitGenericHandlerSetup(JitEnv* env) {
-  word arg = env->currentOp().arg;
-  env->register_state.assign(&env->oparg, kOpargReg);
-  __ movq(env->oparg, Immediate(arg));
-  env->register_state.assign(&env->pc, kPCReg);
-  __ movq(env->pc, Immediate(env->virtualPC()));
-  env->register_state.check(env->handler_assignment);
-}
-
 template <Bytecode bc>
 void jitEmitGenericHandler(JitEnv* env) {
   jitEmitGenericHandlerSetup(env);
@@ -2956,6 +2974,18 @@ word emitHandlerTable(EmitEnv* env) {
 
     env->register_state.check(env->do_return_assignment);
     __ jmp(&env->do_return, Assembler::kFarJump);
+  }
+
+  // DEOPT pseudo-handler
+  static_assert(static_cast<int>(Interpreter::Continue::DEOPT) == 4,
+                "Unexpected DEOPT value");
+  {
+    env->current_handler = "DEOPT pseudo-handler";
+    env->register_state.resetTo(env->return_handler_assignment);
+    HandlerSizer sizer(env, kHandlerSize);
+    DCHECK(!env->in_jit, "DEOPT handler should not get hit");
+    __ breakpoint();
+    __ ud2();
   }
 
   word offset_0 = env->as.codeSize();

@@ -1506,6 +1506,10 @@ HANDLER_INLINE Continue Interpreter::doBinarySubtract(Thread* thread, word) {
 Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word cache) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
+  Function dependent(&scope, frame->function());
+  if (dependent.isCompiled()) {
+    return Continue::DEOPT;
+  }
   Object container(&scope, thread->stackPeek(1));
   Runtime* runtime = thread->runtime();
   Type type(&scope, runtime->typeOf(*container));
@@ -1534,7 +1538,6 @@ Continue Interpreter::binarySubscrUpdateCache(Thread* thread, word cache) {
     // TODO(T55274956): Make this into a separate function to be shared.
     MutableTuple caches(&scope, frame->caches());
     Str get_item_name(&scope, runtime->symbols()->at(ID(__getitem__)));
-    Function dependent(&scope, frame->function());
     ICState next_cache_state =
         icUpdateAttr(thread, caches, cache, container.layoutId(), getitem,
                      get_item_name, dependent);
@@ -1864,6 +1867,11 @@ HANDLER_INLINE Continue Interpreter::doStoreSubscrDict(Thread* thread, word) {
 NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
                                                           word cache) {
   HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  Function dependent(&scope, frame->function());
+  if (dependent.isCompiled()) {
+    return Continue::DEOPT;
+  }
   Object key(&scope, thread->stackPop());
   Object container(&scope, thread->stackPop());
   Object setitem(&scope, lookupMethod(thread, container, ID(__setitem__)));
@@ -1879,11 +1887,9 @@ NEVER_INLINE Continue Interpreter::storeSubscrUpdateCache(Thread* thread,
     return Continue::UNWIND;
   }
   if (setitem.isFunction()) {
-    Frame* frame = thread->currentFrame();
     MutableTuple caches(&scope, frame->caches());
     Str set_item_name(&scope,
                       thread->runtime()->symbols()->at(ID(__setitem__)));
-    Function dependent(&scope, frame->function());
     ICState next_cache_state =
         icUpdateAttr(thread, caches, cache, container.layoutId(), setitem,
                      set_item_name, dependent);
@@ -2772,6 +2778,10 @@ HANDLER_INLINE Continue Interpreter::doForIter(Thread* thread, word arg) {
 Continue Interpreter::forIterUpdateCache(Thread* thread, word arg, word cache) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
+  Function function(&scope, frame->function());
+  if (function.isCompiled()) {
+    return Continue::DEOPT;
+  }
   Object iter(&scope, thread->stackTop());
   Type type(&scope, thread->runtime()->typeOf(*iter));
   Object next(&scope, typeLookupInMroById(thread, *type, ID(__next__)));
@@ -2860,6 +2870,9 @@ ALWAYS_INLINE Continue Interpreter::forIter(Thread* thread,
 static Continue retryForIterAnamorphic(Thread* thread, word arg) {
   // Revert the opcode, and retry FOR_ITER_CACHED.
   Frame* frame = thread->currentFrame();
+  if (frame->function().isCompiled()) {
+    return Continue::DEOPT;
+  }
   rewriteCurrentBytecode(frame, FOR_ITER_ANAMORPHIC);
   return Interpreter::doForIterAnamorphic(thread, arg);
 }
@@ -3182,6 +3195,10 @@ Continue Interpreter::storeAttrUpdateCache(Thread* thread, word arg,
                                            word cache) {
   Frame* frame = thread->currentFrame();
   HandleScope scope(thread);
+  Function function(&scope, frame->function());
+  if (function.isCompiled()) {
+    return Continue::DEOPT;
+  }
   Object receiver(&scope, thread->stackPop());
   Str name(&scope, Tuple::cast(Code::cast(frame->code()).names()).at(arg));
   Object value(&scope, thread->stackPop());
@@ -3260,6 +3277,9 @@ HANDLER_INLINE Continue Interpreter::doStoreAttrAnamorphic(Thread* thread,
 static Continue retryStoreAttrCached(Thread* thread, word arg, word cache) {
   // Revert the opcode, clear the cache, and retry the attribute lookup.
   Frame* frame = thread->currentFrame();
+  if (frame->function().isCompiled()) {
+    return Continue::DEOPT;
+  }
   rewriteCurrentBytecode(frame, STORE_ATTR_ANAMORPHIC);
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   word index = cache * kIcPointersPerEntry;
@@ -3593,6 +3613,10 @@ Continue Interpreter::loadAttrUpdateCache(Thread* thread, word arg,
                                           word cache) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
+  Function function(&scope, frame->function());
+  if (function.isCompiled()) {
+    return Continue::DEOPT;
+  }
   Object receiver(&scope, thread->stackTop());
   Str name(&scope, Tuple::cast(Code::cast(frame->code()).names()).at(arg));
 
@@ -3753,6 +3777,9 @@ NEVER_INLINE Continue Interpreter::retryLoadAttrCached(Thread* thread, word arg,
                                                        word cache) {
   // Revert the opcode, clear the cache, and retry the attribute lookup.
   Frame* frame = thread->currentFrame();
+  if (frame->function().isCompiled()) {
+    return Continue::DEOPT;
+  }
   rewriteCurrentBytecode(frame, LOAD_ATTR_ANAMORPHIC);
   RawMutableTuple caches = MutableTuple::cast(frame->caches());
   word index = cache * kIcPointersPerEntry;
@@ -4462,6 +4489,9 @@ Continue Interpreter::callFunctionTypeNewUpdateCache(Thread* thread, word arg,
   word callable_idx = arg;
   Type receiver(&scope, thread->stackPeek(callable_idx));
   Function dependent(&scope, frame->function());
+  if (dependent.isCompiled()) {
+    return Continue::DEOPT;
+  }
   MutableTuple caches(&scope, frame->caches());
   Object ctor(&scope, receiver.ctor());
   if (arg == 1) {
@@ -5047,6 +5077,10 @@ Continue Interpreter::loadMethodUpdateCache(Thread* thread, word arg,
                                             word cache) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
+  Function dependent(&scope, frame->function());
+  if (dependent.isCompiled()) {
+    return Continue::DEOPT;
+  }
   Object receiver(&scope, thread->stackTop());
   Str name(&scope, Tuple::cast(Code::cast(frame->code()).names()).at(arg));
 
@@ -5063,7 +5097,6 @@ Continue Interpreter::loadMethodUpdateCache(Thread* thread, word arg,
 
   // Cache the attribute load.
   MutableTuple caches(&scope, frame->caches());
-  Function dependent(&scope, frame->function());
   ICState next_ic_state = icUpdateAttr(
       thread, caches, cache, receiver.layoutId(), location, name, dependent);
 
@@ -5138,17 +5171,20 @@ HANDLER_INLINE Continue Interpreter::doCallMethod(Thread* thread, word arg) {
 NEVER_INLINE
 Continue Interpreter::compareInUpdateCache(Thread* thread, word cache) {
   HandleScope scope(thread);
+  Frame* frame = thread->currentFrame();
+  Function dependent(&scope, frame->function());
+  if (dependent.isCompiled()) {
+    return Continue::DEOPT;
+  }
   Object container(&scope, thread->stackPop());
   Object value(&scope, thread->stackPop());
   Object method(&scope, NoneType::object());
   Object result(&scope,
                 sequenceContainsSetMethod(thread, value, container, &method));
   if (method.isFunction()) {
-    Frame* frame = thread->currentFrame();
     MutableTuple caches(&scope, frame->caches());
     Str dunder_contains_name(
         &scope, thread->runtime()->symbols()->at(ID(__contains__)));
-    Function dependent(&scope, frame->function());
     ICState next_cache_state =
         icUpdateAttr(thread, caches, cache, container.layoutId(), method,
                      dunder_contains_name, dependent);
@@ -5323,9 +5359,12 @@ Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg,
                                            word cache) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
+  Function dependent(&scope, frame->function());
+  if (dependent.isCompiled()) {
+    return Continue::DEOPT;
+  }
   Object right(&scope, thread->stackPop());
   Object left(&scope, thread->stackPop());
-  Function function(&scope, frame->function());
   CompareOp op = static_cast<CompareOp>(arg);
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
@@ -5338,7 +5377,7 @@ Continue Interpreter::compareOpUpdateCache(Thread* thread, word arg,
     LayoutId right_layout_id = right.layoutId();
     ICState next_cache_state = icUpdateBinOp(
         thread, caches, cache, left_layout_id, right_layout_id, method, flags);
-    icInsertCompareOpDependencies(thread, function, left_layout_id,
+    icInsertCompareOpDependencies(thread, dependent, left_layout_id,
                                   right_layout_id, op);
     rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
                                       ? COMPARE_OP_MONOMORPHIC
@@ -5581,9 +5620,12 @@ Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg,
                                            word cache) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
+  Function dependent(&scope, frame->function());
+  if (dependent.isCompiled()) {
+    return Continue::DEOPT;
+  }
   Object right(&scope, thread->stackPop());
   Object left(&scope, thread->stackPop());
-  Function function(&scope, frame->function());
   BinaryOp op = static_cast<BinaryOp>(arg);
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
@@ -5595,7 +5637,7 @@ Continue Interpreter::inplaceOpUpdateCache(Thread* thread, word arg,
     LayoutId right_layout_id = right.layoutId();
     ICState next_cache_state = icUpdateBinOp(
         thread, caches, cache, left_layout_id, right_layout_id, method, flags);
-    icInsertInplaceOpDependencies(thread, function, left_layout_id,
+    icInsertInplaceOpDependencies(thread, dependent, left_layout_id,
                                   right_layout_id, op);
     rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
                                       ? INPLACE_OP_MONOMORPHIC
@@ -5732,9 +5774,12 @@ Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg,
                                           word cache) {
   HandleScope scope(thread);
   Frame* frame = thread->currentFrame();
+  Function dependent(&scope, frame->function());
+  if (dependent.isCompiled()) {
+    return Continue::DEOPT;
+  }
   Object right(&scope, thread->stackPop());
   Object left(&scope, thread->stackPop());
-  Function function(&scope, frame->function());
   BinaryOp op = static_cast<BinaryOp>(arg);
   Object method(&scope, NoneType::object());
   BinaryOpFlags flags;
@@ -5746,7 +5791,7 @@ Continue Interpreter::binaryOpUpdateCache(Thread* thread, word arg,
     LayoutId right_layout_id = right.layoutId();
     ICState next_cache_state = icUpdateBinOp(
         thread, caches, cache, left_layout_id, right_layout_id, method, flags);
-    icInsertBinaryOpDependencies(thread, function, left_layout_id,
+    icInsertBinaryOpDependencies(thread, dependent, left_layout_id,
                                  right_layout_id, op);
     rewriteCurrentBytecode(frame, next_cache_state == ICState::kMonomorphic
                                       ? BINARY_OP_MONOMORPHIC

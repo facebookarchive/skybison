@@ -8441,7 +8441,7 @@ instance = E(3)
   Object result(&scope, Interpreter::call0(thread_, deopt_caller));
   EXPECT_TRUE(containsBytecode(function, LOAD_ATTR_POLYMORPHIC));
   EXPECT_TRUE(isIntEqualsWord(*result, 3));
-  EXPECT_EQ(function.entryAsm(), entry_jit);
+  EXPECT_NE(function.entryAsm(), entry_jit);
 }
 
 TEST_F(JitTest, StoreAttrInstanceWithInstanceStoresAttribute) {
@@ -8576,7 +8576,7 @@ instance = E(3)
   Object result(&scope, Interpreter::call0(thread_, deopt_caller));
   EXPECT_TRUE(containsBytecode(function, STORE_ATTR_POLYMORPHIC));
   EXPECT_TRUE(isIntEqualsWord(*result, 17));
-  EXPECT_EQ(function.entryAsm(), entry_jit);
+  EXPECT_NE(function.entryAsm(), entry_jit);
 }
 
 TEST_F(JitTest, StoreAttrInstanceOverflowWithInstanceStoresAttribute) {
