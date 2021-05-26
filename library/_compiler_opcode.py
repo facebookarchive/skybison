@@ -253,8 +253,8 @@ name_op("LOAD_ATTR_INSTANCE_PROPERTY", 237)
 name_op("STORE_ATTR_INSTANCE_UPDATE", 238)
 name_op("LOAD_ATTR_TYPE", 239)
 name_op("LOAD_ATTR_MODULE", 240)
-compare_op("COMPARE_IS_NOT", 241)
-compare_op("COMPARE_IS", 242)
+def_op("COMPARE_IS_NOT", 241)
+def_op("COMPARE_IS", 242)
 const_op("LOAD_IMMEDIATE", 243)
 local_op("STORE_FAST_REVERSE", 244)
 local_op("LOAD_FAST_REVERSE", 245)
@@ -274,6 +274,7 @@ name_op("LOAD_ATTR_ANAMORPHIC", 255)
 # compiler) and the stack effects (also needed by the compiler)
 opcode: Opcode = opcode38.copy()
 opcode.opmap = opmap.copy()
+opcode.opname = opname.copy()
 opcode.hasconst = set(hasconst)
 opcode.hasname = set(hasname)
 opcode.hasjrel = set(hasjrel)
@@ -281,6 +282,13 @@ opcode.hasjabs = set(hasjabs)
 opcode.haslocal = set(haslocal)
 opcode.hascompare = set(hascompare)
 opcode.hasfree = set(hasfree)
+opcode.FVC_MASK = 0x3
+opcode.FVC_NONE = 0x0
+opcode.FVC_STR = 0x1
+opcode.FVC_REPR = 0x2
+opcode.FVC_ASCII = 0x3
+opcode.FVS_MASK = 0x4
+opcode.FVS_HAVE_SPEC = 0x4
 
 
 def add_synonym(old, new):

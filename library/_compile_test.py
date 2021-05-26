@@ -1,438 +1,456 @@
 #!/usr/bin/env python3
-import dis
 import io
 import unittest
+from types import CodeType
 
-from test_support import cpython_only, pyro_only
+try:
+    from _compiler_opcode import opcode
+except ImportError:
+    import opcode
+from test_support import pyro_only
 
 
-def dis_str(code):
-    with io.StringIO() as out:
-        dis.dis(code, file=out)
-        return out.getvalue()
+def _dis_instruction(opcode, code: CodeType, op: int, oparg: int):  # noqa: C901
+    result = opcode.opname[op]
+    if op < opcode.HAVE_ARGUMENT and oparg == 0:
+        oparg_str = None
+    elif op in opcode.hasconst:
+        cnst = code.co_consts[oparg]
+        co_name = getattr(cnst, "co_name", None)
+        if co_name:
+            oparg_str = f"{oparg}:code object {co_name}"
+        else:
+            oparg_str = repr(code.co_consts[oparg])
+    elif op in opcode.hasname:
+        oparg_str = code.co_names[oparg]
+    elif op in opcode.haslocal:
+        oparg_str = code.co_varnames[oparg]
+    elif op in opcode.hascompare:
+        oparg_str = opcode.CMP_OP[oparg]
+    elif result == "FORMAT_VALUE":
+        fvc = oparg & opcode.FVC_MASK
+        if fvc == opcode.FVC_STR:
+            oparg_str = "str"
+        elif fvc == opcode.FVC_REPR:
+            oparg_str = "repr"
+        elif fvc == opcode.FVC_ASCII:
+            oparg_str = "ascii"
+        else:
+            assert fvc == opcode.FVC_NONE
+            oparg_str = None
+        if (oparg & opcode.FVS_HAVE_SPEC) != 0:
+            oparg_str = "" if oparg_str is None else (oparg_str + " ")
+            oparg_str += "have_spec"
+    else:
+        oparg_str = str(oparg)
+    if oparg_str is not None:
+        result = f"{result} {oparg_str}"
+    return result
+
+
+def _dis_code(opcode, lines, code: CodeType):
+    bytecode = code.co_code
+    bytecode_len = len(bytecode)
+    i = 0
+    while i < bytecode_len:
+        op = bytecode[i]
+        oparg = bytecode[i + 1]
+        i += opcode.CODEUNIT_SIZE
+        while op == opcode.EXTENDED_ARG:
+            op = bytecode[i]
+            oparg = oparg << 8 | bytecode[i + 1]
+            i += opcode.CODEUNIT_SIZE
+        lines.append(_dis_instruction(opcode, code, op, oparg))
+    lines.append("")
+    for idx, cnst in enumerate(code.co_consts):
+        co_code = getattr(cnst, "co_code", None)
+        if co_code:
+            lines.append(f"# {idx}:code object {cnst.co_name}")
+            _dis_code(opcode, lines, cnst)
+
+
+def simpledis(opcode, code: CodeType):
+    """Simple disassembler, showing only opcode names + args.
+    Compare to the `dis` module: This producers simpler output making it easier
+    to match in tests. The `opcode` module is parameterized."""
+    lines = []
+    _dis_code(opcode, lines, code)
+    return "\n".join(lines)
+
+
+def test_compile(source, filename="<test>", mode="eval", flags=0, optimize=True):
+    return compile(source, filename, mode, flags, None, optimize)
+
+
+def dis(code):
+    return simpledis(opcode, code)
 
 
 @pyro_only
-class PrintfTransformTests(unittest.TestCase):
-    def test_simple(self):
-        code = compile("'foo' % ()", "", "eval")
+class StrModOptimizer(unittest.TestCase):
+    def test_constant_folds(self):
+        source = "'%s %% foo %r bar %a %s' % (1, 'baz', 3, 4)"
         self.assertEqual(
-            dis_str(code),
+            dis(test_compile(source)),
             """\
-  1           0 LOAD_CONST               0 ('foo')
-              2 RETURN_VALUE
+LOAD_CONST "1 % foo 'baz' bar 3 4"
+RETURN_VALUE
 """,
         )
-        self.assertEqual(eval(code), str.__mod__("foo", ()))  # noqa: P204
 
-    def test_percent_a_constant_folded(self):
-        code = compile("'%a' % (42,)", "", "eval")
+    def test_empty_args(self):
+        source = "'foo' % ()"
         self.assertEqual(
-            dis_str(code),
+            dis(test_compile(source)),
             """\
-  1           0 LOAD_CONST               0 ('42')
-              2 RETURN_VALUE
+LOAD_CONST 'foo'
+RETURN_VALUE
 """,
         )
-        self.assertEqual(eval(code), str.__mod__("%a", (42,)))  # noqa: P204
 
-    def test_percent_a(self):
-        code = compile("'%a' % (x,)", "", "eval")
+    @pyro_only
+    def test_empty_args_executes(self):
+        source = "'foo' % ()"
+        self.assertEqual(eval(test_compile(source)), "foo")  # noqa: P204
+
+    def test_percent_a_uses_format_value(self):
+        source = "'%a' % (x,)"
         self.assertEqual(
-            dis_str(code),
+            dis(test_compile(source)),
             """\
-  1           0 LOAD_NAME                0 (x)
-              2 FORMAT_VALUE             3 (ascii)
-              4 RETURN_VALUE
+LOAD_NAME x
+FORMAT_VALUE ascii
+RETURN_VALUE
 """,
         )
+
+    @pyro_only
+    def test_percent_a_executes(self):
+        source = "'%a' % (x,)"
         self.assertEqual(
-            eval(code, locals={"x": "a\xce"}),  # noqa: P204
-            str.__mod__("%a", ("a\xce",)),
+            eval(test_compile(source), {"x": "\u1234"}), "'\\u1234'"  # noqa: P204
         )
 
     def test_percent_percent(self):
-        code = compile("'%%' % ()", "", "eval")
+        source = "'T%%est' % ()"
         self.assertEqual(
-            dis_str(code),
+            dis(test_compile(source)),
             """\
-  1           0 LOAD_CONST               0 ('%')
-              2 RETURN_VALUE
+LOAD_CONST 'T%est'
+RETURN_VALUE
 """,
         )
-        self.assertEqual(eval(code), str.__mod__("%%", ()))  # noqa: P204
 
-    def test_percent_r_constant_folded(self):
-        code = compile("'%r' % ('bar',)", "", "eval")
+    def test_percent_r_uses_format_value(self):
+        source = "'%r' % (x,)"
         self.assertEqual(
-            dis_str(code),
+            dis(test_compile(source)),
             """\
-  1           0 LOAD_CONST               0 ("'bar'")
-              2 RETURN_VALUE
+LOAD_NAME x
+FORMAT_VALUE repr
+RETURN_VALUE
 """,
         )
-        self.assertEqual(eval(code), str.__mod__("%r", ("bar",)))  # noqa: P204
 
-    def test_percent_r(self):
-        code = compile("'%r' % (x,)", "", "eval")
+    @pyro_only
+    def test_percent_r_executes(self):
+        source = "'%r' % (x,)"
         self.assertEqual(
-            dis_str(code),
+            eval(test_compile(source), {"x": "bar"}), "'bar'"  # noqa: P204
+        )
+
+    def test_percent_s_uses_format_value(self):
+        source = "'%s' % (x,)"
+        self.assertEqual(
+            dis(test_compile(source)),
             """\
-  1           0 LOAD_NAME                0 (x)
-              2 FORMAT_VALUE             2 (repr)
-              4 RETURN_VALUE
+LOAD_NAME x
+FORMAT_VALUE str
+RETURN_VALUE
 """,
         )
-        self.assertEqual(
-            eval(code, locals={"x": "bar"}), str.__mod__("%r", ("bar",))  # noqa: P204
-        )
 
-    def test_percent_s_constant_folded(self):
-        code = compile("'%s' % (42,)", "", "eval")
+    @pyro_only
+    def test_percent_s_executes(self):
+        source = "'%s' % (x,)"
+        self.assertEqual(eval(test_compile(source), {"x": "bar"}), "bar")  # noqa: P204
+
+    def test_percent_s_with_width_uses_format_value(self):
+        source = "'%13s' % (x,)"
         self.assertEqual(
-            dis_str(code),
+            dis(test_compile(source)),
             """\
-  1           0 LOAD_CONST               0 ('42')
-              2 RETURN_VALUE
+LOAD_NAME x
+LOAD_CONST '>13'
+FORMAT_VALUE str have_spec
+RETURN_VALUE
 """,
         )
-        self.assertEqual(eval(code), str.__mod__("%s", (42,)))  # noqa: P204
 
-    def test_percent_s(self):
-        code = compile("'%s' % (x,)", "", "eval")
+    @pyro_only
+    def test_percent_s_with_width_executes(self):
+        source = "'%7s' % (x,)"
         self.assertEqual(
-            dis_str(code),
-            """\
-  1           0 LOAD_NAME                0 (x)
-              2 FORMAT_VALUE             1 (str)
-              4 RETURN_VALUE
-""",
-        )
-        self.assertEqual(
-            eval(code, locals={"x": 42}), str.__mod__("%s", (42,))  # noqa: P204
+            eval(test_compile(source), {"x": 4231}), "   4231"  # noqa: P204
         )
 
-    def test_percent_d_i_u_constant_folded(self):
+    def test_percent_d_i_u_calls_convert_and_formats_value(self):
         expected = """\
-  1           0 LOAD_CONST               0 ('-13')
-              2 RETURN_VALUE
+LOAD_CONST ''
+LOAD_METHOD _mod_convert_number_int
+LOAD_NAME x
+CALL_METHOD 1
+FORMAT_VALUE
+RETURN_VALUE
 """
-        code0 = compile("'%d' % (-13,)", "", "eval")
-        code1 = compile("'%i' % (-13,)", "", "eval")
-        code2 = compile("'%u' % (-13,)", "", "eval")
-        self.assertEqual(dis_str(code0), expected)
-        self.assertEqual(dis_str(code1), expected)
-        self.assertEqual(dis_str(code2), expected)
-        self.assertEqual(eval(code0), str.__mod__("%d", (-13,)))  # noqa: P204
-        self.assertEqual(eval(code1), str.__mod__("%i", (-13,)))  # noqa: P204
-        self.assertEqual(eval(code2), str.__mod__("%u", (-13,)))  # noqa: P204
+        source0 = "'%d' % (x,)"
+        source1 = "'%i' % (x,)"
+        source2 = "'%u' % (x,)"
+        self.assertEqual(dis(test_compile(source0)), expected)
+        self.assertEqual(dis(test_compile(source1)), expected)
+        self.assertEqual(dis(test_compile(source2)), expected)
 
-    def test_percent_d_i_u(self):
-        expected = """\
-  1           0 LOAD_CONST               0 ('')
-              2 LOAD_METHOD              0 (_mod_convert_number_int)
-              4 LOAD_NAME                1 (x)
-              6 CALL_METHOD              1
-              8 FORMAT_VALUE             0
-             10 RETURN_VALUE
-"""
-        code0 = compile("'%d' % (x,)", "", "eval")
-        code1 = compile("'%i' % (x,)", "", "eval")
-        code2 = compile("'%u' % (x,)", "", "eval")
-        self.assertEqual(dis_str(code0), expected)
-        self.assertEqual(dis_str(code1), expected)
-        self.assertEqual(dis_str(code2), expected)
-        self.assertEqual(
-            eval(code0, locals={"x": -13}), str.__mod__("%d", (-13,))  # noqa: P204
-        )
-        self.assertEqual(
-            eval(code1, locals={"x": -13}), str.__mod__("%i", (-13,))  # noqa: P204
-        )
-        self.assertEqual(
-            eval(code2, locals={"x": -13}), str.__mod__("%u", (-13,))  # noqa: P204
-        )
-
-    def test_percent_o(self):
-        expected = """\
-  1           0 LOAD_CONST               0 ('')
-              2 LOAD_METHOD              0 (_mod_convert_number_index)
-              4 LOAD_NAME                1 (x)
-              6 CALL_METHOD              1
-              8 LOAD_CONST               1 ('5o')
-             10 FORMAT_VALUE             4 (with format)
-             12 RETURN_VALUE
-"""
-        code0 = compile("'%5o' % (x,)", "", "eval")
-        self.assertEqual(dis_str(code0), expected)
-
-    def test_percent_o_eval(self):
-        code0 = compile("'%5o' % (x,)", "", "eval")
-        self.assertEqual(
-            eval(code0, locals={"x": -17}), str.__mod__("%5o", (-17,))  # noqa: P204
-        )
-
-    def test_percent_x(self):
-        expected = """\
-  1           0 LOAD_CONST               0 ('')
-              2 LOAD_METHOD              0 (_mod_convert_number_index)
-              4 LOAD_NAME                1 (x)
-              6 CALL_METHOD              1
-              8 LOAD_CONST               1 ('03x')
-             10 FORMAT_VALUE             4 (with format)
-             12 RETURN_VALUE
-"""
-        code0 = compile("'%03x' % (x,)", "", "eval")
-        self.assertEqual(dis_str(code0), expected)
-
-    def test_percent_x_eval(self):
-        code0 = compile("'%03x' % (x,)", "", "eval")
-        self.assertEqual(
-            eval(code0, locals={"x": -11}), str.__mod__("%03x", (-11,))  # noqa: P204
-        )
-
-    def test_percent_X(self):
-        expected = """\
-  1           0 LOAD_CONST               0 ('')
-              2 LOAD_METHOD              0 (_mod_convert_number_index)
-              4 LOAD_NAME                1 (x)
-              6 CALL_METHOD              1
-              8 LOAD_CONST               1 ('03X')
-             10 FORMAT_VALUE             4 (with format)
-             12 RETURN_VALUE
-"""
-        code0 = compile("'%03X' % (x,)", "", "eval")
-        self.assertEqual(dis_str(code0), expected)
-
-    def test_percent_X_eval(self):
-        code0 = compile("'%03X' % (x,)", "", "eval")
-        self.assertEqual(
-            eval(code0, locals={"x": -11}), str.__mod__("%03X", (-11,))  # noqa: P204
-        )
-
-    def test_percent_d_calls_dunder_int(self):
+    @pyro_only
+    def test_percent_d_i_u_executes(self):
         class C:
-            def __int__(self):
-                return 7
-
-        code = compile("'%d' % (x,)", "", "eval")
-        self.assertNotIn("BINARY_MOD", dis_str(code))
-        self.assertEqual(eval(code, None, {"x": C()}), "7")  # noqa: P204
-
-    def test_percent_x_calls_dunder_index(self):
-        class C:
-            def __int__(self):
-                return None
-
             def __index__(self):
-                return 9
+                raise Exception("should not be called")
 
-        code = compile("'%x' % (x,)", "", "eval")
-        self.assertNotIn("BINARY_MOD", dis_str(code))
-        self.assertEqual(eval(code, None, {"x": C()}), "9")  # noqa: P204
+            def __int__(self):
+                return 13
 
+        source0 = "'%d' % (x,)"
+        source1 = "'%i' % (x,)"
+        source2 = "'%u' % (x,)"
+        self.assertEqual(eval(test_compile(source0), {"x": -42}), "-42")  # noqa: P204
+        self.assertEqual(
+            eval(test_compile(source1), {"x": 0x1234}), "4660"  # noqa: P204
+        )
+        self.assertEqual(eval(test_compile(source2), {"x": C()}), "13")  # noqa: P204
+
+    @pyro_only
     def test_percent_d_raises_type_error(self):
         class C:
             pass
 
-        code = compile("'%d' % (x,)", "", "eval")
-        self.assertNotIn("BINARY_MOD", dis_str(code))
+        source = "'%d' % (x,)"
+        code = test_compile(source)
         with self.assertRaisesRegex(TypeError, "format requires a number, not C"):
             eval(code, None, {"x": C()})  # noqa: P204
 
-    def test_percent_s_with_width_constant_folded(self):
-        code = compile("'%13s' % (42,)", "", "eval")
+    def test_percent_i_with_width_and_zero_uses_format_value_with_spec(self):
+        source = "'%05d' % (x,)"
         self.assertEqual(
-            dis_str(code),
+            dis(test_compile(source)),
             """\
-  1           0 LOAD_CONST               0 ('           42')
-              2 RETURN_VALUE
+LOAD_CONST ''
+LOAD_METHOD _mod_convert_number_int
+LOAD_NAME x
+CALL_METHOD 1
+LOAD_CONST '05'
+FORMAT_VALUE have_spec
+RETURN_VALUE
 """,
         )
-        self.assertEqual(eval(code), str.__mod__("%13s", (42,)))  # noqa: P204
 
-    def test_percent_s_with_width(self):
-        code = compile("'%13s' % (x,)", "", "eval")
+    def test_percent_o_calls_convert_and_formats_value(self):
+        source = "'%5o' % (x,)"
         self.assertEqual(
-            dis_str(code),
+            dis(test_compile(source)),
             """\
-  1           0 LOAD_NAME                0 (x)
-              2 LOAD_CONST               0 ('>13')
-              4 FORMAT_VALUE             5 (str, with format)
-              6 RETURN_VALUE
+LOAD_CONST ''
+LOAD_METHOD _mod_convert_number_index
+LOAD_NAME x
+CALL_METHOD 1
+LOAD_CONST '5o'
+FORMAT_VALUE have_spec
+RETURN_VALUE
 """,
         )
-        self.assertEqual(
-            eval(code, locals={"x": 42}), str.__mod__("%13s", (42,))  # noqa: P204
-        )
 
-    def test_percent_d_with_width_and_flags_constant_folded(self):
-        code = compile("'%05d' % (-5,)", "", "eval")
+    @pyro_only
+    def test_percent_o_executes(self):
+        class C:
+            def __index__(self):
+                return -93
+
+            def __int__(self):
+                raise Exception("should not be called")
+
+        source = "'%5o' % (x,)"
+        self.assertEqual(eval(test_compile(source), {"x": C()}), " -135")  # noqa: P204
+
+    def test_percent_x_calls_convert_and_formats_value(self):
+        source = "'%03x' % (x,)"
         self.assertEqual(
-            dis_str(code),
+            dis(test_compile(source)),
             """\
-  1           0 LOAD_CONST               0 ('-0005')
-              2 RETURN_VALUE
+LOAD_CONST ''
+LOAD_METHOD _mod_convert_number_index
+LOAD_NAME x
+CALL_METHOD 1
+LOAD_CONST '03x'
+FORMAT_VALUE have_spec
+RETURN_VALUE
 """,
         )
-        self.assertEqual(eval(code), str.__mod__("%05d", (-5,)))  # noqa: P204
 
-    def test_percent_d_with_width_and_flags(self):
-        code = compile("'%05d' % (x,)", "", "eval")
+    @pyro_only
+    def test_percent_x_executes(self):
+        class C:
+            def __index__(self):
+                return -11
+
+            def __int__(self):
+                raise Exception("should not be called")
+
+        source = "'%04x' % (x,)"
+        self.assertEqual(eval(test_compile(source), {"x": C()}), "-00b")  # noqa: P204
+
+    def test_percent_X_calls_convert_and_formats_value(self):
+        source = "'%4X' % (x,)"
         self.assertEqual(
-            dis_str(code),
+            dis(test_compile(source)),
             """\
-  1           0 LOAD_CONST               0 ('')
-              2 LOAD_METHOD              0 (_mod_convert_number_int)
-              4 LOAD_NAME                1 (x)
-              6 CALL_METHOD              1
-              8 LOAD_CONST               1 ('05')
-             10 FORMAT_VALUE             4 (with format)
-             12 RETURN_VALUE
+LOAD_CONST ''
+LOAD_METHOD _mod_convert_number_index
+LOAD_NAME x
+CALL_METHOD 1
+LOAD_CONST '4X'
+FORMAT_VALUE have_spec
+RETURN_VALUE
 """,
         )
-        self.assertEqual(
-            eval(code, locals={"x": -5}), str.__mod__("%05d", (-5,))  # noqa: P204
-        )
 
-    def test_mixed_constant_folded(self):
-        code = compile("'%s %% foo %r bar %a %s' % (1,2,3,4)", "", "eval")
+    @pyro_only
+    def test_percent_X_executes(self):
+        class C:
+            def __index__(self):
+                return 51966
+
+            def __int__(self):
+                raise Exception("should not be called")
+
+        source = "'%04X' % (x,)"
+        self.assertEqual(eval(test_compile(source), {"x": C()}), "CAFE")  # noqa: P204
+
+    def test_mixed_format_uses_format_value_and_build_string(self):
+        source = "'%s %% foo %r bar %a %s' % (a, b, c, d)"
         self.assertEqual(
-            dis_str(code),
+            dis(test_compile(source)),
             """\
-  1           0 LOAD_CONST               0 ('1 % foo 2 bar 3 4')
-              2 RETURN_VALUE
+LOAD_NAME a
+FORMAT_VALUE str
+LOAD_CONST ' '
+LOAD_CONST '% foo '
+LOAD_NAME b
+FORMAT_VALUE repr
+LOAD_CONST ' bar '
+LOAD_NAME c
+FORMAT_VALUE ascii
+LOAD_CONST ' '
+LOAD_NAME d
+FORMAT_VALUE str
+BUILD_STRING 8
+RETURN_VALUE
 """,
         )
+
+    @pyro_only
+    def test_mixed_format_executes(self):
+        source = "'%s %% foo %r bar %a %s' % (a, b, c, d)"
+        locals = {"a": 1, "b": 2, "c": 3, "d": 4}
         self.assertEqual(
-            eval(code),  # noqa: P204
-            str.__mod__("%s %% foo %r bar %a %s", (1, 2, 3, 4)),
+            eval(test_compile(source), locals), "1 % foo 2 bar 3 4"  # noqa: P204
         )
 
-    def test_mixed(self):
-        code = compile("'%s %% foo %r bar %a %s' % (a, b, c, d)", "", "eval")
+    def test_no_tuple_arg_calls_check_single_arg(self):
+        source = "'%s' % x"
         self.assertEqual(
-            dis_str(code),
+            dis(test_compile(source)),
             """\
-  1           0 LOAD_NAME                0 (a)
-              2 FORMAT_VALUE             1 (str)
-              4 LOAD_CONST               0 (' ')
-              6 LOAD_CONST               1 ('% foo ')
-              8 LOAD_NAME                1 (b)
-             10 FORMAT_VALUE             2 (repr)
-             12 LOAD_CONST               2 (' bar ')
-             14 LOAD_NAME                2 (c)
-             16 FORMAT_VALUE             3 (ascii)
-             18 LOAD_CONST               0 (' ')
-             20 LOAD_NAME                3 (d)
-             22 FORMAT_VALUE             1 (str)
-             24 BUILD_STRING             8
-             26 RETURN_VALUE
+LOAD_CONST ''
+LOAD_METHOD _mod_check_single_arg
+LOAD_NAME x
+CALL_METHOD 1
+LOAD_CONST 0
+BINARY_SUBSCR
+FORMAT_VALUE str
+RETURN_VALUE
 """,
         )
-        self.assertEqual(
-            eval(code, locals={"a": 1, "b": 2, "c": 3, "d": 4}),  # noqa: P204
-            str.__mod__("%s %% foo %r bar %a %s", (1, 2, 3, 4)),
-        )
 
-    # TODO(T78706522): Port printf transforms to compiler
-    # Getting this working might require some modifications to the Dino
-    # compiler.
-    @cpython_only
-    def test_with_invalid_ast_raises_type_error(self):
-        import ast
+    @pyro_only
+    def test_no_tuple_arg_executes(self):
+        source = "'%s' % x"
+        self.assertEqual(eval(test_compile(source), {"x": 5.5}), "5.5")  # noqa: P204
 
-        with self.assertRaises(TypeError):
-            compile(ast.Module(), "test", "exec")
-
-    def test_without_tuple_constant_folded(self):
-        code = compile("'%s' % 5.5", "", "eval")
-        self.assertEqual(
-            dis_str(code),
-            """\
-  1           0 LOAD_CONST               0 ('5.5')
-              2 RETURN_VALUE
-""",
-        )
-        self.assertEqual(eval(code), str.__mod__("%s", 5.5))  # noqa: P204
-
-    def test_without_tuple(self):
-        code = compile("'%s' % x", "", "eval")
-        self.assertEqual(
-            dis_str(code),
-            """\
-  1           0 LOAD_CONST               0 ('')
-              2 LOAD_METHOD              0 (_mod_check_single_arg)
-              4 LOAD_NAME                1 (x)
-              6 CALL_METHOD              1
-              8 LOAD_CONST               1 (0)
-             10 BINARY_SUBSCR
-             12 FORMAT_VALUE             1 (str)
-             14 RETURN_VALUE
-""",
-        )
-        self.assertEqual(
-            eval(code, locals={"x": 5.5}), str.__mod__("%s", 5.5)  # noqa: P204
-        )
-
-    def test_without_tuple_formats_value(self):
-        code = compile("'%s' % x", "", "eval")
-        self.assertNotIn("BINARY_MODULO", dis_str(code))
-        self.assertEqual(
-            eval(code, None, {"x": -8}), str.__mod__("%s", -8)  # noqa: P204
-        )
-        self.assertEqual(
-            eval(code, None, {"x": (True,)}), str.__mod__("%s", (True,))  # noqa: P204
-        )
-
-    def test_without_tuple_raises_type_error(self):
-        code = compile("'%s' % x", "", "eval")
-        self.assertNotIn("BINARY_MODULO", dis_str(code))
+    @pyro_only
+    def test_no_tuple_raises_type_error_not_enough_arguments(self):
+        source = "'%s' % x"
         with self.assertRaisesRegex(
             TypeError, "not enough arguments for format string"
         ):
-            eval(code, None, {"x": ()})  # noqa: P204
+            eval(test_compile(source), {"x": ()})  # noqa: P204
+
+    @pyro_only
+    def test_no_tuple_raises_type_error_not_all_converted(self):
+        source = "'%s' % x"
         with self.assertRaisesRegex(
             TypeError, "not all arguments converted during string formatting"
         ):
-            eval(code, None, {"x": (1, 2)})  # noqa: P204
+            eval(test_compile(source), {"x": (1, 2)})  # noqa: P204
 
-    def test_no_trailing_percent(self):
-        code = compile("'foo%' % ()", "", "eval")
-        self.assertIn("BINARY_MODULO", dis_str(code))
+    def test_trailing_percent_it_not_optimized(self):
+        source = "'foo%' % (x,)"
+        self.assertIn("BINARY_MODULO", dis(test_compile(source)))
 
-    def test_no_no_tuple(self):
-        code = compile("'%s%s' % x", "", "eval")
-        self.assertIn("BINARY_MODULO", dis_str(code))
+    def test_multiple_specs_without_tuple_is_not_optimized(self):
+        source = "'%s%s' % x"
+        self.assertIn("BINARY_MODULO", dis(test_compile(source)))
 
-    def test_no_mapping_key(self):
-        code = compile("'%(foo)' % x", "", "eval")
-        self.assertIn("BINARY_MODULO", dis_str(code))
+    def test_spec_with_mapping_key_is_not_optimized(self):
+        source = "'%(%s)' % x"
+        self.assertIn("BINARY_MODULO", dis(test_compile(source)))
 
-        code = compile("'%(%s)' % x", "", "eval")
-        self.assertIn("BINARY_MODULO", dis_str(code))
+    def test_with_too_small_arg_tuple_is_not_optimized(self):
+        source = "'%s%s%s' % (x,y)"
+        self.assertIn("BINARY_MODULO", dis(test_compile(source)))
 
-    def test_no_tuple_too_small(self):
-        code = compile("'%s%s%s' % (1,2)", "", "eval")
-        self.assertIn("BINARY_MODULO", dis_str(code))
+    def test_with_too_large_arg_tuple_is_not_optimized(self):
+        source = "'%s%s%s' % (w,x,y,z)"
+        self.assertIn("BINARY_MODULO", dis(test_compile(source)))
 
-    def test_no_tuple_too_big(self):
-        code = compile("'%s%s%s' % (1,2,3,4)", "", "eval")
-        self.assertIn("BINARY_MODULO", dis_str(code))
-
-    def test_no_unknown_specifier(self):
-        code = compile("'%Z' % (None,)", "", "eval")
-        self.assertIn("BINARY_MODULO", dis_str(code))
+    def test_with_unknown_specifier_is_not_optimized(self):
+        source = "'%Z' % (x,)"
+        self.assertIn("BINARY_MODULO", dis(test_compile(source)))
 
 
 @pyro_only
 class CustomOpcodeTests(unittest.TestCase):
     def test_is_generates_COMPARE_IS(self):
-        code = compile("a is b", "", "eval")
-        self.assertIn("COMPARE_IS", dis_str(code))
+        source = "a is b"
+        self.assertEqual(
+            dis(test_compile(source)),
+            """\
+LOAD_NAME a
+LOAD_NAME b
+COMPARE_IS 0
+RETURN_VALUE
+""",
+        )
 
     def test_is_not_generates_COMPARE_IS_NOT(self):
-        code = compile("a is not b", "", "eval")
-        self.assertIn("COMPARE_IS_NOT", dis_str(code))
+        source = "a is not b"
+        self.assertEqual(
+            dis(test_compile(source)),
+            """\
+LOAD_NAME a
+LOAD_NAME b
+COMPARE_IS_NOT 0
+RETURN_VALUE
+""",
+        )
 
 
 if __name__ == "__main__":
