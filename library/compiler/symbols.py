@@ -1,3 +1,4 @@
+# Portions copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 # pyre-unsafe
 """Module symbol-table generator"""
 from __future__ import print_function
@@ -260,10 +261,6 @@ class GenExprScope(FunctionScope):
         self.__super_init(name, module, klass, lineno=lineno)
         self.add_param(".0")
 
-    def get_names(self):
-        keys = Scope.get_names(self)
-        return keys
-
 
 class LambdaScope(FunctionScope):
     __super_init = Scope.__init__
@@ -473,7 +470,7 @@ class SymbolVisitor(ASTVisitor):
         scope.parent = parent
         if parent.nested or isinstance(parent, FunctionScope):
             scope.nested = 1
-        doc = ast.get_docstring(node)
+        doc = ast.get_docstring(node, False)
         if doc is not None:
             scope.add_def("__doc__")
         scope.add_def("__module__")

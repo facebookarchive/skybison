@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 from __future__ import annotations
 
 import ast
@@ -162,7 +163,7 @@ from . import symbols, opcode38static
 from .consts import SC_LOCAL, SC_GLOBAL_EXPLICIT, SC_GLOBAL_IMPLICIT
 from .opcodebase import Opcode
 from .optimizer import AstOptimizer
-from .pyassem import Block, PyFlowGraph, PyFlowGraphCinder
+from .pyassem import Block, PyFlowGraph, PyFlowGraphCinder, IndexedSet
 from .pycodegen import (
     AugAttribute,
     AugName,
@@ -533,7 +534,6 @@ class ModuleTable:
         self.types: Dict[Union[AST, Delegator], Value] = {}
         self.node_data: Dict[Tuple[Union[AST, Delegator], object], object] = {}
         self.nonchecked_dicts = False
-        self.tinyframe = False
         self.noframe = False
         self.decls: List[Tuple[AST, Optional[Value]]] = []
         # TODO: final constants should be typed to literals, and
@@ -630,6 +630,17 @@ class ModuleTable:
                     "Final annotation is only valid in initial declaration "
                     "of attribute or module-level constant",
                 )
+
+            # TODO until we support runtime checking of unions, we must for
+            # safety resolve union annotations to dynamic (except for
+            # optionals, which we can check at runtime)
+            if (
+                isinstance(klass, UnionType)
+                and klass is not UNION_TYPE
+                and klass is not OPTIONAL_TYPE
+                and klass.opt_type is None
+            ):
+                return None
 
             # Even if we know that e.g. `builtins.str` is the exact `str` type and
             # not a subclass, and it's useful to track that knowledge, when we
@@ -728,7 +739,7 @@ class Value:
     def bind_attr(
         self, node: ast.Attribute, visitor: TypeBinder, type_ctx: Optional[Class]
     ) -> None:
-        visitor.visit(node.value)
+
         raise visitor.syntax_error(f"cannot load attribute from {self.name}", node)
 
     def bind_call(
@@ -950,7 +961,6 @@ class Object(Value, Generic[TClass]):
                 member.bind_descr_get(node, self, self.klass, visitor, type_ctx)
                 return
 
-        visitor.visit(node.value)
         if node.attr == "__class__":
             visitor.set_type(node, self.klass)
         else:
@@ -2193,12 +2203,15 @@ class Callable(Object[TClass]):
         for emitter in arg_mapping.emitters:
             emitter.emit(node, code_gen)
         self_expr = arg_mapping.self_arg
-        if self_expr is not None and not code_gen.get_type(self_expr).klass.is_exact:
-            code_gen.emit_invoke_method(self.type_descr, len(self.args) - 1)
-        else:
+        if (
+            self_expr is None
+            or code_gen.get_type(self_expr).klass.is_exact
+            or code_gen.get_type(self_expr).klass.is_final
+        ):
             code_gen.emit("EXTENDED_ARG", 0)
             code_gen.emit("INVOKE_FUNCTION", (self.type_descr, len(self.args)))
-        return
+        else:
+            code_gen.emit_invoke_method(self.type_descr, len(self.args) - 1)
 
 
 class ContainerTypeRef(TypeRef):
@@ -2242,7 +2255,7 @@ class InlinedCall:
         self,
         expr: ast.expr,
         replacements: Dict[ast.expr, ast.expr],
-        spills: Dict[str, ast.expr],
+        spills: Dict[str, Tuple[ast.expr, ast.Name]],
     ) -> None:
         self.expr = expr
         self.replacements = replacements
@@ -2301,7 +2314,6 @@ class Function(Callable[Class]):
         self, node: ast.Call, visitor: TypeBinder, type_ctx: Optional[Class]
     ) -> Optional[NarrowingEffect]:
         args = visitor.get_node_data(node, ArgMapping)
-
         arg_replacements = {}
         spills = {}
 
@@ -2332,7 +2344,11 @@ class Function(Callable[Class]):
             tmp_name = f"{_TMP_VAR_PREFIX}{visitor.inline_depth}{name}"
             cur_scope = visitor.symbols.scopes[visitor.scope]
             cur_scope.add_def(tmp_name)
-            spills[tmp_name] = arg.argument
+
+            store = ast.Name(tmp_name, ast.Store())
+            visitor.set_type(store, visitor.get_type(arg.argument))
+            spills[tmp_name] = arg.argument, store
+
             replacement = ast.Name(tmp_name, ast.Load())
             visitor.assign_value(replacement, visitor.get_type(arg.argument))
 
@@ -2360,9 +2376,10 @@ class Function(Callable[Class]):
         if inlined_call is None:
             return self.emit_call_self(node, code_gen)
 
-        for name, arg in inlined_call.spills.items():
+        for name, (arg, store) in inlined_call.spills.items():
             code_gen.visit(arg)
-            code_gen.emit("STORE_FAST", name)
+
+            code_gen.get_type(store).emit_name(store, code_gen)
 
         code_gen.visit(inlined_call.expr)
 
@@ -4064,7 +4081,7 @@ class ArrayInstance(Object["ArrayClass"]):
         if index_is_python_int:
             # If the index is not a primitive, unbox its value to an int64, our implementation of
             # SEQUENCE_{GET/SET} expects the index to be a primitive int.
-            code_gen.emit("INT_UNBOX", INT64_TYPE.instance.as_oparg())
+            code_gen.emit("PRIMITIVE_UNBOX", INT64_TYPE.instance.as_oparg())
 
         if isinstance(node.ctx, ast.Store) and not aug_flag:
             code_gen.emit("SEQUENCE_SET", self._seq_type())
@@ -4458,9 +4475,10 @@ class CIntInstance(CInstance["CIntType"]):
         visitor: TypeBinder,
         type_ctx: Optional[Class],
     ) -> bool:
-        if visitor.get_type(right) != self:
+        rtype = visitor.get_type(right)
+        if rtype != self and not isinstance(rtype, CIntInstance):
             try:
-                visitor.visit(right, type_ctx or INT64_VALUE)
+                visitor.visit(right, self)
             except TypedSyntaxError:
                 # Report a better error message than the generic can't be used
                 raise visitor.syntax_error(
@@ -4489,7 +4507,7 @@ class CIntInstance(CInstance["CIntType"]):
     ) -> bool:
         if not isinstance(visitor.get_type(left), CIntInstance):
             try:
-                visitor.visit(left, type_ctx or INT64_VALUE)
+                visitor.visit(left, self)
             except TypedSyntaxError:
                 # Report a better error message than the generic can't be used
                 raise visitor.syntax_error(
@@ -4631,7 +4649,7 @@ class CIntInstance(CInstance["CIntType"]):
             code_gen.emit("PRIMITIVE_LOAD_CONST", (typ.literal_value, self.as_oparg()))
             return
         code_gen.visit(node)
-        code_gen.emit("INT_UNBOX", self.as_oparg())
+        code_gen.emit("PRIMITIVE_UNBOX", self.as_oparg())
 
     def bind_unaryop(
         self, node: ast.UnaryOp, visitor: TypeBinder, type_ctx: Optional[Class]
@@ -4771,7 +4789,7 @@ class CDoubleInstance(CInstance["CDoubleType"]):
     def emit_constant(
         self, node: ast.Constant, code_gen: Static38CodeGenerator
     ) -> None:
-        code_gen.emit("PRIMITIVE_LOAD_CONST", (node.value, self.as_oparg()))
+        code_gen.emit("PRIMITIVE_LOAD_CONST", (float(node.value), self.as_oparg()))
 
     def emit_box(self, node: expr, code_gen: Static38CodeGenerator) -> None:
         code_gen.visit(node)
@@ -5519,8 +5537,6 @@ class TypeBinder(GenericVisitor):
                     for name in stmt.names:
                         if name.name == "nonchecked_dicts":
                             self.cur_mod.nonchecked_dicts = True
-                        elif name.name == "tinyframe":
-                            self.cur_mod.tinyframe = True
                         elif name.name == "noframe":
                             self.cur_mod.noframe = True
 
@@ -6607,8 +6623,6 @@ class Static38CodeGenerator(CinderCodeGenerator):
         graph.setFlag(self.consts.CO_STATICALLY_COMPILED)
         if self.cur_mod.noframe:
             graph.setFlag(self.consts.CO_NO_FRAME)
-        elif self.cur_mod.tinyframe:
-            graph.setFlag(self.consts.CO_TINY_FRAME)
         gen = StaticCodeGenerator(
             self,
             tree,
@@ -6659,6 +6673,9 @@ class Static38CodeGenerator(CinderCodeGenerator):
                     )
                 )
                 arg_checks.append(t.klass.type_descr)
+
+        # we should never emit arg checks for object
+        assert not any(td == ("builtins", "object") for td in arg_checks[1::2])
 
         gen.emit("CHECK_ARGS", tuple(arg_checks))
 
@@ -6743,6 +6760,10 @@ class Static38CodeGenerator(CinderCodeGenerator):
             yield f"{_TMP_VAR_PREFIX}.{self._tmpvar_loopidx_count}"
         finally:
             self._tmpvar_loopidx_count -= 1
+
+    def store_type_name_and_flags(self, node: ClassDef) -> None:
+        self.emit("INVOKE_FUNCTION", (("_static", "set_type_static"), 1))
+        self.storeName(node.name)
 
     def walkClassBody(self, node: ClassDef, gen: CodeGenerator) -> None:
         super().walkClassBody(node, gen)
@@ -7132,7 +7153,7 @@ class Static38CodeGenerator(CinderCodeGenerator):
         self.get_type(test).emit_jumpif(test, next, is_if_true, self)
 
     def _calculate_idx(
-        self, arg_name: str, non_cellvar_pos: int, cellvars: List[str]
+        self, arg_name: str, non_cellvar_pos: int, cellvars: IndexedSet
     ) -> int:
         try:
             offset = cellvars.index(arg_name)

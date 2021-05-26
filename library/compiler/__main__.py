@@ -1,12 +1,20 @@
+# Portions copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 # pyre-unsafe
 import argparse
 import importlib.util
 import marshal
 import os
 import re
+import sys
 from dis import dis
 
 from . import pycodegen, static
+
+try:
+    # pyre-ignore[21]: Could not find a module corresponding to import `cinder`.
+    from cinder import StrictModule
+except ImportError:
+    StrictModule = None
 
 # https://www.python.org/dev/peps/pep-0263/
 coding_re = re.compile(rb"^[ \t\f]*#.*?coding[:=][ \t]*([-_.a-zA-Z0-9]+)")
@@ -38,6 +46,9 @@ argparser.add_argument(
 )
 argparser.add_argument("--dis", action="store_true", help="disassemble compiled code")
 argparser.add_argument("--output", help="path to the output .pyc file")
+argparser.add_argument(
+    "--modname", help="module name to compile as (default __main__)", default="__main__"
+)
 argparser.add_argument("input", help="source .py file")
 group = argparser.add_mutually_exclusive_group()
 group.add_argument(
@@ -53,6 +64,7 @@ group.add_argument(
     default=-1,
     help="set optimization level to compile with",
 )
+argparser.add_argument("--strict", action="store_true", help="run in strict module")
 args = argparser.parse_args()
 
 with open_with_coding(args.input) as f:
@@ -72,7 +84,7 @@ else:
         "exec",
         optimize=args.opt,
         compiler=compiler,
-        modname="__main__",
+        modname=args.modname,
     )
 
 if args.dis:
@@ -89,4 +101,11 @@ if args.c:
         f.write(hdr)
         marshal.dump(codeobj, f)
 else:
-    exec(codeobj)
+    if args.strict and StrictModule is not None:
+        d = {}
+        mod = StrictModule(d, False)
+        d["__name__"] = "__main__"
+        sys.modules["__main__"] = mod
+        exec(codeobj, d, d)
+    else:
+        exec(codeobj)

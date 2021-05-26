@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 """Tests for __static__ module.
 
 These are tests for the plain-Python fallback implementations in __static__;
@@ -111,7 +112,7 @@ class StaticTests(unittest.TestCase):
 
     def test_vector_size(self):
         x = Vector[int8]()
-        with self.assertRaisesRegex(OverflowError, "overflow"):
+        with self.assertRaisesRegex(OverflowError, "overflow|.*greater than maximum"):
             x.append(300)
 
     def test_vector_no_bare_instantiation(self):
