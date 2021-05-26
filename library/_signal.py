@@ -50,3 +50,7 @@ def sigpending():
 
 def sigwait(sigset):
     _unimplemented()
+
+
+def valid_signals():
+    _builtin()

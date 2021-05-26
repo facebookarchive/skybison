@@ -35,6 +35,12 @@ class SignalTest(unittest.TestCase):
         with self.assertRaises(OverflowError):
             signal.alarm(2 ** 65)
 
+    def test_valid_signals(self):
+        valid_signals = signal.valid_signals()
+        self.assertIsInstance(valid_signals, set)
+        self.assertIn(signal.SIGINT, valid_signals)
+        self.assertNotIn(1001, valid_signals)
+
 
 if __name__ == "__main__":
     unittest.main()

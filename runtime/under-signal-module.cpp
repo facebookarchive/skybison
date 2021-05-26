@@ -6,10 +6,12 @@
 #include <csignal>
 
 #include "builtins.h"
+#include "int-builtins.h"
 #include "module-builtins.h"
 #include "modules.h"
 #include "os.h"
 #include "runtime.h"
+#include "set-builtins.h"
 #include "symbols.h"
 #include "type-builtins.h"
 
@@ -129,6 +131,27 @@ RawObject FUNC(_signal, alarm)(Thread* thread, Arguments args) {
   }
   word seconds_remaining = ::alarm(Int::cast(*obj).asWord());
   return SmallInt::fromWord(seconds_remaining);
+}
+
+RawObject FUNC(_signal, valid_signals)(Thread* thread, Arguments) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  sigset_t mask;
+  if (sigemptyset(&mask) || sigfillset(&mask)) {
+    return thread->raiseWithFmt(LayoutId::kOSError,
+                                "Error while retreiving valid signals.");
+  }
+  Set set(&scope, runtime->newSet());
+  Object value(&scope, NoneType::object());
+  for (word signal = 1; signal < NSIG; signal++) {
+    if (sigismember(&mask, signal) != 1) {
+      continue;
+    }
+    value = runtime->newInt(signal);
+    word hash = intHash(*value);
+    setAdd(thread, set, value, hash);
+  }
+  return *set;
 }
 
 }  // namespace py
