@@ -9082,5 +9082,96 @@ foo(1, 1)
   EXPECT_EQ(function.entryAsm(), entry_before);
 }
 
+TEST_F(JitTest, CallFunctionWithInterpretedFunctionCallsFunction) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def bar(a, b):
+  return a + b
+def foo():
+  return bar(3, 4)
+# Rewrite CALL_FUNCTION_ANAMORPHIC to CALL_FUNCTION
+foo()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, CALL_FUNCTION));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_TRUE(isIntEqualsWord(*result, 7));
+}
+
+TEST_F(JitTest, CallFunctionWithGeneratorFunctionCallsFunction) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def bar(a, b):
+  yield a + b
+def foo():
+  return bar(3, 4)
+# Rewrite CALL_FUNCTION_ANAMORPHIC to CALL_FUNCTION
+foo()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, CALL_FUNCTION));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_TRUE(result.isGenerator());
+}
+
+static ALIGN_16 RawObject addTwoNumbers(Thread*, Arguments args) {
+  return SmallInt::fromWord(SmallInt::cast(args.get(0)).value() +
+                            SmallInt::cast(args.get(1)).value());
+}
+
+TEST_F(JitTest, CallFunctionWithBuiltinFunctionCallsFunction) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  const char* params[] = {"a", "b"};
+  addBuiltin("bar", addTwoNumbers, params, 0);
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  return bar(3, 4)
+# Rewrite CALL_FUNCTION_ANAMORPHIC to CALL_FUNCTION
+foo()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, CALL_FUNCTION));
+  Object result(&scope, compileAndCallJITFunction(thread_, function));
+  EXPECT_TRUE(isIntEqualsWord(*result, 7));
+}
+
+TEST_F(JitTest, CallFunctionWithCallableCallsDunderCall) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+def function():
+  return 5
+def foo(fn):
+  return fn()
+# Rewrite CALL_FUNCTION_ANAMORPHIC to CALL_FUNCTION
+foo(function)
+class C:
+  def __call__(self):
+    return 10
+instance = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, CALL_FUNCTION));
+  Object callable(&scope, mainModuleAt(runtime_, "instance"));
+  Object result(&scope,
+                compileAndCallJITFunction1(thread_, function, callable));
+  EXPECT_TRUE(isIntEqualsWord(*result, 10));
+}
+
 }  // namespace testing
 }  // namespace py

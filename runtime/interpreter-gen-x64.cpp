@@ -1527,8 +1527,6 @@ static void emitFunctionEntrySimpleInterpretedHandler(EmitEnv* env,
 }
 
 void emitCallTrampoline(EmitEnv* env) {
-  CHECK(!env->in_jit,
-        "should not be emitting function entrypoints in JIT mode");
   ScratchReg r_scratch(env);
 
   // Function::cast(callable).entry()(thread, nargs);
@@ -2527,6 +2525,57 @@ void jitEmitHandler(JitEnv* env) {
   jitEmitGenericHandler<bc>(env);
 }
 
+template <>
+void jitEmitHandler<CALL_FUNCTION>(JitEnv* env) {
+  // Check callable.
+  env->register_state.assign(&env->callable, kCallableReg);
+  __ movq(env->callable, Address(RSP, env->currentOp().arg * kWordSize));
+  env->register_state.assign(&env->oparg, kOpargReg);
+  __ movq(env->oparg, Immediate(env->currentOp().arg));
+
+  // Check whether callable is a heap object.
+  static_assert(Object::kHeapObjectTag == 1, "unexpected tag");
+  Label prepare_callable;
+  emitJumpIfImmediate(env, env->callable, &prepare_callable,
+                      Assembler::kFarJump);
+  // Check whether callable is a function.
+  static_assert(Header::kLayoutIdMask <= kMaxInt32, "big layout id mask");
+  ScratchReg r_layout_id(env);
+  __ movl(r_layout_id,
+          Address(env->callable, heapObjectDisp(RawHeapObject::kHeaderOffset)));
+  __ andl(r_layout_id,
+          Immediate(Header::kLayoutIdMask << RawHeader::kLayoutIdOffset));
+  __ cmpl(r_layout_id, Immediate(static_cast<word>(LayoutId::kFunction)
+                                 << RawHeader::kLayoutIdOffset));
+  Label call_function;
+  __ jcc(EQUAL, &call_function, Assembler::kNearJump);
+
+  __ bind(&prepare_callable);
+  env->register_state.assign(&env->pc, kPCReg);
+  __ movq(env->pc, Immediate(env->virtualPC()));
+  emitSaveInterpreterState(env, kVMPC | kVMStack | kVMFrame);
+  {
+    ScratchReg arg0(env, kArgRegs[0]);
+    __ movq(arg0, env->thread);
+    CHECK(kArgRegs[1] == env->oparg, "mismatch");
+    ScratchReg arg2(env, kArgRegs[2]);
+    __ movq(arg2, Immediate(env->currentOp().arg));
+    emitCall<Interpreter::PrepareCallableResult (*)(Thread*, word, word)>(
+        env, Interpreter::prepareCallableCallDunderCall);
+  }
+  __ cmpl(kReturnRegs[0], Immediate(Error::exception().raw()));
+  __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
+  emitRestoreInterpreterState(env, kHandlerWithoutFrameChange);
+  env->register_state.assign(&env->callable, kCallableReg);
+  __ movq(env->callable, kReturnRegs[0]);
+  env->register_state.assign(&env->oparg, kOpargReg);
+  __ movq(env->oparg, kReturnRegs[1]);
+
+  __ bind(&call_function);
+  env->register_state.check(env->call_trampoline_assignment);
+  emitCallTrampoline(env);
+}
+
 void emitPushImmediate(EmitEnv* env, word value) {
   if (Utils::fits<int32_t>(value)) {
     __ pushq(Immediate(value));
@@ -2666,6 +2715,7 @@ bool isSupportedInJIT(Bytecode bc) {
     case BUILD_TUPLE:
     case BUILD_TUPLE_UNPACK:
     case BUILD_TUPLE_UNPACK_WITH_CALL:
+    case CALL_FUNCTION:
     case COMPARE_EQ_SMALLINT:
     case COMPARE_GE_SMALLINT:
     case COMPARE_GT_SMALLINT:
@@ -3132,6 +3182,12 @@ void compileFunction(Thread* thread, const Function& function) {
       FOREACH_BYTECODE(BC)
 #undef BC
     }
+  }
+
+  if (!env->unwind_handler.isUnused()) {
+    __ bind(&env->unwind_handler);
+    // TODO(T91715866): Unwind.
+    __ ud2();
   }
 
   __ bind(&call_interpreted_slow_path);
