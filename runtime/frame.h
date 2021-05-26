@@ -139,6 +139,7 @@ class Frame {
     kNormal = 0,
     kExitRecursiveInterpreter = 1 << 0,
     kProfilerReturn = 1 << 1,
+    kJitReturn = 1 << 2,
   };
 
   // Returns true if this frame is for a built-in or extension function. This

@@ -1266,6 +1266,13 @@ NEVER_INLINE static bool handleReturnModes(Thread* thread, word return_mode,
   HandleScope scope(thread);
   Object retval(&scope, *retval_ptr);
 
+  if (return_mode == Frame::ReturnMode::kJitReturn) {
+    thread->popFrame();
+    thread->stackPush(*retval);
+    // Signal to do emulated ret to JIT code.
+    *retval_ptr = Error::notFound();
+    return true;
+  }
   if (return_mode & Frame::kProfilerReturn) {
     profiling_return(thread);
   }
@@ -1279,6 +1286,7 @@ RawObject Interpreter::handleReturn(Thread* thread) {
   Frame* frame = thread->currentFrame();
   RawObject retval = thread->stackPop();
   DCHECK(frame->blockStackEmpty(), "block stack should be empty");
+  DCHECK(!retval.isError(), "should not return error");
 
   // Check whether we should exit the interpreter loop.
   word return_mode = frame->returnMode();

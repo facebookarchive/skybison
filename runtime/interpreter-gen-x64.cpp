@@ -82,6 +82,7 @@ const word kNumCalleeSavedRegs = ARRAYSIZE(kUsedCalleeSavedRegs);
 const word kFrameOffset = -kNumCalleeSavedRegs * kPointerSize;
 const word kPaddingBytes = (kFrameOffset % 16) == 0 ? 0 : kPointerSize;
 const word kNativeStackFrameSize = -kFrameOffset + kPaddingBytes;
+const word kCallStackAlignment = 16;
 static_assert(kNativeStackFrameSize % 16 == 0,
               "native frame size must be multiple of 16");
 
@@ -974,7 +975,12 @@ void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
 
 static void emitSetReturnMode(EmitEnv* env) {
   env->register_state.assign(&env->return_mode, kReturnModeReg);
-  __ xorl(env->return_mode, env->return_mode);
+  if (env->in_jit) {
+    __ movq(env->return_mode, Immediate(word{Frame::ReturnMode::kJitReturn}
+                                        << Frame::kReturnModeOffset));
+  } else {
+    __ xorl(env->return_mode, env->return_mode);
+  }
 }
 
 template <>
@@ -1540,6 +1546,19 @@ static void emitFunctionEntrySimpleInterpretedHandler(EmitEnv* env,
   __ jmp(&env->call_interpreted_slow_path, Assembler::kFarJump);
 }
 
+// Functions called from JIT-compiled functions emulate call/ret on the C++
+// stack to avoid putting random pointers on the Python stack. If returning
+// back to the JIT, find the return address. This emulates `ret'.
+static void emitPseudoRet(EmitEnv* env) {
+  ScratchReg r_return_address(env);
+
+  // Load the return address from the C++ stack
+  __ movq(r_return_address, Address(RBP, -kNativeStackFrameSize));
+  __ addq(RBP, Immediate(kCallStackAlignment));
+  // Ret.
+  __ jmp(r_return_address);
+}
+
 void emitCallTrampoline(EmitEnv* env) {
   ScratchReg r_scratch(env);
 
@@ -1559,7 +1578,15 @@ void emitCallTrampoline(EmitEnv* env) {
   __ jcc(EQUAL, &env->unwind_handler, Assembler::kFarJump);
   emitRestoreInterpreterState(env, kHandlerWithoutFrameChange);
   __ pushq(r_result);
+  // if (return_to_jit) ret;
+  Label return_to_jit;
+  __ shrq(env->return_mode, Immediate(Frame::kReturnModeOffset));
+  __ cmpq(env->return_mode, Immediate(Frame::ReturnMode::kJitReturn));
+  __ jcc(EQUAL, &return_to_jit, Assembler::kNearJump);
   emitNextOpcode(env);
+
+  __ bind(&return_to_jit);
+  emitPseudoRet(env);
 }
 
 void emitFunctionEntryWithNoIntrinsicHandler(EmitEnv* env, Label* next_opcode) {
@@ -1702,6 +1729,11 @@ void emitFunctionEntryBuiltin(EmitEnv* env, word nargs) {
   emitRestoreInterpreterState(env, kBytecode | kVMPC);
   // thread->stackPush(result)
   __ pushq(r_result);
+  // Check return_mode == kJitReturn
+  Label return_to_jit;
+  __ shrq(env->return_mode, Immediate(Frame::kReturnModeOffset));
+  __ cmpq(env->return_mode, Immediate(Frame::ReturnMode::kJitReturn));
+  __ jcc(EQUAL, &return_to_jit, Assembler::kNearJump);
   emitNextOpcode(env);
 
   __ bind(&unwind);
@@ -1713,6 +1745,12 @@ void emitFunctionEntryBuiltin(EmitEnv* env, word nargs) {
   __ bind(&stack_overflow);
   __ addq(RSP, Immediate(Frame::kSize));
   __ jmp(&env->call_trampoline, Assembler::kFarJump);
+
+  // TODO(T91716258): Split LOAD_FAST into LOAD_PARAM and LOAD_FAST. This will
+  // allow us to put additional metadata in the frame (such as a return
+  // address) and not have to do these shenanigans.
+  __ bind(&return_to_jit);
+  emitPseudoRet(env);
 }
 
 void emitCallHandler(EmitEnv* env) {
@@ -2469,9 +2507,13 @@ void emitInterpreter(EmitEnv* env) {
       call_interpreted_slow_path_assignment;
 
   RegisterAssignment call_trampoline_assignment[] = {
-      {&env->pc, kPCReg},       {&env->callable, kCallableReg},
-      {&env->frame, kFrameReg}, {&env->thread, kThreadReg},
-      {&env->oparg, kOpargReg}, {&env->handlers_base, kHandlersBaseReg},
+      {&env->pc, kPCReg},
+      {&env->callable, kCallableReg},
+      {&env->frame, kFrameReg},
+      {&env->thread, kThreadReg},
+      {&env->oparg, kOpargReg},
+      {&env->handlers_base, kHandlersBaseReg},
+      {&env->return_mode, kReturnModeReg},
   };
   env->call_trampoline_assignment = call_trampoline_assignment;
 
@@ -2543,30 +2585,38 @@ void jitEmitHandler(JitEnv* env) {
   jitEmitGenericHandler<bc>(env);
 }
 
+// Functions called from JIT-compiled functions emulate call/ret on the C++
+// stack to avoid putting random pointers on the Python stack. This emulates
+// `call'.
+static void emitPseudoCall(EmitEnv* env, Register r_function) {
+  DCHECK(env->in_jit, "pseudo-call not supported for non-JIT assembly");
+  ScratchReg r_next(env);
+  Label next;
+
+  __ subq(RBP, Immediate(kCallStackAlignment));
+  __ leaq(r_next, &next);
+  __ movq(Address(RBP, -kNativeStackFrameSize), r_next);
+  env->register_state.check(env->function_entry_assignment);
+  __ jmp(Address(r_function, heapObjectDisp(Function::kEntryAsmOffset)));
+  // `next' label address must be able to fit in a SmallInt.
+  __ align(1 << Object::kSmallIntTagBits);
+  __ bind(&next);
+}
+
 template <>
 void jitEmitHandler<CALL_FUNCTION>(JitEnv* env) {
-  // Check callable.
   env->register_state.assign(&env->callable, kCallableReg);
   __ movq(env->callable, Address(RSP, env->currentOp().arg * kWordSize));
-  env->register_state.assign(&env->oparg, kOpargReg);
-  __ movq(env->oparg, Immediate(env->currentOp().arg));
-
-  // Check whether callable is a heap object.
-  static_assert(Object::kHeapObjectTag == 1, "unexpected tag");
+  jitEmitGenericHandlerSetup(env);
   Label prepare_callable;
-  emitJumpIfImmediate(env, env->callable, &prepare_callable,
-                      Assembler::kFarJump);
-  // Check whether callable is a function.
-  static_assert(Header::kLayoutIdMask <= kMaxInt32, "big layout id mask");
-  ScratchReg r_layout_id(env);
-  __ movl(r_layout_id,
-          Address(env->callable, heapObjectDisp(RawHeapObject::kHeaderOffset)));
-  __ andl(r_layout_id,
-          Immediate(Header::kLayoutIdMask << RawHeader::kLayoutIdOffset));
-  __ cmpl(r_layout_id, Immediate(static_cast<word>(LayoutId::kFunction)
-                                 << RawHeader::kLayoutIdOffset));
-  Label call_function;
-  __ jcc(EQUAL, &call_function, Assembler::kNearJump);
+  emitJumpIfNotHeapObjectWithLayoutId(env, env->callable, LayoutId::kFunction,
+                                      &prepare_callable);
+
+  emitSetReturnMode(env);
+  // TODO(T91716080): Push next opcode as return address instead of
+  // emitNextOpcode second jump
+  emitPseudoCall(env, env->callable);
+  emitNextOpcode(env);
 
   __ bind(&prepare_callable);
   env->register_state.assign(&env->pc, kPCReg);
@@ -2589,7 +2639,6 @@ void jitEmitHandler<CALL_FUNCTION>(JitEnv* env) {
   env->register_state.assign(&env->oparg, kOpargReg);
   __ movq(env->oparg, kReturnRegs[1]);
 
-  __ bind(&call_function);
   env->register_state.check(env->call_trampoline_assignment);
   emitCallTrampoline(env);
 }
@@ -2847,6 +2896,8 @@ word emitHandlerTable(EmitEnv* env) {
     }
     __ movq(kArgRegs[0], env->thread);
 
+    // TODO(T91716258): Add JIT support here for isErrorNotFound and
+    // appropriate jmp.
     emitCall<RawObject (*)(Thread*)>(env, Interpreter::unwind);
     ScratchReg r_result(env, kReturnRegs[0]);
     // Check result.isErrorError()
@@ -2867,14 +2918,27 @@ word emitHandlerTable(EmitEnv* env) {
     HandlerSizer sizer(env, kHandlerSize);
     __ movq(kArgRegs[0], env->thread);
     emitCall<RawObject (*)(Thread*)>(env, Interpreter::handleReturn);
-    ScratchReg r_result(env, kReturnRegs[0]);
-    // Check result.isErrorError()
-    __ cmpl(r_result, Immediate(Error::error().raw()));
-    env->register_state.assign(&env->return_value, r_result);
+    Label return_to_jit;
+    {
+      ScratchReg r_result(env, kReturnRegs[0]);
+      // Check result.isErrorNotFound()
+      __ cmpl(r_result, Immediate(Error::notFound().raw()));
+      __ jcc(EQUAL, &return_to_jit, Assembler::kNearJump);
+      // Check result.isErrorError()
+      __ cmpl(r_result, Immediate(Error::error().raw()));
+      env->register_state.assign(&env->return_value, r_result);
+    }
     env->register_state.check(env->do_return_assignment);
     __ jcc(NOT_EQUAL, &env->do_return, Assembler::kFarJump);
     emitRestoreInterpreterState(env, kGenericHandler);
     emitNextOpcode(env);
+
+    // TODO(T91716258): Split LOAD_FAST into LOAD_PARAM and LOAD_FAST. This
+    // will allow us to put additional metadata in the frame (such as a return
+    // address) and not have to do these shenanigans.
+    __ bind(&return_to_jit);
+    emitRestoreInterpreterState(env, kGenericHandler);
+    emitPseudoRet(env);
   }
 
   // YIELD pseudo-handler
