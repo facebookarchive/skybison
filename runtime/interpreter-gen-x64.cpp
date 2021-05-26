@@ -65,6 +65,9 @@ const Register kHandlersBaseReg = R13;
 // Callable objects shared for function call path.
 const Register kCallableReg = RDI;
 
+// Used for signaling the return mode when jumping to entryAsm
+const Register kReturnModeReg = R15;
+
 // The native frame/stack looks like this:
 // +-------------+
 // | return addr |
@@ -74,7 +77,7 @@ const Register kCallableReg = RDI;
 // | ...         |
 // | padding     | <- native %rsp, when materialized for a C++ call
 // +-------------+
-constexpr Register kUsedCalleeSavedRegs[] = {RBX, R12, R13, R14};
+constexpr Register kUsedCalleeSavedRegs[] = {RBX, R12, R13, R14, R15};
 const word kNumCalleeSavedRegs = ARRAYSIZE(kUsedCalleeSavedRegs);
 const word kFrameOffset = -kNumCalleeSavedRegs * kPointerSize;
 const word kPaddingBytes = (kFrameOffset % 16) == 0 ? 0 : kPointerSize;
@@ -141,6 +144,7 @@ struct EmitEnv {
   VirtualRegister handlers_base{"handlers_base"};
   VirtualRegister callable{"callable"};
   VirtualRegister return_value{"return_value"};
+  VirtualRegister return_mode{"return_mode"};
 
   View<RegisterAssignment> handler_assignment = kNoRegisterAssignment;
   Label call_handler;
@@ -968,6 +972,11 @@ void emitHandler<BINARY_SUBSCR_LIST>(EmitEnv* env) {
   emitHandleContinue(env, kGenericHandler);
 }
 
+static void emitSetReturnMode(EmitEnv* env) {
+  env->register_state.assign(&env->return_mode, kReturnModeReg);
+  __ xorl(env->return_mode, env->return_mode);
+}
+
 template <>
 void emitHandler<BINARY_SUBSCR_MONOMORPHIC>(EmitEnv* env) {
   ScratchReg r_receiver(env);
@@ -989,6 +998,7 @@ void emitHandler<BINARY_SUBSCR_MONOMORPHIC>(EmitEnv* env) {
   __ pushq(r_receiver);
   __ pushq(r_key);
   __ movq(env->oparg, Immediate(2));
+  emitSetReturnMode(env);
   env->register_state.check(env->function_entry_assignment);
   __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
 
@@ -1153,6 +1163,7 @@ void emitHandler<LOAD_ATTR_INSTANCE_PROPERTY>(EmitEnv* env) {
   __ pushq(env->callable);
   __ pushq(r_base);
   __ movq(env->oparg, Immediate(1));
+  emitSetReturnMode(env);
   env->register_state.check(env->function_entry_assignment);
   __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
 
@@ -1411,8 +1422,9 @@ static void emitPushCallFrame(EmitEnv* env, Label* stack_overflow) {
     // new_frame.setLocalsOffset(locals_offset)
     __ movq(Address(RSP, Frame::kLocalsOffsetOffset), r_locals_offset);
   }
-  // new_frame.setBlockStackDepth(0)
-  __ movq(Address(RSP, Frame::kBlockStackDepthReturnModeOffset), Immediate(0));
+  // new_frame.setBlockStackDepthReturnMode(return_mode)
+  __ movq(Address(RSP, Frame::kBlockStackDepthReturnModeOffset),
+          env->return_mode);
   // new_frame.setPreviousFrame(kFrameReg)
   __ movq(Address(RSP, Frame::kPreviousFrameOffset), env->frame);
   // kBCReg = callable.rewritteBytecode(); new_frame.setBytecode(kBCReg);
@@ -1478,6 +1490,7 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
 
   emitJumpIfNotHeapObjectWithLayoutId(env, env->callable, LayoutId::kFunction,
                                       &slow_path);
+  emitSetReturnMode(env);
   env->register_state.check(env->function_entry_assignment);
   __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
 
@@ -1504,6 +1517,7 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
   env->register_state.assign(&env->oparg, kOpargReg);
   __ movq(env->oparg, kReturnRegs[1]);
 
+  emitSetReturnMode(env);
   env->register_state.check(env->function_entry_assignment);
   __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
 }
@@ -1721,6 +1735,7 @@ void emitCallHandler(EmitEnv* env) {
                                  << RawHeader::kLayoutIdOffset));
   Label prepare_callable_generic;
   __ jcc(NOT_EQUAL, &prepare_callable_generic, Assembler::kNearJump);
+  emitSetReturnMode(env);
   // Jump to the function's specialized entry point.
   env->register_state.check(env->function_entry_assignment);
   __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
@@ -1784,6 +1799,7 @@ void emitHandler<CALL_FUNCTION_TYPE_NEW>(EmitEnv* env) {
     __ movq(env->callable, r_ctor);
     __ movq(Address(RSP, env->oparg, TIMES_8, 0), env->callable);
   }
+  emitSetReturnMode(env);
   env->register_state.check(env->function_entry_assignment);
   __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
 
@@ -1803,6 +1819,7 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
 
   // Increment argument count by 1 and jump into a call handler.
   __ incl(env->oparg);
+  emitSetReturnMode(env);
   // Jump to the function's specialized entry point.
   env->register_state.check(env->function_entry_assignment);
   __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
@@ -2432,6 +2449,7 @@ void emitInterpreter(EmitEnv* env) {
       {&env->thread, kThreadReg},
       {&env->handlers_base, kHandlersBaseReg},
       {&env->callable, kCallableReg},
+      {&env->return_mode, kReturnModeReg},
   };
   env->function_entry_assignment = function_entry_assignment;
 
@@ -3160,6 +3178,8 @@ void compileFunction(Thread* thread, const Function& function) {
   __ jcc(NOT_EQUAL, &call_interpreted_slow_path, Assembler::kFarJump);
 
   // Open a new frame.
+  env->register_state.assign(&env->return_mode, kReturnModeReg);
+  __ xorl(env->return_mode, env->return_mode);
   emitPushCallFrame(env, /*stack_overflow=*/&call_interpreted_slow_path);
 
   for (word i = 0; i < num_opcodes;) {
