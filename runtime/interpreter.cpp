@@ -3554,9 +3554,9 @@ HANDLER_INLINE Continue Interpreter::doBuildMap(Thread* thread, word arg) {
   Object value(&scope, NoneType::object());
   Object key(&scope, NoneType::object());
   Object hash_obj(&scope, NoneType::object());
-  for (word i = 0; i < arg; i++) {
-    value = thread->stackPop();
-    key = thread->stackPop();
+  for (word i = ((arg - 1) * 2); i >= 0; i -= 2) {
+    value = thread->stackPeek(i);
+    key = thread->stackPeek(i + 1);
     hash_obj = hash(thread, key);
     if (hash_obj.isErrorException()) return Continue::UNWIND;
     word hash = SmallInt::cast(*hash_obj).value();
@@ -3564,6 +3564,7 @@ HANDLER_INLINE Continue Interpreter::doBuildMap(Thread* thread, word arg) {
       return Continue::UNWIND;
     }
   }
+  thread->stackDrop(arg * 2);
   thread->stackPush(*dict);
   return Continue::NEXT;
 }

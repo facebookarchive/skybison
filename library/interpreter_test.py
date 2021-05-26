@@ -54,6 +54,15 @@ class IntepreterTest(unittest.TestCase):
 
         self.assertEqual(C[int], "M:C[int]")
 
+    def test_build_map_returns_dict(self):
+        def foo(k0, k1, k2):
+            return {k0: 0, k1: 42.4, k2: "test"}
+
+        d = foo("key0", "aaa", "zzz")
+        self.assertIs(type(d), dict)
+        self.assertEqual(list(d.keys()), ["key0", "aaa", "zzz"])
+        self.assertEqual(list(d.values()), [0, 42.4, "test"])
+
     def test_compare_op_in_propagetes_exception(self):
         class C:
             def __contains__(self, value):
