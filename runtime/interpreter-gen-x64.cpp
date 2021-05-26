@@ -983,6 +983,40 @@ static void emitSetReturnMode(EmitEnv* env) {
   }
 }
 
+static void emitJumpToEntryAsm(EmitEnv* env, Register r_function) {
+  env->register_state.check(env->function_entry_assignment);
+  __ jmp(Address(r_function, heapObjectDisp(Function::kEntryAsmOffset)));
+}
+
+// Functions called from JIT-compiled functions emulate call/ret on the C++
+// stack to avoid putting random pointers on the Python stack. This emulates
+// `call'.
+static void emitPseudoCall(EmitEnv* env, Register r_function) {
+  DCHECK(env->in_jit, "pseudo-call not supported for non-JIT assembly");
+  ScratchReg r_next(env);
+  Label next;
+
+  __ subq(RBP, Immediate(kCallStackAlignment));
+  __ leaq(r_next, &next);
+  __ movq(Address(RBP, -kNativeStackFrameSize), r_next);
+  emitJumpToEntryAsm(env, r_function);
+  // `next' label address must be able to fit in a SmallInt.
+  __ align(1 << Object::kSmallIntTagBits);
+  __ bind(&next);
+}
+
+static void emitFunctionCall(EmitEnv* env, Register r_function) {
+  emitSetReturnMode(env);
+  if (env->in_jit) {
+    // TODO(T91716080): Push next opcode as return address instead of
+    // emitNextOpcode second jump
+    emitPseudoCall(env, r_function);
+    emitNextOpcode(env);
+  } else {
+    emitJumpToEntryAsm(env, r_function);
+  }
+}
+
 template <>
 void emitHandler<BINARY_SUBSCR_MONOMORPHIC>(EmitEnv* env) {
   ScratchReg r_receiver(env);
@@ -1004,9 +1038,7 @@ void emitHandler<BINARY_SUBSCR_MONOMORPHIC>(EmitEnv* env) {
   __ pushq(r_receiver);
   __ pushq(r_key);
   __ movq(env->oparg, Immediate(2));
-  emitSetReturnMode(env);
-  env->register_state.check(env->function_entry_assignment);
-  __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
+  emitFunctionCall(env, env->callable);
 
   __ bind(&slow_path);
   __ pushq(r_receiver);
@@ -1169,9 +1201,7 @@ void emitHandler<LOAD_ATTR_INSTANCE_PROPERTY>(EmitEnv* env) {
   __ pushq(env->callable);
   __ pushq(r_base);
   __ movq(env->oparg, Immediate(1));
-  emitSetReturnMode(env);
-  env->register_state.check(env->function_entry_assignment);
-  __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
+  emitFunctionCall(env, env->callable);
 
   __ bind(&slow_path);
   __ pushq(r_base);
@@ -1496,9 +1526,7 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
 
   emitJumpIfNotHeapObjectWithLayoutId(env, env->callable, LayoutId::kFunction,
                                       &slow_path);
-  emitSetReturnMode(env);
-  env->register_state.check(env->function_entry_assignment);
-  __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
+  emitFunctionCall(env, env->callable);
 
   // res = Interpreter::prepareCallableDunderCall(thread, nargs, nargs)
   // callable = res.function
@@ -1523,9 +1551,7 @@ void emitPrepareCallable(EmitEnv* env, Register r_layout_id,
   env->register_state.assign(&env->oparg, kOpargReg);
   __ movq(env->oparg, kReturnRegs[1]);
 
-  emitSetReturnMode(env);
-  env->register_state.check(env->function_entry_assignment);
-  __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
+  emitFunctionCall(env, env->callable);
 }
 
 static void emitFunctionEntrySimpleInterpretedHandler(EmitEnv* env,
@@ -1773,10 +1799,8 @@ void emitCallHandler(EmitEnv* env) {
                                  << RawHeader::kLayoutIdOffset));
   Label prepare_callable_generic;
   __ jcc(NOT_EQUAL, &prepare_callable_generic, Assembler::kNearJump);
-  emitSetReturnMode(env);
   // Jump to the function's specialized entry point.
-  env->register_state.check(env->function_entry_assignment);
-  __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
+  emitFunctionCall(env, env->callable);
 
   __ bind(&prepare_callable_generic);
   emitPrepareCallable(env, r_layout_id, &prepare_callable_immediate);
@@ -1837,9 +1861,7 @@ void emitHandler<CALL_FUNCTION_TYPE_NEW>(EmitEnv* env) {
     __ movq(env->callable, r_ctor);
     __ movq(Address(RSP, env->oparg, TIMES_8, 0), env->callable);
   }
-  emitSetReturnMode(env);
-  env->register_state.check(env->function_entry_assignment);
-  __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
+  emitFunctionCall(env, env->callable);
 
   __ bind(&slow_path);
   emitJumpToGenericHandler(env);
@@ -1857,10 +1879,8 @@ void emitHandler<CALL_METHOD>(EmitEnv* env) {
 
   // Increment argument count by 1 and jump into a call handler.
   __ incl(env->oparg);
-  emitSetReturnMode(env);
   // Jump to the function's specialized entry point.
-  env->register_state.check(env->function_entry_assignment);
-  __ jmp(Address(env->callable, heapObjectDisp(Function::kEntryAsmOffset)));
+  emitFunctionCall(env, env->callable);
 
   // thread->removeValueAt(arg + 1)
   __ bind(&remove_value_and_call);
@@ -2585,24 +2605,6 @@ void jitEmitHandler(JitEnv* env) {
   jitEmitGenericHandler<bc>(env);
 }
 
-// Functions called from JIT-compiled functions emulate call/ret on the C++
-// stack to avoid putting random pointers on the Python stack. This emulates
-// `call'.
-static void emitPseudoCall(EmitEnv* env, Register r_function) {
-  DCHECK(env->in_jit, "pseudo-call not supported for non-JIT assembly");
-  ScratchReg r_next(env);
-  Label next;
-
-  __ subq(RBP, Immediate(kCallStackAlignment));
-  __ leaq(r_next, &next);
-  __ movq(Address(RBP, -kNativeStackFrameSize), r_next);
-  env->register_state.check(env->function_entry_assignment);
-  __ jmp(Address(r_function, heapObjectDisp(Function::kEntryAsmOffset)));
-  // `next' label address must be able to fit in a SmallInt.
-  __ align(1 << Object::kSmallIntTagBits);
-  __ bind(&next);
-}
-
 template <>
 void jitEmitHandler<CALL_FUNCTION>(JitEnv* env) {
   env->register_state.assign(&env->callable, kCallableReg);
@@ -2611,12 +2613,7 @@ void jitEmitHandler<CALL_FUNCTION>(JitEnv* env) {
   Label prepare_callable;
   emitJumpIfNotHeapObjectWithLayoutId(env, env->callable, LayoutId::kFunction,
                                       &prepare_callable);
-
-  emitSetReturnMode(env);
-  // TODO(T91716080): Push next opcode as return address instead of
-  // emitNextOpcode second jump
-  emitPseudoCall(env, env->callable);
-  emitNextOpcode(env);
+  emitFunctionCall(env, env->callable);
 
   __ bind(&prepare_callable);
   env->register_state.assign(&env->pc, kPCReg);
@@ -2765,6 +2762,7 @@ bool isSupportedInJIT(Bytecode bc) {
     case BINARY_RSHIFT:
     case BINARY_SUBSCR:
     case BINARY_SUBSCR_LIST:
+    case BINARY_SUBSCR_MONOMORPHIC:
     case BINARY_SUBTRACT:
     case BINARY_SUB_SMALLINT:
     case BINARY_TRUE_DIVIDE:

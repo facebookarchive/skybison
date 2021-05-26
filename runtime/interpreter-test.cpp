@@ -9173,5 +9173,68 @@ instance = C()
   EXPECT_TRUE(isIntEqualsWord(*result, 10));
 }
 
+TEST_F(JitTest, BinarySubscrMonomorphicCallsDunderGetitem) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __getitem__(self, key):
+    return key * 2
+
+def foo(ls):
+  return ls[3]
+
+# Rewrite BINARY_SUBSCR_ANAMORPHIC to BINARY_SUBSCR_MONOMORPHIC
+foo(C())
+
+instance = C()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BINARY_SUBSCR_MONOMORPHIC));
+  Object callable(&scope, mainModuleAt(runtime_, "instance"));
+  Object result(&scope,
+                compileAndCallJITFunction1(thread_, function, callable));
+  EXPECT_TRUE(isIntEqualsWord(*result, 6));
+}
+
+TEST_F(JitTest, BinarySubscrMonomorphicWithNewTypeDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  ASSERT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __getitem__(self, key):
+    return 7
+
+class D:
+  def __getitem__(self, key):
+    return 13
+
+def foo(ls):
+  return ls[3]
+
+# Rewrite BINARY_SUBSCR_ANAMORPHIC to BINARY_SUBSCR_MONOMORPHIC
+foo(C())
+
+instance = D()
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BINARY_SUBSCR_MONOMORPHIC));
+  Object instance(&scope, mainModuleAt(runtime_, "instance"));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Function deopt_caller(&scope, createTrampolineFunction1(thread_, instance));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_TRUE(containsBytecode(function, BINARY_SUBSCR_POLYMORPHIC));
+  EXPECT_TRUE(isIntEqualsWord(*result, 13));
+  EXPECT_EQ(function.entryAsm(), entry_before);
+}
+
 }  // namespace testing
 }  // namespace py
