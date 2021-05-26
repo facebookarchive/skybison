@@ -2633,21 +2633,39 @@ void jitEmitHandler<RETURN_VALUE>(JitEnv* env) {
 
 bool isSupportedInJIT(Bytecode bc) {
   switch (bc) {
+    case BINARY_ADD:
     case BINARY_ADD_SMALLINT:
+    case BINARY_AND:
     case BINARY_AND_SMALLINT:
+    case BINARY_FLOOR_DIVIDE:
+    case BINARY_LSHIFT:
+    case BINARY_MATRIX_MULTIPLY:
+    case BINARY_MODULO:
     case BINARY_MUL_SMALLINT:
+    case BINARY_MULTIPLY:
+    case BINARY_OR:
     case BINARY_OR_SMALLINT:
+    case BINARY_POWER:
+    case BINARY_RSHIFT:
+    case BINARY_SUBSCR:
     case BINARY_SUBSCR_LIST:
+    case BINARY_SUBTRACT:
     case BINARY_SUB_SMALLINT:
+    case BINARY_TRUE_DIVIDE:
+    case BINARY_XOR:
+    case BUILD_CONST_KEY_MAP:
     case BUILD_LIST:
     case BUILD_LIST_UNPACK:
     case BUILD_MAP:
     case BUILD_MAP_UNPACK:
+    case BUILD_MAP_UNPACK_WITH_CALL:
     case BUILD_SET:
     case BUILD_SET_UNPACK:
+    case BUILD_SLICE:
     case BUILD_STRING:
     case BUILD_TUPLE:
     case BUILD_TUPLE_UNPACK:
+    case BUILD_TUPLE_UNPACK_WITH_CALL:
     case COMPARE_EQ_SMALLINT:
     case COMPARE_GE_SMALLINT:
     case COMPARE_GT_SMALLINT:
@@ -2656,44 +2674,86 @@ bool isSupportedInJIT(Bytecode bc) {
     case COMPARE_LE_SMALLINT:
     case COMPARE_LT_SMALLINT:
     case COMPARE_NE_SMALLINT:
+    case COMPARE_OP:
+    case DELETE_ATTR:
     case DELETE_FAST:
+    case DELETE_NAME:
+    case DELETE_SUBSCR:
     case DUP_TOP:
     case DUP_TOP_TWO:
     case FORMAT_VALUE:
+    case FOR_ITER:
     case FOR_ITER_LIST:
     case FOR_ITER_RANGE:
+    case GET_ANEXT:
     case GET_ITER:
+    case GET_YIELD_FROM_ITER:
+    case IMPORT_FROM:
+    case IMPORT_STAR:
+    case INPLACE_ADD:
     case INPLACE_ADD_SMALLINT:
+    case INPLACE_AND:
+    case INPLACE_FLOOR_DIVIDE:
+    case INPLACE_LSHIFT:
+    case INPLACE_MATRIX_MULTIPLY:
+    case INPLACE_MODULO:
+    case INPLACE_MULTIPLY:
+    case INPLACE_OR:
+    case INPLACE_POWER:
+    case INPLACE_RSHIFT:
+    case INPLACE_SUBTRACT:
     case INPLACE_SUB_SMALLINT:
+    case INPLACE_TRUE_DIVIDE:
+    case INPLACE_XOR:
     case JUMP_ABSOLUTE:
     case JUMP_FORWARD:
     case JUMP_IF_FALSE_OR_POP:
     case JUMP_IF_TRUE_OR_POP:
+    case LIST_APPEND:
+    case LOAD_ATTR:
     case LOAD_ATTR_INSTANCE:
     case LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD:
     case LOAD_ATTR_POLYMORPHIC:
     case LOAD_BOOL:
+    case LOAD_BUILD_CLASS:
     case LOAD_CONST:
+    case LOAD_FAST:
     case LOAD_FAST_REVERSE:
     case LOAD_FAST_REVERSE_UNCHECKED:
     case LOAD_GLOBAL_CACHED:
     case LOAD_IMMEDIATE:
+    case LOAD_METHOD:
+    case LOAD_NAME:
+    case MAKE_FUNCTION:
+    case MAP_ADD:
+    case NOP:
     case POP_JUMP_IF_FALSE:
     case POP_JUMP_IF_TRUE:
     case POP_TOP:
+    case PRINT_EXPR:
     case RETURN_VALUE:
     case ROT_FOUR:
     case ROT_THREE:
     case ROT_TWO:
+    case SETUP_ANNOTATIONS:
+    case SETUP_ASYNC_WITH:
+    case SETUP_WITH:
+    case SET_ADD:
+    case STORE_ATTR:
     case STORE_ATTR_INSTANCE:
     case STORE_ATTR_INSTANCE_OVERFLOW:
     case STORE_ATTR_POLYMORPHIC:
+    case STORE_FAST:
     case STORE_FAST_REVERSE:
+    case STORE_NAME:
+    case STORE_SUBSCR:
     case STORE_SUBSCR_LIST:
     case UNARY_INVERT:
     case UNARY_NEGATIVE:
     case UNARY_NOT:
     case UNARY_POSITIVE:
+    case UNPACK_EX:
+    case UNPACK_SEQUENCE:
       return true;
     default:
       return false;
