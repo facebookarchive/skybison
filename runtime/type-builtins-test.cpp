@@ -188,7 +188,7 @@ TEST_F(TypeBuiltinsTest, TypeKeysFiltersOutPlaceholders) {
   typeAtPut(thread_, type, bar, value);
   typeAtPut(thread_, type, baz, value);
 
-  ValueCell::cast(attributeValueCellAt(*type, *bar)).makePlaceholder();
+  ValueCell::cast(typeValueCellAt(*type, *bar)).makePlaceholder();
 
   List keys(&scope, typeKeys(thread_, type));
   EXPECT_EQ(keys.numItems(), 2);
@@ -211,7 +211,7 @@ TEST_F(TypeBuiltinsTest, TypeLenReturnsItemCountExcludingPlaceholders) {
 
   word previous_len = typeLen(thread_, type);
 
-  ValueCell::cast(attributeValueCellAt(*type, *bar)).makePlaceholder();
+  ValueCell::cast(typeValueCellAt(*type, *bar)).makePlaceholder();
 
   word after_len = typeLen(thread_, type);
   EXPECT_EQ(previous_len, after_len + 1);
@@ -232,7 +232,7 @@ TEST_F(TypeBuiltinsTest, TypeValuesFiltersOutPlaceholders) {
   typeAtPut(thread_, type, bar, bar_value);
   typeAtPut(thread_, type, baz, baz_value);
 
-  ValueCell::cast(attributeValueCellAt(*type, *bar)).makePlaceholder();
+  ValueCell::cast(typeValueCellAt(*type, *bar)).makePlaceholder();
 
   List values(&scope, typeValues(thread_, type));
   EXPECT_TRUE(listContains(values, foo_value));

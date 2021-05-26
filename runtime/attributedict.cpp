@@ -246,9 +246,10 @@ RawObject inline USED attributeValueCellAtPut(Thread* thread,
   }
 }
 
-RawObject attributeValueCellAt(RawAttributeDict attrs, RawObject name) {
+bool attributeValueCellAt(RawAttributeDict attrs, RawObject name,
+                          RawObject* result_out) {
   word hash = internedStrHash(name);
-  return attributeValueCellAtWithHash(attrs, name, hash);
+  return attributeValueCellAtWithHash(attrs, name, hash, result_out);
 }
 
 RawObject attributeValues(Thread* thread, const AttributeDict& attrs) {

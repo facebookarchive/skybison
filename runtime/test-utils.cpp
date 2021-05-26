@@ -9,6 +9,7 @@
 #include <memory>
 #include <sstream>
 
+#include "attributedict.h"
 #include "builtins-module.h"
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
@@ -289,6 +290,12 @@ std::string typeName(Runtime* runtime, RawObject obj) {
   word length = name.length();
   std::string result(length, '\0');
   name.copyTo(reinterpret_cast<byte*>(&result[0]), length);
+  return result;
+}
+
+RawObject typeValueCellAt(RawType type, RawObject name) {
+  RawObject result = NoneType::object();
+  if (!attributeValueCellAt(type, name, &result)) return Error::notFound();
   return result;
 }
 

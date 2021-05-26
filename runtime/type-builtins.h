@@ -154,8 +154,8 @@ inline RawObject typeLookupInMro(Thread* thread, RawType type, RawObject name) {
   for (word i = 0, length = mro.length(); i < length; i++) {
     DCHECK(thread->runtime()->isInstanceOfType(mro.at(i)), "non-type in MRO");
     RawType mro_type = mro.at(i).rawCast<RawType>();
-    RawObject result = attributeAtWithHash(mro_type, name, hash);
-    if (!result.isErrorNotFound()) {
+    RawObject result = NoneType::object();
+    if (attributeAtWithHash(mro_type, name, hash, &result)) {
       return result;
     }
   }

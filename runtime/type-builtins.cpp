@@ -100,13 +100,16 @@ RawObject raiseTypeErrorCannotSetImmutable(Thread* thread, const Type& type) {
 }
 
 RawObject typeAt(const Type& type, const Object& name) {
-  word hash = internedStrHash(*name);
-  return attributeAtWithHash(*type, *name, hash);
+  RawObject result = NoneType::object();
+  if (!attributeAt(*type, *name, &result)) return Error::notFound();
+  return result;
 }
 
 RawObject typeAtById(Thread* thread, const Type& type, SymbolId id) {
   RawObject name = thread->runtime()->symbols()->at(id);
-  return attributeAt(*type, name);
+  RawObject result = NoneType::object();
+  if (!attributeAt(*type, name, &result)) return Error::notFound();
+  return result;
 }
 
 // Returns type flags updated with the given attribute.
@@ -290,9 +293,11 @@ RawObject typeAtPutById(Thread* thread, const Type& type, SymbolId id,
 
 RawObject typeAtSetLocation(RawType type, RawObject name, word hash,
                             Object* location) {
-  RawObject result = attributeValueCellAtWithHash(type, name, hash);
-  if (result.isErrorNotFound()) return result;
-  if (ValueCell::cast(result).isPlaceholder()) return Error::notFound();
+  RawObject result = NoneType::object();
+  if (!attributeValueCellAtWithHash(type, name, hash, &result) ||
+      ValueCell::cast(result).isPlaceholder()) {
+    return Error::notFound();
+  }
   if (location != nullptr) {
     *location = result;
   }
@@ -1034,7 +1039,8 @@ static const SymbolId kUnimplementedTypeAttrUpdates[] = {
 
 void terminateIfUnimplementedTypeAttrCacheInvalidation(
     Thread* thread, const Type& type, const Object& attr_name) {
-  if (attributeValueCellAt(*type, *attr_name).isErrorNotFound()) {
+  RawObject unused = NoneType::object();
+  if (!attributeValueCellAt(*type, *attr_name, &unused)) {
     // No need for cache invalidation due to the absence of the attribute.
     return;
   }

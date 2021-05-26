@@ -200,7 +200,7 @@ result = cache_binary_op(a, b)
 
   // Verify that A.__add__ has the dependent.
   Object left_op_name(&scope, runtime_->symbols()->at(ID(__add__)));
-  Object type_a_attr(&scope, attributeValueCellAt(*type_a, *left_op_name));
+  Object type_a_attr(&scope, typeValueCellAt(*type_a, *left_op_name));
   ASSERT_TRUE(type_a_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_a_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -209,7 +209,7 @@ result = cache_binary_op(a, b)
 
   // Verify that B.__radd__ has the dependent.
   Object right_op_name(&scope, runtime_->symbols()->at(ID(__radd__)));
-  Object type_b_attr(&scope, attributeValueCellAt(*type_b, *right_op_name));
+  Object type_b_attr(&scope, typeValueCellAt(*type_b, *right_op_name));
   ASSERT_TRUE(type_b_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_b_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -1376,7 +1376,7 @@ cache_inplace_op(a, b)
 
   // Verify that A.__imul__ has the dependent.
   Object inplace_op_name(&scope, runtime_->symbols()->at(ID(__imul__)));
-  Object inplace_attr(&scope, attributeValueCellAt(*type_a, *inplace_op_name));
+  Object inplace_attr(&scope, typeValueCellAt(*type_a, *inplace_op_name));
   ASSERT_TRUE(inplace_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*inplace_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(WeakLink::cast(ValueCell::cast(*inplace_attr).dependencyLink())
@@ -1385,7 +1385,7 @@ cache_inplace_op(a, b)
 
   // Verify that A.__mul__ has the dependent.
   Object left_op_name(&scope, runtime_->symbols()->at(ID(__mul__)));
-  Object type_a_attr(&scope, attributeValueCellAt(*type_a, *left_op_name));
+  Object type_a_attr(&scope, typeValueCellAt(*type_a, *left_op_name));
   ASSERT_TRUE(type_a_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_a_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -1394,7 +1394,7 @@ cache_inplace_op(a, b)
 
   // Verify that B.__rmul__ has the dependent.
   Object right_op_name(&scope, runtime_->symbols()->at(ID(__rmul__)));
-  Object type_b_attr(&scope, attributeValueCellAt(*type_b, *right_op_name));
+  Object type_b_attr(&scope, typeValueCellAt(*type_b, *right_op_name));
   ASSERT_TRUE(type_b_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*type_b_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -2522,7 +2522,7 @@ result = cache_compare_op(a, b)
   // Verify that A.__ge__ has the dependent.
   Type a_type(&scope, mainModuleAt(runtime_, "A"));
   Object left_op_name(&scope, runtime_->symbols()->at(ID(__ge__)));
-  Object a_type_attr(&scope, attributeValueCellAt(*a_type, *left_op_name));
+  Object a_type_attr(&scope, typeValueCellAt(*a_type, *left_op_name));
   ASSERT_TRUE(a_type_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*a_type_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -2532,7 +2532,7 @@ result = cache_compare_op(a, b)
   // Verify that B.__le__ has the dependent.
   Type b_type(&scope, mainModuleAt(runtime_, "B"));
   Object right_op_name(&scope, runtime_->symbols()->at(ID(__le__)));
-  Object b_type_attr(&scope, attributeValueCellAt(*b_type, *right_op_name));
+  Object b_type_attr(&scope, typeValueCellAt(*b_type, *right_op_name));
   ASSERT_TRUE(b_type_attr.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*b_type_attr).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -6125,9 +6125,10 @@ result = foo()
 
   Module module(&scope, function.moduleObject());
   Object name(&scope, Runtime::internStrFromCStr(thread_, "a"));
-  Object module_entry(&scope, attributeValueCellAt(*module, *name));
+  RawObject module_entry = NoneType::object();
+  EXPECT_TRUE(attributeValueCellAt(*module, *name, &module_entry));
   ASSERT_TRUE(module_entry.isValueCell());
-  EXPECT_TRUE(ValueCell::cast(*module_entry).isPlaceholder());
+  EXPECT_TRUE(ValueCell::cast(module_entry).isPlaceholder());
 }
 
 TEST_F(InterpreterTest, StoreGlobalCachedInvalidatesCachedBuiltinToBeShadowed) {
@@ -6358,14 +6359,14 @@ c = C()
 
   // Verify that all type dictionaries in C's mro have dependentices to get_foo.
   Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Object result(&scope, attributeValueCellAt(*type_b, *foo_name));
+  Object result(&scope, typeValueCellAt(*type_b, *foo_name));
   ASSERT_TRUE(result.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*result).dependencyLink().isWeakLink());
   EXPECT_EQ(
       WeakLink::cast(ValueCell::cast(*result).dependencyLink()).referent(),
       *get_foo);
 
-  result = attributeValueCellAt(*type_c, *foo_name);
+  result = typeValueCellAt(*type_c, *foo_name);
   ASSERT_TRUE(result.isValueCell());
   ASSERT_TRUE(ValueCell::cast(*result).dependencyLink().isWeakLink());
   EXPECT_EQ(
@@ -6418,8 +6419,7 @@ cache_A_add(a, b)
   // Ensure that cache_a_add is being tracked as a dependent from A.__add__.
   Type type_a(&scope, mainModuleAt(runtime_, "A"));
   Str dunder_add(&scope, runtime_->symbols()->at(ID(__add__)));
-  ValueCell a_add_value_cell(&scope,
-                             attributeValueCellAt(*type_a, *dunder_add));
+  ValueCell a_add_value_cell(&scope, typeValueCellAt(*type_a, *dunder_add));
   ASSERT_FALSE(a_add_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(a_add_value_cell.dependencyLink()).referent(),
             *cache_a_add);
@@ -6427,8 +6427,7 @@ cache_A_add(a, b)
   // Ensure that cache_a_add is being tracked as a dependent from B.__radd__.
   Type type_b(&scope, mainModuleAt(runtime_, "B"));
   Str dunder_radd(&scope, runtime_->symbols()->at(ID(__radd__)));
-  ValueCell b_radd_value_cell(&scope,
-                              attributeValueCellAt(*type_b, *dunder_radd));
+  ValueCell b_radd_value_cell(&scope, typeValueCellAt(*type_b, *dunder_radd));
   ASSERT_TRUE(b_radd_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(b_radd_value_cell.dependencyLink()).referent(),
             *cache_a_add);
@@ -6540,15 +6539,13 @@ cache_A_iadd(a, b)
   // Ensure that cache_a_iadd is being tracked as a dependent from A.__iadd__.
   Type type_a(&scope, mainModuleAt(runtime_, "A"));
   Str dunder_iadd(&scope, runtime_->symbols()->at(ID(__iadd__)));
-  ValueCell a_iadd_value_cell(&scope,
-                              attributeValueCellAt(*type_a, *dunder_iadd));
+  ValueCell a_iadd_value_cell(&scope, typeValueCellAt(*type_a, *dunder_iadd));
   ASSERT_FALSE(a_iadd_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(a_iadd_value_cell.dependencyLink()).referent(),
             *cache_a_iadd);
 
   Str dunder_add(&scope, runtime_->symbols()->at(ID(__add__)));
-  ValueCell a_add_value_cell(&scope,
-                             attributeValueCellAt(*type_a, *dunder_add));
+  ValueCell a_add_value_cell(&scope, typeValueCellAt(*type_a, *dunder_add));
   ASSERT_TRUE(a_add_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(a_add_value_cell.dependencyLink()).referent(),
             *cache_a_iadd);
@@ -6556,8 +6553,7 @@ cache_A_iadd(a, b)
   // Ensure that cache_a_iadd is being tracked as a dependent from B.__riadd__.
   Type type_b(&scope, mainModuleAt(runtime_, "B"));
   Str dunder_radd(&scope, runtime_->symbols()->at(ID(__radd__)));
-  ValueCell b_radd_value_cell(&scope,
-                              attributeValueCellAt(*type_b, *dunder_radd));
+  ValueCell b_radd_value_cell(&scope, typeValueCellAt(*type_b, *dunder_radd));
   ASSERT_TRUE(b_radd_value_cell.isPlaceholder());
   EXPECT_EQ(WeakLink::cast(b_radd_value_cell.dependencyLink()).referent(),
             *cache_a_iadd);
@@ -6770,7 +6766,7 @@ c = C()
 
   // Verify that cache_attribute function is added as a dependent.
   Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  ValueCell value_cell(&scope, attributeValueCellAt(*type_c, *foo_name));
+  ValueCell value_cell(&scope, typeValueCellAt(*type_c, *foo_name));
   ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
   EXPECT_EQ(WeakLink::cast(value_cell.dependencyLink()).referent(),
             *cache_attribute);
@@ -6848,7 +6844,7 @@ c = C()
 
   // Verify that cache_attribute function is added as a dependent.
   Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  ValueCell value_cell(&scope, attributeValueCellAt(*type_c, *foo_name));
+  ValueCell value_cell(&scope, typeValueCellAt(*type_c, *foo_name));
   ASSERT_TRUE(value_cell.dependencyLink().isWeakLink());
   EXPECT_EQ(WeakLink::cast(value_cell.dependencyLink()).referent(),
             *cache_attribute);
@@ -6910,21 +6906,21 @@ function_that_caches_attr_lookup(a, b, c)
   // Verify that function_that_caches_attr_lookup cached the attribute lookup
   // and appears on the dependency list of A.foo.
   Object foo_name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  ValueCell foo_in_a(&scope, attributeValueCellAt(*type_a, *foo_name));
+  ValueCell foo_in_a(&scope, typeValueCellAt(*type_a, *foo_name));
   ASSERT_TRUE(foo_in_a.dependencyLink().isWeakLink());
   ASSERT_EQ(WeakLink::cast(foo_in_a.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);
 
   // Verify that function_that_caches_attr_lookup cached the attribute lookup
   // and appears on the dependency list of B.foo.
-  ValueCell foo_in_b(&scope, attributeValueCellAt(*type_b, *foo_name));
+  ValueCell foo_in_b(&scope, typeValueCellAt(*type_b, *foo_name));
   ASSERT_TRUE(foo_in_b.dependencyLink().isWeakLink());
   ASSERT_EQ(WeakLink::cast(foo_in_b.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);
 
   // Verify that function_that_caches_attr_lookup cached the attribute lookup
   // and appears on the dependency list of C.foo.
-  ValueCell foo_in_c(&scope, attributeValueCellAt(*type_c, *foo_name));
+  ValueCell foo_in_c(&scope, typeValueCellAt(*type_c, *foo_name));
   ASSERT_TRUE(foo_in_c.dependencyLink().isWeakLink());
   ASSERT_EQ(WeakLink::cast(foo_in_c.dependencyLink()).referent(),
             *function_that_caches_attr_lookup);

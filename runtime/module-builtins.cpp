@@ -16,12 +16,16 @@
 namespace py {
 
 RawObject moduleAt(const Module& module, const Object& name) {
-  return attributeAt(*module, *name);
+  RawObject result = NoneType::object();
+  if (!attributeAt(*module, *name, &result)) return Error::notFound();
+  return result;
 }
 
 RawObject moduleAtById(Thread* thread, const Module& module, SymbolId id) {
   RawObject name = thread->runtime()->symbols()->at(id);
-  return attributeAt(*module, name);
+  RawObject result = NoneType::object();
+  if (!attributeAt(*module, name, &result)) return Error::notFound();
+  return result;
 }
 
 RawObject moduleDeleteAttribute(Thread* thread, const Module& module,
@@ -47,34 +51,33 @@ RawObject moduleDeleteAttribute(Thread* thread, const Module& module,
   return NoneType::object();
 }
 
-static RawObject filterPlaceholderValueCell(RawObject result) {
-  if (result.isErrorNotFound()) {
-    return result;
-  }
-  RawValueCell value_cell = ValueCell::cast(result);
-  if (value_cell.isPlaceholder()) {
-    return Error::notFound();
-  }
-  return value_cell;
-}
-
 RawObject moduleValueCellAtById(Thread* thread, const Module& module,
                                 SymbolId id) {
   RawObject name = thread->runtime()->symbols()->at(id);
-  return filterPlaceholderValueCell(attributeValueCellAt(*module, name));
+  RawObject result = NoneType::object();
+  if (!attributeValueCellAt(*module, name, &result) ||
+      ValueCell::cast(result).isPlaceholder()) {
+    return Error::notFound();
+  }
+  return result;
 }
 
 RawObject moduleValueCellAt(Thread*, const Module& module, const Object& name) {
-  return filterPlaceholderValueCell(attributeValueCellAt(*module, *name));
+  RawObject result = NoneType::object();
+  if (!attributeValueCellAt(*module, *name, &result) ||
+      ValueCell::cast(result).isPlaceholder()) {
+    return Error::notFound();
+  }
+  return result;
 }
 
 static RawObject moduleValueCellAtPut(Thread* thread, const Module& module,
                                       const Object& name, const Object& value) {
-  HandleScope scope(thread);
-  Object module_result(&scope, attributeValueCellAt(*module, *name));
-  if (!module_result.isErrorNotFound() &&
-      ValueCell::cast(*module_result).isPlaceholder()) {
+  RawObject module_result = NoneType::object();
+  if (attributeValueCellAt(*module, *name, &module_result) &&
+      ValueCell::cast(module_result).isPlaceholder()) {
     // A builtin entry is cached under the same name, so invalidate its caches.
+    HandleScope scope(thread);
     Object builtins(&scope, moduleAtById(thread, module, ID(__builtins__)));
     Module builtins_module(&scope, *module);
     if (builtins.isModuleProxy()) {
@@ -82,10 +85,9 @@ static RawObject moduleValueCellAtPut(Thread* thread, const Module& module,
     }
     if (thread->runtime()->isInstanceOfModule(*builtins)) {
       builtins_module = *builtins;
-      Object builtins_result(&scope,
-                             attributeValueCellAt(*builtins_module, *name));
-      if (!builtins_result.isErrorNotFound()) {
-        ValueCell builtins_value_cell(&scope, *builtins_result);
+      RawObject builtins_result = NoneType::object();
+      if (attributeValueCellAt(*builtins_module, *name, &builtins_result)) {
+        ValueCell builtins_value_cell(&scope, builtins_result);
         if (!builtins_value_cell.isPlaceholder()) {
           DCHECK(!builtins_value_cell.dependencyLink().isNoneType(),
                  "the builtin valuecell must have a dependent");

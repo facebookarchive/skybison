@@ -330,8 +330,11 @@ void icDeleteDependentFromInheritingTypes(Thread* thread,
     // If a mro_type's dict is not mutable, its parents must be not imutable.
     // Therefore, we can stop the MRO search here.
     if (!mro_type.hasMutableDict()) break;
-    ValueCell value_cell(
-        &scope, attributeValueCellAtWithHash(*mro_type, *attr_name, hash));
+    RawObject value_cell_raw = NoneType::object();
+    bool found = attributeValueCellAtWithHash(*mro_type, *attr_name, hash,
+                                              &value_cell_raw);
+    DCHECK(found, "value cell not found");
+    ValueCell value_cell(&scope, value_cell_raw);
     icDeleteDependentInValueCell(thread, value_cell, dependent);
     if (mro_type == new_defining_type) {
       // This can be a placeholder for some caching opcodes that depend on not
@@ -359,8 +362,8 @@ RawObject icHighestSuperTypeNotInMroOfOtherCachedTypes(
     if (!mro_type.hasMutableDict()) {
       break;
     }
-    if (attributeValueCellAtWithHash(*mro_type, *attr_name, hash)
-            .isErrorNotFound() ||
+    RawObject unused = NoneType::object();
+    if (!attributeValueCellAtWithHash(*mro_type, *attr_name, hash, &unused) ||
         icIsAttrCachedInDependent(thread, mro_type, attr_name, dependent)) {
       break;
     }
@@ -391,18 +394,18 @@ bool icIsCachedAttributeAffectedByUpdatedType(Thread* thread,
     // If a mro_type's dict is not mutable, its parents must be not immutable.
     // Therefore, we can stop the MRO search here.
     if (!mro_type.hasMutableDict()) break;
-    result = attributeValueCellAtWithHash(*mro_type, *attribute_name, hash);
+    if (!attributeValueCellAtWithHash(*mro_type, *attribute_name, hash,
+                                      &result)) {
+      // No ValueCell found, implying that no dependencies in this type dict and
+      // above.
+      return false;
+    }
+    DCHECK(result.isValueCell(), "result must be ValueCell");
     if (mro_type == updated_type) {
       // The current type in MRO is the searched type, and the searched
       // attribute is unfound in MRO so far, so type[attribute_name] is the one
       // retrieved from this mro.
-      DCHECK(result.isValueCell(), "result must be ValueCell");
       return true;
-    }
-    if (result.isErrorNotFound()) {
-      // No ValueCell found, implying that no dependencies in this type dict and
-      // above.
-      return false;
     }
     if (!ValueCell::cast(*result).isPlaceholder()) {
       // A non-placeholder is found for the attribute, this is retrived as the

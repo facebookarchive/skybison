@@ -140,6 +140,8 @@ RawObject moduleAtByCStr(Runtime* runtime, const char* module_name,
 // Get the name of the type of the given object.
 std::string typeName(Runtime* runtime, RawObject obj);
 
+RawObject typeValueCellAt(RawType type, RawObject name);
+
 RawCode newEmptyCode();
 
 RawFunction newEmptyFunction();

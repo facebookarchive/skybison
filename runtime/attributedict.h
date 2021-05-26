@@ -13,10 +13,10 @@ const int kAttributeBucketValueOffset = 1;
 const RawObject kAttributeDictEmptyKey = SmallInt::fromWord(0);
 const RawObject kAttributeDictTombstoneKey = NoneType::object();
 
-RawObject attributeAt(RawAttributeDict attrs, RawObject name);
+bool attributeAt(RawAttributeDict attrs, RawObject name, RawObject* result_out);
 
-RawObject attributeAtWithHash(RawAttributeDict attrs, RawObject name,
-                              word hash);
+bool attributeAtWithHash(RawAttributeDict attrs, RawObject name, word hash,
+                         RawObject* result_out);
 
 RawObject attributeAtPut(Thread* thread, const AttributeDict& attrs,
                          const Object& name, const Object& value);
@@ -40,11 +40,12 @@ bool attributeFindForRemoval(const AttributeDict& attrs, const Object& name,
 void attributeRemove(const AttributeDict& attrs, word index);
 
 // Look-up underlying value-cell to a name.
-RawObject attributeValueCellAt(RawAttributeDict attrs, RawObject name);
+bool attributeValueCellAt(RawAttributeDict attrs, RawObject name,
+                          RawObject* result_out);
 
 // Look-up underlying value-cell to a name.
-RawObject attributeValueCellAtWithHash(RawAttributeDict attrs, RawObject name,
-                                       word hash);
+bool attributeValueCellAtWithHash(RawAttributeDict attrs, RawObject name,
+                                  word hash, RawObject* result_out);
 
 // Look-up or insert a value-cell for a given name.
 RawObject attributeValueCellAtPut(Thread* thread, const AttributeDict& attrs,
@@ -54,8 +55,8 @@ RawObject attributeValues(Thread* thread, const AttributeDict& attrs);
 
 word internedStrHash(RawObject name);
 
-inline RawObject attributeValueCellAtWithHash(RawAttributeDict attrs,
-                                              RawObject name, word hash) {
+inline bool attributeValueCellAtWithHash(RawAttributeDict attrs, RawObject name,
+                                         word hash, RawObject* result_out) {
   RawMutableTuple data = MutableTuple::cast(attrs.attributes());
   word mask = (data.length() - 1) >> 1;
   for (word bucket = hash & mask, num_probes = 0;;
@@ -63,10 +64,11 @@ inline RawObject attributeValueCellAtWithHash(RawAttributeDict attrs,
     word idx = bucket * kAttributeBucketNumWords;
     RawObject key = data.at(idx + kAttributeBucketKeyOffset);
     if (key == name) {
-      return data.at(idx + kAttributeBucketValueOffset);
+      *result_out = data.at(idx + kAttributeBucketValueOffset);
+      return true;
     }
     if (key == kAttributeDictEmptyKey) {
-      return Error::notFound();
+      return false;
     }
     // Remaining cases are either a key that does not match or tombstone.
   }
@@ -80,17 +82,21 @@ inline RawObject attributeAtPut(Thread* thread, const AttributeDict& attrs,
   return value_cell;
 }
 
-inline RawObject attributeAtWithHash(RawAttributeDict attrs, RawObject name,
-                                     word hash) {
-  RawObject result = attributeValueCellAtWithHash(attrs, name, hash);
-  if (result.isErrorNotFound()) return result;
-  if (ValueCell::cast(result).isPlaceholder()) return Error::notFound();
-  return ValueCell::cast(result).value();
+inline bool attributeAtWithHash(RawAttributeDict attrs, RawObject name,
+                                word hash, RawObject* result_out) {
+  RawObject result = NoneType::object();
+  if (!attributeValueCellAtWithHash(attrs, name, hash, &result) ||
+      ValueCell::cast(result).isPlaceholder()) {
+    return false;
+  }
+  *result_out = ValueCell::cast(result).value();
+  return true;
 }
 
-inline RawObject attributeAt(RawAttributeDict attrs, RawObject name) {
+inline bool attributeAt(RawAttributeDict attrs, RawObject name,
+                        RawObject* result_out) {
   word hash = internedStrHash(name);
-  return attributeAtWithHash(attrs, name, hash);
+  return attributeAtWithHash(attrs, name, hash, result_out);
 }
 
 inline word internedStrHash(RawObject name) {

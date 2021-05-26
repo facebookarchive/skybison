@@ -146,8 +146,9 @@ TEST_F(ModuleBuiltinsTest, ModuleAtReturnsErrorNotFoundForPlaceholder) {
   Object value(&scope, runtime_->newStrFromCStr("a's value"));
   moduleAtPut(thread_, module, name, value);
 
-  ValueCell value_cell(&scope, attributeValueCellAt(*module, *name));
-  value_cell.makePlaceholder();
+  RawObject value_cell = NoneType::object();
+  EXPECT_TRUE(attributeValueCellAt(*module, *name, &value_cell));
+  ValueCell::cast(value_cell).makePlaceholder();
   EXPECT_TRUE(moduleAt(module, name).isErrorNotFound());
 }
 
@@ -266,7 +267,9 @@ TEST_F(ModuleBuiltinsTest, ModuleLenReturnsItemCountExcludingPlaceholders) {
 
   word previous_len = moduleLen(thread_, module);
 
-  ValueCell::cast(attributeValueCellAt(*module, *bar)).makePlaceholder();
+  RawObject value_cell = NoneType::object();
+  EXPECT_TRUE(attributeValueCellAt(*module, *bar, &value_cell));
+  ValueCell::cast(value_cell).makePlaceholder();
 
   word after_len = moduleLen(thread_, module);
   EXPECT_EQ(previous_len, after_len + 1);
@@ -313,7 +316,9 @@ TEST_F(ModuleBuiltinsTest, ModuleValuesFiltersOutPlaceholders) {
   moduleAtPut(thread_, module, bar, bar_value);
   moduleAtPut(thread_, module, baz, baz_value);
 
-  ValueCell::cast(attributeValueCellAt(*module, *bar)).makePlaceholder();
+  RawObject value_cell = NoneType::object();
+  EXPECT_TRUE(attributeValueCellAt(*module, *bar, &value_cell));
+  ValueCell::cast(value_cell).makePlaceholder();
 
   List values(&scope, moduleValues(thread_, module));
   EXPECT_TRUE(listContains(values, foo_value));
