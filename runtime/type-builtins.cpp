@@ -376,20 +376,6 @@ RawObject typeDeleteAttribute(Thread* thread, const Type& type,
   return NoneType::object();
 }
 
-RawObject typeLookupInMro(Thread* thread, RawType type, RawObject name) {
-  RawTuple mro = Tuple::cast(type.mro());
-  word hash = internedStrHash(name);
-  for (word i = 0, length = mro.length(); i < length; i++) {
-    DCHECK(thread->runtime()->isInstanceOfType(mro.at(i)), "non-type in MRO");
-    RawType mro_type = mro.at(i).rawCast<RawType>();
-    RawObject result = attributeAtWithHash(mro_type, name, hash);
-    if (!result.isErrorNotFound()) {
-      return result;
-    }
-  }
-  return Error::notFound();
-}
-
 RawObject typeLookupInMroById(Thread* thread, RawType type, SymbolId id) {
   return typeLookupInMro(thread, type, thread->runtime()->symbols()->at(id));
 }

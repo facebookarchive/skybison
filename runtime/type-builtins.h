@@ -1,5 +1,6 @@
 #pragma once
 
+#include "attributedict.h"
 #include "frame.h"
 #include "globals.h"
 #include "layout.h"
@@ -145,6 +146,20 @@ inline bool typeIsSubclass(RawObject subclass, RawObject superclass) {
     }
   }
   return false;
+}
+
+inline RawObject typeLookupInMro(Thread* thread, RawType type, RawObject name) {
+  RawTuple mro = Tuple::cast(type.mro());
+  word hash = internedStrHash(name);
+  for (word i = 0, length = mro.length(); i < length; i++) {
+    DCHECK(thread->runtime()->isInstanceOfType(mro.at(i)), "non-type in MRO");
+    RawType mro_type = mro.at(i).rawCast<RawType>();
+    RawObject result = attributeAtWithHash(mro_type, name, hash);
+    if (!result.isErrorNotFound()) {
+      return result;
+    }
+  }
+  return Error::notFound();
 }
 
 }  // namespace py
