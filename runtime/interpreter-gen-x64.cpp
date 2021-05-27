@@ -396,6 +396,7 @@ SaveRestoreFlags mayChangeFramePC(Bytecode bc) {
     case COMPARE_LT_SMALLINT:
     case COMPARE_GT_SMALLINT:
     case INPLACE_ADD_SMALLINT:
+    case INPLACE_SUB_SMALLINT:
     case LOAD_ATTR_INSTANCE:
     case LOAD_ATTR_INSTANCE_TYPE_BOUND_METHOD:
     case LOAD_ATTR_POLYMORPHIC:
