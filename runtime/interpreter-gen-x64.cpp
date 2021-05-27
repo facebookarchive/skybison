@@ -26,6 +26,12 @@ namespace py {
 
 namespace {
 
+#if DCHECK_IS_ON()
+#define COMMENT(...) __ comment(__VA_ARGS__)
+#else
+#define COMMENT(...)
+#endif
+
 using namespace x64;
 
 const word kInstructionCacheLineSize = 64;
@@ -3264,6 +3270,9 @@ void compileFunction(Thread* thread, const Function& function) {
   // assignment.
   env->register_state.resetTo(function_entry_assignment);
 
+  COMMENT("Function <%s>",
+          unique_c_ptr<char>(Str::cast(function.qualname()).toCStr()).get());
+  COMMENT("Prologue");
   // Check that we received the right number of arguments.
   Label call_interpreted_slow_path;
   __ cmpl(env->oparg, Immediate(function.argcount()));
@@ -3285,6 +3294,7 @@ void compileFunction(Thread* thread, const Function& function) {
     env->setCurrentOp(op);
     env->setVirtualPC(i * kCodeUnitSize);
     env->register_state.resetTo(env->jit_handler_assignment);
+    COMMENT("%s %d (%d)", kBytecodeNames[op.bc], op.arg, op.cache);
     __ bind(env->opcodeAtByteOffset(current_pc));
     switch (op.bc) {
 #define BC(name, _0, _1)                                                       \
@@ -3298,11 +3308,13 @@ void compileFunction(Thread* thread, const Function& function) {
   }
 
   if (!env->unwind_handler.isUnused()) {
+    COMMENT("Unwind");
     __ bind(&env->unwind_handler);
     // TODO(T91715866): Unwind.
     __ ud2();
   }
 
+  COMMENT("Call interpreted slow path");
   __ bind(&call_interpreted_slow_path);
   // TODO(T89721522): Have one canonical slow path chunk of code that all JIT
   // functions jump to, instead of one per function.
@@ -3310,6 +3322,7 @@ void compileFunction(Thread* thread, const Function& function) {
   emitCallInterpretedSlowPath(env);
 
   if (!env->deopt_handler.isUnused()) {
+    COMMENT("Deopt");
     // Handle deoptimization by resetting the entrypoint to an assembly
     // entrypoint and then jumping back into the interpreter.
     __ bind(&env->deopt_handler);
@@ -3321,6 +3334,9 @@ void compileFunction(Thread* thread, const Function& function) {
     emitRestoreInterpreterState(env, kAllState);
     emitNextOpcodeImpl(env);
   }
+
+  COMMENT("<END>");
+  __ ud2();
 
   // Finalize the code.
   word jit_size = Utils::roundUp(env->as.codeSize(), kBitsPerByte);
