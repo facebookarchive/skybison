@@ -2258,7 +2258,8 @@ class RawCode : public RawInstance {
     kFutureGeneratorStop = 0x800000,
     kFutureAnnotations = 0x1000000,
     kBuiltin = 0x2000000,
-    kLast = kBuiltin,
+    kMetadata = 0x4000000,
+    kLast = kMetadata,
   };
 
   // Getters and setters.

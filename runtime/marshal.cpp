@@ -4,7 +4,9 @@
 #include <cstring>
 #include <memory>
 
+#include "handles.h"
 #include "heap.h"
+#include "modules.h"
 #include "runtime.h"
 #include "set-builtins.h"
 #include "tuple-builtins.h"
@@ -408,7 +410,7 @@ RawObject Marshal::Reader::readTypeCode() {
   int32_t flags = readLong();
   CHECK(flags <= (Code::Flags::kLast << 1) - 1, "unknown flags in code object");
   Object code(&scope, readObject());
-  Object consts(&scope, readObject());
+  Tuple consts(&scope, readObject());
   Object names(&scope, readObject());
   Tuple varnames(&scope, readObject());
   Tuple freevars(&scope, readObject());
@@ -418,7 +420,18 @@ RawObject Marshal::Reader::readTypeCode() {
   int32_t firstlineno = readLong();
   Object lnotab(&scope, readObject());
 
-  word intrinsic_index = (stacksize & 0xffff0000) >> (2 * kBitsPerByte);
+  word intrinsic_index = 0;
+  if (flags & Code::Flags::kMetadata) {
+    Object metadata_obj(&scope, consts.at(0));
+    CHECK(metadata_obj.isTuple() && Tuple::cast(*metadata_obj).length() == 1,
+          "malformed metadata");
+    Tuple metadata(&scope, *metadata_obj);
+    Object intrinsic(&scope, metadata.at(0));
+    CHECK(intrinsic.isSmallInt(), "malformed intrinsic ID");
+    intrinsic_index = SmallInt::cast(*intrinsic).value();
+    consts = runtime_->tupleSubseq(thread_, consts, 1, consts.length() - 1);
+  }
+
   IntrinsicFunction intrinsic = nullptr;
   if (intrinsic_functions_ != nullptr && intrinsic_index != 0) {
     CHECK_INDEX(intrinsic_index - 1, num_intrinsic_functions_);
@@ -427,11 +440,10 @@ RawObject Marshal::Reader::readTypeCode() {
   }
   Object result(&scope, NoneType::object());
   if (flags & Code::Flags::kBuiltin) {
-    word function_index = stacksize & 0xffff;
+    word function_index = stacksize;
     CHECK(code.isBytes() && Bytes::cast(*code).length() == 0,
           "must not have bytecode in native code");
-    CHECK(consts.isTuple() && Tuple::cast(*consts).length() == 0,
-          "must not have constants in native code");
+    CHECK(consts.length() == 0, "consts should contain only metadata");
     CHECK(names.isTuple() && Tuple::cast(*names).length() == 0,
           "must not have variables in native code");
     CHECK(freevars.length() == 0, "must not have free vars in native code");
@@ -444,9 +456,9 @@ RawObject Marshal::Reader::readTypeCode() {
     Code::cast(*result).setFirstlineno(firstlineno);
   } else {
     result = runtime_->newCode(argcount, posonlyargcount, kwonlyargcount,
-                               nlocals, stacksize & 0xffff, flags, code, consts,
-                               names, varnames, freevars, cellvars, filename,
-                               name, firstlineno, lnotab);
+                               nlocals, stacksize, flags, code, consts, names,
+                               varnames, freevars, cellvars, filename, name,
+                               firstlineno, lnotab);
   }
   Code::cast(*result).setIntrinsic(reinterpret_cast<void*>(intrinsic));
   if (index >= 0) {

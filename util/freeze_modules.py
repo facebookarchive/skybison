@@ -29,9 +29,9 @@ assert (
 INIT_MODULE_NAME = "__init_module__"
 
 
-# Pyro specific flag to mark code objects for builtin functions.
-# (see also `runtime/objects.h`)
+# Pyro-specific flags to mark code objects (see also `runtime/objects.h`)
 CO_BUILTIN = 0x2000000
+CO_METADATA = 0x4000000
 
 
 def builtin_function_template():
@@ -74,6 +74,16 @@ def mark_native_functions(code, builtins, intrinsics, module_name, fqname=()):
     constants tuple only contains a `_builtin()` call and should be marked
     as a native function. If so an entry is appended to the `builtins` list
     and the code object is marked with the CO_BUILTIN flag."""
+
+    flags = code.co_flags
+    metadata = [0]
+    if marked_with_intrinsic(code):
+        flags |= CO_METADATA
+        intrinsic_id = builtin_intrinsic_id(module_name, fqname)
+        intrinsics.append(intrinsic_id)
+        # The intrinsic IDs are biased by 1 so that 0 means no intrinsic
+        metadata[0] = len(intrinsics)
+
     if code.co_names == ("_builtin",) and (
         code.co_code == builtin_function_template.__code__.co_code
         or code.co_code == builtin_function_template_with_docu.__code__.co_code
@@ -88,25 +98,16 @@ def mark_native_functions(code, builtins, intrinsics, module_name, fqname=()):
         builtin_num = len(builtins)
         builtins.append(builtin_id)
 
-        stacksize = builtin_num
-        if marked_with_intrinsic(code):
-            intrinsic_id = builtin_intrinsic_id(module_name, fqname)
-            # The intrinsic IDs are biased by 1 so that 0 means no intrinsic
-            stacksize |= (len(intrinsics) + 1) << 16
-            intrinsics.append(intrinsic_id)
-
         # We abuse the stacksize field to store the index of the builtin
-        # function and its intrinsic. This way we do not need to invent a new
-        # marshaling type just for this.
-        #
-        # stacksize is 32 bits in the marshaled code. We use the upper 16 bits
-        # for an intrinsic id and the lower 16 bits for the builtin id.
-        flags = code.co_flags | CO_BUILTIN
+        # function. This way we do not need to invent a new marshaling type
+        # just for this.
+        flags |= CO_BUILTIN
+        consts = (tuple(metadata),) if flags & CO_METADATA else ()
         new_code = code.replace(
-            co_stacksize=stacksize,
+            co_stacksize=builtin_num,
             co_flags=flags,
             co_code=b"",
-            co_consts=(),
+            co_consts=consts,
             co_names=(),
             co_filename="",
             co_firstlineno=0,
@@ -116,20 +117,9 @@ def mark_native_functions(code, builtins, intrinsics, module_name, fqname=()):
         )
         return new_code
 
-    stacksize = code.co_stacksize
-    if stacksize > 0xFFFF:
-        raise Exception(
-            "stacksize greater than expected and overflows into intrinsic space"
-        )
-    if marked_with_intrinsic(code):
-        intrinsic_id = builtin_intrinsic_id(module_name, fqname)
-        # The intrinsic IDs are biased by 1 so that 0 means no intrinsic
-        stacksize |= (len(intrinsics) + 1) << 16
-        intrinsics.append(intrinsic_id)
-
     # Recursively transform code objects in the constants tuple.
-    new_consts = []
-    changed = False
+    changed = flags & CO_METADATA
+    new_consts = [tuple(metadata)] if changed else []
     for c in code.co_consts:
         if isinstance(c, CodeType):
             assert c.co_name != "<module>"
@@ -137,15 +127,15 @@ def mark_native_functions(code, builtins, intrinsics, module_name, fqname=()):
             new_c = mark_native_functions(
                 c, builtins, intrinsics, module_name, sub_name
             )
+            changed |= new_c is not c
         else:
             new_c = c
-        changed |= new_c is c
         new_consts.append(new_c)
     if not changed:
         return code
 
     new_consts = tuple(new_consts)
-    return code.replace(co_stacksize=stacksize, co_consts=new_consts)
+    return code.replace(co_flags=flags, co_consts=new_consts)
 
 
 def to_char_array(byte_array):
