@@ -23,7 +23,12 @@ static const word kInitialHandlesCapacity = 256;
 
 void finalizeCAPIState(Runtime* runtime) {
   CAPIState* state = capiState(runtime);
-  OS::freeMemory(state->handle_buffer, state->handle_buffer_size);
+  // TODO(T91722776) Remove hack when extension code has been audited for global
+  // access after finalization. For now only explicitly unmap the handle
+  // space if using debug checks.
+  if (DCHECK_IS_ON()) {
+    OS::freeMemory(state->handle_buffer, state->handle_buffer_size);
+  }
   state->~CAPIState();
 }
 
