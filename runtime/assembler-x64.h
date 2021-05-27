@@ -792,6 +792,8 @@ class Assembler {
   void align(int alignment);
   void bind(Label* label);
 
+  void comment(const char* format, ...);
+
   // Debugging and bringup support.
   void breakpoint() { int3(); }
 
@@ -856,6 +858,7 @@ class Assembler {
   void emitGenericShift(bool wide, int rm, Register operand, Register shifter);
 
   AssemblerBuffer buffer_;  // Contains position independent code.
+  CodeComments comments_;
 
   DISALLOW_COPY_AND_ASSIGN(Assembler);
 };

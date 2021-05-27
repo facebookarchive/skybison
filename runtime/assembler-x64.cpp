@@ -5,6 +5,8 @@
 
 #include "assembler-x64.h"
 
+#include <cstdarg>
+#include <cstdio>
 #include <cstring>
 
 #include "globals.h"
@@ -817,6 +819,15 @@ void Assembler::bind(Label* label) {
     buffer_.store<int8_t>(position, offset);
   }
   label->bindTo(bound);
+}
+
+void Assembler::comment(const char* format, ...) {
+  char comment_buffer[1024];
+  va_list args;
+  ::va_start(args, format);
+  std::vsnprintf(comment_buffer, sizeof comment_buffer, format, args);
+  ::va_end(args);
+  comments_.add(new CodeComment(buffer_.getPosition(), comment_buffer));
 }
 
 void Assembler::align(int alignment) {

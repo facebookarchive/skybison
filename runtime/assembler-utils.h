@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "globals.h"
 #include "memory-region.h"
 #include "utils.h"
@@ -255,6 +257,39 @@ class AssemblerBuffer {
   void extendCapacity();
 
   friend class AssemblerFixup;
+};
+
+class CodeComment {
+ public:
+  CodeComment(word offset, const char* comment)
+      : offset_(offset), comment_(comment) {}
+
+  word offset() const { return offset_; }
+  const std::string& comment() const { return comment_; }
+
+ private:
+  word offset_ = -1;
+  std::string comment_;
+
+  DISALLOW_COPY_AND_ASSIGN(CodeComment);
+};
+
+class CodeComments {
+ public:
+  CodeComments() = default;
+
+  ~CodeComments() {
+    for (word i = 0; i < comments_.size(); i++) {
+      delete comments_[i];
+    }
+  }
+
+  void add(CodeComment* comment) { comments_.push_back(comment); }
+
+ private:
+  Vector<CodeComment*> comments_;
+
+  DISALLOW_COPY_AND_ASSIGN(CodeComments);
 };
 
 }  // namespace py
