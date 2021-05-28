@@ -189,6 +189,15 @@ static word computeAttributeTypeFlags(Thread* thread, const Type& type,
     }
     return flags;
   }
+  if (name == ID(__eq__)) {
+    RawObject value = typeLookupInMroById(thread, *type, name);
+    if (value == runtime->objectDunderEq()) {
+      flags |= Type::Flag::kHasObjectDunderEq;
+    } else {
+      flags &= ~Type::Flag::kHasObjectDunderEq;
+    }
+    return flags;
+  }
   if (name == ID(__get__)) {
     RawObject value = typeLookupInMroById(thread, *type, name);
     if (!value.isErrorNotFound()) {
@@ -249,9 +258,9 @@ static void typePropagateAttributeTypeFlag(Thread* thread, const Type& type,
 }
 
 static const SymbolId kAttributesForTypeFlags[] = {
-    ID(__getattribute__), ID(__new__), ID(__hash__),
-    ID(__bool__),         ID(__len__), ID(__class__),
-    ID(__get__),          ID(__set__), ID(__delete__),
+    ID(__getattribute__), ID(__new__),   ID(__hash__), ID(__bool__),
+    ID(__len__),          ID(__class__), ID(__get__),  ID(__set__),
+    ID(__delete__),       ID(__eq__),
 };
 
 // Returns `SymbolId` for `attr_name` if given `attr_name` is marked in

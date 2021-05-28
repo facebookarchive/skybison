@@ -1939,6 +1939,7 @@ void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
   switch (layout_id) {
     case LayoutId::kObject:
       object_dunder_class_ = typeAtById(thread, type, ID(__class__));
+      object_dunder_eq_ = typeAtById(thread, type, ID(__eq__));
       object_dunder_getattribute_ =
           typeAtById(thread, type, ID(__getattribute__));
       object_dunder_hash_ = typeAtById(thread, type, ID(__hash__));
@@ -2029,6 +2030,15 @@ void Runtime::builtinTypeCreated(Thread* thread, const Type& type) {
                                           Type::Flag::kHasObjectDunderClass));
   }
 
+  Object dunder_eq(&scope, typeLookupInMroById(thread, *type, ID(__eq__)));
+  if (*dunder_eq == object_dunder_eq_ ||
+      // __eq__ cannot be found in this type and this type is initialized
+      // before `object`.
+      (dunder_eq.isErrorNotFound() && object_dunder_eq_.isNoneType())) {
+    type.setFlags(
+        static_cast<Type::Flag>(type.flags() | Type::Flag::kHasObjectDunderEq));
+  }
+
   if (!typeLookupInMroById(thread, *type, ID(__get__)).isErrorNotFound()) {
     type.setFlags(
         static_cast<Type::Flag>(type.flags() | Type::Flag::kHasDunderGet));
@@ -2088,6 +2098,7 @@ void Runtime::visitRuntimeRoots(PointerVisitor* visitor) {
   visitor->visitPointer(&empty_tuple_, PointerKind::kRuntime);
   visitor->visitPointer(&module_dunder_getattribute_, PointerKind::kRuntime);
   visitor->visitPointer(&object_dunder_class_, PointerKind::kRuntime);
+  visitor->visitPointer(&object_dunder_eq_, PointerKind::kRuntime);
   visitor->visitPointer(&object_dunder_getattribute_, PointerKind::kRuntime);
   visitor->visitPointer(&object_dunder_hash_, PointerKind::kRuntime);
   visitor->visitPointer(&object_dunder_init_, PointerKind::kRuntime);
@@ -2678,6 +2689,13 @@ static RawObject NEVER_INLINE callDunderEq(Thread* thread, RawObject o0_raw,
   HandleScope scope(thread);
   Object o0(&scope, o0_raw);
   Object o1(&scope, o1_raw);
+  Runtime* runtime = thread->runtime();
+  Type o0_type(&scope, runtime->typeOf(*o0));
+  Type o1_type(&scope, runtime->typeOf(*o1));
+  if ((o0_type.flags() & Type::Flag::kHasObjectDunderEq) &&
+      (o1_type.flags() & Type::Flag::kHasObjectDunderEq)) {
+    return Bool::fromBool(*o0 == *o1);
+  }
   Object compare_result(
       &scope, Interpreter::compareOperation(thread, CompareOp::EQ, o0, o1));
   if (compare_result.isErrorException()) return *compare_result;

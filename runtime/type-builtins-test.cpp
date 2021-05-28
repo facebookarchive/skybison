@@ -23,38 +23,38 @@ using TypeBuiltinsTest = RuntimeFixture;
 TEST_F(TypeBuiltinsTest, TypeAtReturnsNoPlaceholderValue) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_->newType());
-  Object name(&scope, Runtime::internStrFromCStr(thread_, "__eq__"));
-  Object value(&scope, Runtime::internStrFromCStr(thread_, "__eq__'s value"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "__ne__"));
+  Object value(&scope, Runtime::internStrFromCStr(thread_, "__ne__'s value"));
   typeAtPut(thread_, type, name, value);
   EXPECT_EQ(typeAt(type, name), *value);
-  EXPECT_EQ(typeAtById(thread_, type, ID(__eq__)), *value);
+  EXPECT_EQ(typeAtById(thread_, type, ID(__ne__)), *value);
 }
 
 TEST_F(TypeBuiltinsTest, TypeAtReturnsErrorNotFoundForPlaceholder) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_->newType());
-  Object name(&scope, Runtime::internStrFromCStr(thread_, "__eq__"));
-  Object value(&scope, Runtime::internStrFromCStr(thread_, "__eq__'s value"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "__ne__"));
+  Object value(&scope, Runtime::internStrFromCStr(thread_, "__ne__'s value"));
   ValueCell value_cell(&scope, typeAtPut(thread_, type, name, value));
   value_cell.makePlaceholder();
   EXPECT_TRUE(typeAt(type, name).isErrorNotFound());
-  EXPECT_TRUE(typeAtById(thread_, type, ID(__eq__)).isErrorNotFound());
+  EXPECT_TRUE(typeAtById(thread_, type, ID(__ne__)).isErrorNotFound());
 }
 
 TEST_F(TypeBuiltinsTest, TypeAtPutPutsValueInValueCell) {
   HandleScope scope(thread_);
   Type type(&scope, runtime_->newType());
-  Object name(&scope, Runtime::internStrFromCStr(thread_, "__eq__"));
-  Object value(&scope, Runtime::internStrFromCStr(thread_, "__eq__'s value"));
+  Object name(&scope, Runtime::internStrFromCStr(thread_, "__ne__"));
+  Object value(&scope, Runtime::internStrFromCStr(thread_, "__ne__'s value"));
 
   ValueCell result(&scope, typeAtPut(thread_, type, name, value));
   ASSERT_EQ(result.value(), *value);
   EXPECT_EQ(typeAt(type, name), *value);
   result.setValue(NoneType::object());
 
-  result = typeAtPutById(thread_, type, ID(__eq__), value);
+  result = typeAtPutById(thread_, type, ID(__ne__), value);
   ASSERT_EQ(result.value(), *value);
-  EXPECT_EQ(typeAtById(thread_, type, ID(__eq__)), *value);
+  EXPECT_EQ(typeAtById(thread_, type, ID(__ne__)), *value);
 }
 
 TEST_F(TypeBuiltinsTest, TypeAtPutByStrInvalidatesCache) {
@@ -1375,16 +1375,19 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasDunderGet));
   EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasDunderSet));
   EXPECT_FALSE(object_type.hasFlag(Type::Flag::kHasDunderDelete));
+  EXPECT_TRUE(object_type.hasFlag(Type::Flag::kHasObjectDunderEq));
 
   Type type_type(&scope, runtime_->typeAt(LayoutId::kType));
   EXPECT_TRUE(type_type.hasFlag(Type::Flag::kHasTypeDunderGetattribute));
   EXPECT_FALSE(type_type.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_TRUE(type_type.hasFlag(Type::Flag::kHasObjectDunderHash));
+  EXPECT_TRUE(type_type.hasFlag(Type::Flag::kHasObjectDunderEq));
 
   Type module_type(&scope, runtime_->typeAt(LayoutId::kModule));
   EXPECT_TRUE(module_type.hasFlag(Type::Flag::kHasModuleDunderGetattribute));
   EXPECT_FALSE(module_type.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_TRUE(module_type.hasFlag(Type::Flag::kHasObjectDunderHash));
+  EXPECT_TRUE(module_type.hasFlag(Type::Flag::kHasObjectDunderEq));
 
   Type property_type(&scope, runtime_->typeAt(LayoutId::kProperty));
   EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
@@ -1394,11 +1397,13 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasDunderGet));
   EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasDunderSet));
   EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasDunderDelete));
+  EXPECT_TRUE(property_type.hasFlag(Type::Flag::kHasObjectDunderEq));
 
   Type function_type(&scope, runtime_->typeAt(LayoutId::kFunction));
   EXPECT_TRUE(function_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
   EXPECT_FALSE(function_type.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_TRUE(function_type.hasFlag(Type::Flag::kHasObjectDunderHash));
+  EXPECT_TRUE(function_type.hasFlag(Type::Flag::kHasObjectDunderEq));
 
   Type int_type(&scope, runtime_->typeAt(LayoutId::kInt));
   EXPECT_TRUE(int_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
@@ -1410,6 +1415,7 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasDunderGet));
   EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasDunderSet));
   EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasDunderDelete));
+  EXPECT_FALSE(int_type.hasFlag(Type::Flag::kHasObjectDunderEq));
 
   Type str_type(&scope, runtime_->typeAt(LayoutId::kStr));
   EXPECT_TRUE(str_type.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
@@ -1418,6 +1424,7 @@ TEST_F(TypeBuiltinsTest, BuiltinTypesHaveAppropriateAttributeTypeFlags) {
   // TODO(T83275120): Flip the condition.
   EXPECT_TRUE(str_type.hasFlag(Type::Flag::kHasDunderBool));
   EXPECT_TRUE(str_type.hasFlag(Type::Flag::kHasDunderLen));
+  EXPECT_FALSE(str_type.hasFlag(Type::Flag::kHasObjectDunderEq));
 
   // super.__getattribute__ is not same as object.__getattribute.
   Type super_type(&scope, runtime_->typeAt(LayoutId::kSuper));
@@ -1474,6 +1481,13 @@ class M:
   def __delete__(self, obj):
     return None
 
+class N:
+  def __eq__(self, other):
+    return None
+
+class SubN(N):
+  pass
+
 class Str(str): pass
 
 class Str2(Str):
@@ -1486,6 +1500,7 @@ class Str2(Str):
   EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderNew));
   EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderHash));
   EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderClass));
+  EXPECT_TRUE(c.hasFlag(Type::Flag::kHasObjectDunderEq));
 
   Type d(&scope, mainModuleAt(runtime_, "D"));
   EXPECT_TRUE(d.hasFlag(Type::Flag::kHasTypeDunderGetattribute));
@@ -1538,6 +1553,12 @@ class Str2(Str):
   EXPECT_TRUE(m.hasFlag(Type::Flag::kHasDunderDelete));
   EXPECT_TRUE(typeIsDataDescriptor(*m));
   EXPECT_FALSE(typeIsNonDataDescriptor(*m));
+
+  Type n(&scope, mainModuleAt(runtime_, "N"));
+  EXPECT_FALSE(n.hasFlag(Type::Flag::kHasObjectDunderEq));
+
+  Type sub_n(&scope, mainModuleAt(runtime_, "SubN"));
+  EXPECT_FALSE(sub_n.hasFlag(Type::Flag::kHasObjectDunderEq));
 
   Type str(&scope, mainModuleAt(runtime_, "Str"));
   EXPECT_TRUE(str.hasFlag(Type::Flag::kHasObjectDunderGetattribute));
