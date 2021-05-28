@@ -37,7 +37,7 @@ def setitimer(which, seconds, interval=0.0):
 
 
 def siginterrupt(signalnum, flag):
-    _unimplemented()
+    _builtin()
 
 
 def signal(signalnum, handler):

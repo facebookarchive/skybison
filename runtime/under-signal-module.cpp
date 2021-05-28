@@ -154,4 +154,33 @@ RawObject FUNC(_signal, valid_signals)(Thread* thread, Arguments) {
   return *set;
 }
 
+RawObject FUNC(_signal, siginterrupt)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Runtime* runtime = thread->runtime();
+  Object signalnum_obj(&scope, args.get(0));
+  if (!runtime->isInstanceOfInt(*signalnum_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "`signalnum` must be an integer (got type %T)",
+                                &signalnum_obj);
+  }
+  word signalnum = intUnderlying(*signalnum_obj).asWordSaturated();
+  Object flag_obj(&scope, args.get(1));
+  if (!runtime->isInstanceOfInt(*flag_obj)) {
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "`flag` must be an integer (got type %T)",
+                                &flag_obj);
+  }
+  word flag = intUnderlying(*flag_obj).asWordSaturated();
+
+  if (signalnum < 1 || signalnum >= NSIG) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "signal number out of range");
+  }
+  word result = ::siginterrupt(signalnum, flag);
+  if (result < 0) {
+    return thread->raiseOSErrorFromErrno(-result);
+  }
+  return NoneType::object();
+}
+
 }  // namespace py

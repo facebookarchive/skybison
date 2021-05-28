@@ -41,6 +41,28 @@ class SignalTest(unittest.TestCase):
         self.assertIn(signal.SIGINT, valid_signals)
         self.assertNotIn(1001, valid_signals)
 
+    def test_siginterrupt_with_string_signal_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            signal.siginterrupt("invalid", True)
+
+    def test_siginterrupt_with_string_flag_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            signal.siginterrupt(signal.SIGCHLD, "invalid")
+
+    def test_siginterrupt_with_too_large_signal_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            signal.siginterrupt(123456, True)
+
+    def test_siginterrupt_with_negative_signal_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            signal.siginterrupt(-1, True)
+
+    def test_siginterrupt_with_valid_signal_sets_interrupt(self):
+        self.assertEqual(signal.siginterrupt(signal.SIGCHLD, True), None)
+
+    def test_siginterrupt_with_integer_flag_sets_interrupt(self):
+        self.assertEqual(signal.siginterrupt(signal.SIGCHLD, 0), None)
+
 
 if __name__ == "__main__":
     unittest.main()
