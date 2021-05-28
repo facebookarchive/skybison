@@ -469,6 +469,9 @@ add_library(
   runtime/descriptor-builtins.h
   runtime/dict-builtins.cpp
   runtime/dict-builtins.h
+  runtime/disassembler-x64.cpp
+  runtime/disassembler.cpp
+  runtime/disassembler.h
   runtime/event.h
   runtime/exception-builtins.cpp
   runtime/exception-builtins.h

@@ -286,6 +286,14 @@ class CodeComments {
 
   void add(CodeComment* comment) { comments_.push_back(comment); }
 
+  const char* commentAt(word index) const {
+    return comments_[index]->comment().c_str();
+  }
+
+  word length() const { return comments_.size(); }
+
+  word offsetAt(word index) const { return comments_[index]->offset(); }
+
  private:
   Vector<CodeComment*> comments_;
 
@@ -293,5 +301,3 @@ class CodeComments {
 };
 
 }  // namespace py
-
-#include "assembler-x64.h"

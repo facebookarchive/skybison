@@ -50,7 +50,8 @@ enum XmmRegister {
   XMM13 = 13,
   XMM14 = 14,
   XMM15 = 15,
-  kNoXmmRegister = -1  // Signals an illegal register.
+  kNoXmmRegister = -1,  // Signals an illegal register.
+  kNumXmmRegisters = 16,
 };
 
 enum RexBits {
