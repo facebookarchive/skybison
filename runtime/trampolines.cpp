@@ -416,9 +416,7 @@ RawObject prepareKeywordCall(Thread* thread, word nargs,
     word name_tuple_size = expected_args - num_positional_args;
     MutableTuple padded_keywords(
         &scope, thread->runtime()->newMutableTuple(name_tuple_size));
-    for (word i = 0; i < num_keyword_args; i++) {
-      padded_keywords.atPut(i, keywords.at(i));
-    }
+    padded_keywords.replaceFromWith(0, *keywords, num_keyword_args);
     // Fill in missing spots w/ Error code
     for (word i = num_keyword_args; i < name_tuple_size; i++) {
       thread->stackPush(Error::error());
