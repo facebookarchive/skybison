@@ -299,21 +299,59 @@ RawObject typeValueCellAt(RawType type, RawObject name) {
   return result;
 }
 
-RawCode newEmptyCode() {
-  Thread* thread = Thread::current();
+static RawCode newCodeHelper(Thread* thread, View<byte> bytes,
+                             const Tuple& consts, const Tuple& names,
+                             Locals* locals, word flags) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Bytes code(&scope, runtime->newBytes(0, 0));
+  word argcount = 0;
+  word posonlyargcount = 0;
+  word kwonlyargcount = 0;
+  word nlocals = 0;
+  word stacksize = 20;
+  Tuple varnames_tuple(&scope, runtime->emptyTuple());
+  if (locals != nullptr) {
+    argcount = locals->argcount;
+    posonlyargcount = locals->posonlyargcount;
+    kwonlyargcount = locals->kwonlyargcount;
+    nlocals = argcount + kwonlyargcount + locals->varcount;
+    if (locals->varargs) {
+      nlocals++;
+      flags |= Code::Flags::kVarargs;
+    }
+    if (locals->varkeyargs) {
+      nlocals++;
+      flags |= Code::Flags::kVarkeyargs;
+    }
+    MutableTuple varnames(&scope, runtime->newMutableTuple(nlocals));
+    word idx = 0;
+    for (word i = 0; i < locals->argcount; i++) {
+      varnames.atPut(idx++, runtime->newStrFromFmt("arg%w", i));
+    }
+    if (locals->varargs) {
+      varnames.atPut(idx++, runtime->newStrFromCStr("args"));
+    }
+    if (locals->varkeyargs) {
+      varnames.atPut(idx++, runtime->newStrFromCStr("kwargs"));
+    }
+    for (word i = 0; i < locals->varcount; i++) {
+      varnames.atPut(idx++, runtime->newStrFromFmt("var%w", i));
+    }
+    CHECK(idx == nlocals, "local count mismatch");
+    varnames_tuple = varnames.becomeImmutable();
+  }
+
+  Bytes code(&scope, runtime->newBytesWithAll(bytes));
   Tuple empty_tuple(&scope, runtime->emptyTuple());
   Object empty_string(&scope, Str::empty());
   Object empty_bytes(&scope, Bytes::empty());
-  word flags = Code::Flags::kOptimized | Code::Flags::kNewlocals;
-  return Code::cast(runtime->newCode(/*argcount=*/0, /*posonlyargcount=*/0,
-                                     /*kwonlyargcount=*/0, /*nlocals=*/0,
-                                     /*stacksize=*/0, flags, code,
-                                     /*consts=*/empty_tuple,
-                                     /*names=*/empty_tuple,
-                                     /*varnames=*/empty_tuple,
+  return Code::cast(runtime->newCode(/*argcount=*/argcount,
+                                     /*posonlyargcount=*/posonlyargcount,
+                                     /*kwonlyargcount=*/kwonlyargcount,
+                                     /*nlocals=*/nlocals,
+                                     /*stacksize=*/stacksize,
+                                     /*flags=*/flags, code, consts, names,
+                                     varnames_tuple,
                                      /*freevars=*/empty_tuple,
                                      /*cellvars=*/empty_tuple,
                                      /*filename=*/empty_string,
@@ -322,11 +360,45 @@ RawCode newEmptyCode() {
                                      /*lnotab=*/empty_bytes));
 }
 
+RawCode newCodeWithBytesConstsNames(View<byte> bytes, const Tuple& consts,
+                                    const Tuple& names) {
+  Thread* thread = Thread::current();
+  word flags = Code::Flags::kOptimized | Code::Flags::kNewlocals;
+  return newCodeHelper(thread, bytes, consts, names, /*locals=*/nullptr, flags);
+}
+
+RawCode newCodeWithBytesConstsNamesFlags(View<byte> bytes, const Tuple& consts,
+                                         const Tuple& names, word flags) {
+  Thread* thread = Thread::current();
+  return newCodeHelper(thread, bytes, consts, names, /*locals=*/nullptr, flags);
+}
+
+RawCode newCodeWithBytesConstsNamesLocals(View<byte> bytes, const Tuple& consts,
+                                          const Tuple& names, Locals* locals) {
+  Thread* thread = Thread::current();
+  word flags = Code::Flags::kOptimized | Code::Flags::kNewlocals;
+  return newCodeHelper(thread, bytes, consts, names, locals, flags);
+}
+
+RawCode newCodeWithBytesConsts(View<byte> bytes, const Tuple& consts) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple names(&scope, thread->runtime()->emptyTuple());
+  return newCodeWithBytesConstsNames(bytes, consts, names);
+}
+
+RawCode newCodeWithBytes(View<byte> bytes) {
+  Thread* thread = Thread::current();
+  HandleScope scope(thread);
+  Tuple consts(&scope, thread->runtime()->emptyTuple());
+  return newCodeWithBytesConsts(bytes, consts);
+}
+
 RawFunction newEmptyFunction() {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Code code(&scope, newEmptyCode());
+  Code code(&scope, newCodeWithBytes(View<byte>(nullptr, 0)));
   Object qualname(&scope, Str::empty());
   Module main(&scope, findMainModule(runtime));
   return Function::cast(

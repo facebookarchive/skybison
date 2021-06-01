@@ -567,15 +567,13 @@ TEST_F(InterpreterTest, DoBinaryOpWithCacheHitCallsCachedMethod) {
 
   word left = SmallInt::kMaxValue + 1;
   word right = -13;
-  Code code(&scope, newEmptyCode());
-  Object left_obj(&scope, runtime_->newInt(left));
-  Object right_obj(&scope, runtime_->newInt(right));
-  Tuple consts(&scope, runtime_->newTupleWith2(left_obj, right_obj));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, BINARY_SUBTRACT, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Object left_obj(&scope, runtime_->newInt(left));
+  Object right_obj(&scope, runtime_->newInt(right));
+  Tuple consts(&scope, runtime_->newTupleWith2(left_obj, right_obj));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -613,13 +611,11 @@ v1 = 7
   Object v0(&scope, mainModuleAt(runtime_, "v0"));
   Object v1(&scope, mainModuleAt(runtime_, "v1"));
 
-  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_->newTupleWith2(v0, v1));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, BINARY_SUBTRACT, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -645,15 +641,13 @@ TEST_F(InterpreterTest, DoBinaryOpWithSmallIntsRewritesOpcode) {
 
   word left = 7;
   word right = -13;
-  Code code(&scope, newEmptyCode());
   Object left_obj(&scope, runtime_->newInt(left));
   Object right_obj(&scope, runtime_->newInt(right));
   Tuple consts(&scope, runtime_->newTupleWith2(left_obj, right_obj));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, BINARY_SUBTRACT, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -1425,29 +1419,23 @@ i = C()
                    .isError());
   Object i(&scope, mainModuleAt(runtime_, "i"));
 
-  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_->newTupleWith1(i));
-  code.setConsts(*consts);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Tuple names(&scope, runtime_->newTupleWith1(name));
-  code.setNames(*names);
   const byte bytecode[] = {LOAD_CONST, 0, IMPORT_FROM, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConstsNames(bytecode, consts, names));
 
   EXPECT_TRUE(isStrEqualsCStr(runCode(code), "getattribute 'foo'"));
 }
 
 TEST_F(InterpreterTest, ImportFromWithNonModuleRaisesImportError) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Object obj(&scope, NoneType::object());
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
-  code.setConsts(*consts);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Tuple names(&scope, runtime_->newTupleWith1(name));
-  code.setNames(*names);
   const byte bytecode[] = {LOAD_CONST, 0, IMPORT_FROM, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConstsNames(bytecode, consts, names));
 
   EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kImportError,
                             "cannot import name 'foo'"));
@@ -1464,14 +1452,11 @@ i = C()
                    .isError());
   Object i(&scope, mainModuleAt(runtime_, "i"));
 
-  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_->newTupleWith1(i));
-  code.setConsts(*consts);
   Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Tuple names(&scope, runtime_->newTupleWith1(name));
-  code.setNames(*names);
   const byte bytecode[] = {LOAD_CONST, 0, IMPORT_FROM, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConstsNames(bytecode, consts, names));
 
   EXPECT_TRUE(raised(runCode(code), LayoutId::kUserWarning));
 }
@@ -1634,15 +1619,13 @@ TEST_F(InterpreterTest, InplaceAddWithSmallIntsRewritesOpcode) {
 
   word left = 7;
   word right = -13;
-  Code code(&scope, newEmptyCode());
   Object left_obj(&scope, runtime_->newInt(left));
   Object right_obj(&scope, runtime_->newInt(right));
   Tuple consts(&scope, runtime_->newTupleWith2(left_obj, right_obj));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, INPLACE_ADD, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -1712,15 +1695,13 @@ TEST_F(InterpreterTest, InplaceSubtractWithSmallIntsRewritesOpcode) {
 
   word left = 7;
   word right = -13;
-  Code code(&scope, newEmptyCode());
   Object left_obj(&scope, runtime_->newInt(left));
   Object right_obj(&scope, runtime_->newInt(right));
   Tuple consts(&scope, runtime_->newTupleWith2(left_obj, right_obj));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, INPLACE_SUBTRACT, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -1788,9 +1769,8 @@ def foo(a, b):
 TEST_F(InterpreterDeathTest, InvalidOpcode) {
   HandleScope scope(thread_);
 
-  Code code(&scope, newEmptyCode());
   const byte bytecode[] = {NOP, 0, NOP, 0, UNUSED_BYTECODE_7, 17, NOP, 7};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytes(bytecode));
 
   ASSERT_DEATH(static_cast<void>(runCode(code)),
                "bytecode 'UNUSED_BYTECODE_7'");
@@ -1870,15 +1850,13 @@ i = C()
 
 TEST_F(InterpreterTest, CompareInAnamorphicWithStrRewritesOpcode) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Object obj1(&scope, runtime_->newStrFromCStr("test"));
   Object obj2(&scope, runtime_->newStrFromCStr("test string"));
   Tuple consts(&scope, runtime_->newTupleWith2(obj1, obj2));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, COMPARE_IN_ANAMORPHIC, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -1897,17 +1875,15 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithStrRewritesOpcode) {
 
 TEST_F(InterpreterTest, CompareInAnamorphicWithDictRewritesOpcode) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Dict dict(&scope, runtime_->newDict());
   Str key(&scope, runtime_->newStrFromCStr("test"));
   word key_hash = strHash(thread_, *key);
   dictAtPut(thread_, dict, key, key_hash, key);
   Tuple consts(&scope, runtime_->newTupleWith2(key, dict));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, COMPARE_IN_ANAMORPHIC, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -1926,15 +1902,13 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithDictRewritesOpcode) {
 
 TEST_F(InterpreterTest, CompareInAnamorphicWithTupleRewritesOpcode) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Object obj(&scope, runtime_->newStrFromCStr("test"));
   Tuple tuple(&scope, runtime_->newTupleWith1(obj));
   Tuple consts(&scope, runtime_->newTupleWith2(obj, tuple));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, COMPARE_IN_ANAMORPHIC, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -1953,18 +1927,16 @@ TEST_F(InterpreterTest, CompareInAnamorphicWithTupleRewritesOpcode) {
 
 TEST_F(InterpreterTest, CompareInAnamorphicWithListRewritesOpcode) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   List list(&scope, runtime_->newList());
   Object value0(&scope, runtime_->newStrFromCStr("value0"));
   Object value1(&scope, runtime_->newStrFromCStr("test"));
   listInsert(thread_, list, value0, 0);
   listInsert(thread_, list, value1, 1);
   Tuple consts(&scope, runtime_->newTupleWith2(value1, list));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, COMPARE_IN_ANAMORPHIC, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -2120,18 +2092,16 @@ c = C()
 TEST_F(InterpreterTest, CompareOpWithStrsRewritesOpcode) {
   HandleScope scope(thread_);
 
-  Code code(&scope, newEmptyCode());
   Object obj1(&scope, runtime_->newStrFromCStr("abc"));
   Object obj2(&scope, runtime_->newStrFromCStr("def"));
   Tuple consts(&scope, runtime_->newTupleWith2(obj1, obj2));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST,   0,
       LOAD_CONST,   1,
       COMPARE_OP,   static_cast<byte>(CompareOp::EQ),
       RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -2151,18 +2121,16 @@ TEST_F(InterpreterTest, CompareOpWithStrsRewritesOpcode) {
 TEST_F(InterpreterTest, CompareOpWithNeOperatorWithStrsRewritesToCompareNeStr) {
   HandleScope scope(thread_);
 
-  Code code(&scope, newEmptyCode());
   Object obj1(&scope, runtime_->newStrFromCStr("abc"));
   Object obj2(&scope, runtime_->newStrFromCStr("def"));
   Tuple consts(&scope, runtime_->newTupleWith2(obj1, obj2));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST,   0,
       LOAD_CONST,   1,
       COMPARE_OP,   static_cast<byte>(CompareOp::NE),
       RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -2191,18 +2159,16 @@ TEST_F(InterpreterTest, CompareOpSmallIntsRewritesOpcode) {
 
   word left = 7;
   word right = -13;
-  Code code(&scope, newEmptyCode());
   Object obj1(&scope, runtime_->newInt(left));
   Object obj2(&scope, runtime_->newInt(right));
   Tuple consts(&scope, runtime_->newTupleWith2(obj1, obj2));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST,   0,
       LOAD_CONST,   1,
       COMPARE_OP,   static_cast<byte>(CompareOp::LT),
       RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -2543,14 +2509,15 @@ result = cache_compare_op(a, b)
 TEST_F(InterpreterTest, DoStoreFastStoresValue) {
   HandleScope scope(thread_);
 
-  Code code(&scope, newEmptyCode());
   Object obj(&scope, SmallInt::fromWord(1111));
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
-  code.setConsts(*consts);
-  code.setNlocals(2);
+  Tuple names(&scope, runtime_->emptyTuple());
+  Locals locals;
+  locals.varcount = 2;
   const byte bytecode[] = {LOAD_CONST, 0, 0, 0, STORE_FAST,   1, 0, 0,
                            LOAD_FAST,  1, 0, 0, RETURN_VALUE, 0, 0, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConstsNamesLocals(bytecode, consts, names,
+                                                      &locals));
 
   EXPECT_TRUE(isIntEqualsWord(runCodeNoBytecodeRewriting(code), 1111));
 }
@@ -2558,14 +2525,14 @@ TEST_F(InterpreterTest, DoStoreFastStoresValue) {
 TEST_F(InterpreterTest, DoLoadFastReverseLoadsValue) {
   HandleScope scope(thread_);
 
-  Code code(&scope, newEmptyCode());
   Object obj1(&scope, SmallInt::fromWord(1));
   Object obj2(&scope, SmallInt::fromWord(22));
   Object obj3(&scope, SmallInt::fromWord(333));
   Object obj4(&scope, SmallInt::fromWord(4444));
   Tuple consts(&scope, runtime_->newTupleWith4(obj1, obj2, obj3, obj4));
-  code.setConsts(*consts);
-  code.setNlocals(4);
+  Tuple names(&scope, runtime_->emptyTuple());
+  Locals locals;
+  locals.varcount = 4;
   const byte bytecode[] = {
       LOAD_CONST,        0, 0, 0, STORE_FAST,   0, 0, 0,
       LOAD_CONST,        1, 0, 0, STORE_FAST,   1, 0, 0,
@@ -2577,7 +2544,8 @@ TEST_F(InterpreterTest, DoLoadFastReverseLoadsValue) {
       LOAD_FAST_REVERSE, 1, 0, 0,  // 333
       BUILD_TUPLE,       4, 0, 0, RETURN_VALUE, 0, 0, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConstsNamesLocals(bytecode, consts, names,
+                                                      &locals));
 
   Object result_obj(&scope, runCodeNoBytecodeRewriting(code));
   ASSERT_TRUE(result_obj.isTuple());
@@ -2593,39 +2561,35 @@ TEST_F(InterpreterTest,
        DoLoadFastReverseFromUninitializedLocalRaisesUnboundLocalError) {
   HandleScope scope(thread_);
 
-  Code code(&scope, newEmptyCode());
   Object obj(&scope, SmallInt::fromWord(42));
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
-  code.setConsts(*consts);
-  Object obj1(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Object obj2(&scope, Runtime::internStrFromCStr(thread_, "bar"));
-  Object obj3(&scope, Runtime::internStrFromCStr(thread_, "baz"));
-  Tuple varnames(&scope, runtime_->newTupleWith3(obj1, obj2, obj3));
-  code.setVarnames(*varnames);
-  code.setNlocals(3);
+  Tuple names(&scope, runtime_->emptyTuple());
+  Locals locals;
+  locals.varcount = 3;
   const byte bytecode[] = {
       LOAD_CONST,   0, 0, 0, STORE_FAST,  0, 0, 0, LOAD_CONST,        0, 0, 0,
       STORE_FAST,   2, 0, 0, DELETE_FAST, 2, 0, 0, LOAD_FAST_REVERSE, 0, 0, 0,
       RETURN_VALUE, 0, 0, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConstsNamesLocals(bytecode, consts, names,
+                                                      &locals));
 
   EXPECT_TRUE(raisedWithStr(
       runCodeNoBytecodeRewriting(code), LayoutId::kUnboundLocalError,
-      "local variable 'baz' referenced before assignment"));
+      "local variable 'var2' referenced before assignment"));
 }
 
 TEST_F(InterpreterTest, DoStoreFastReverseStoresValue) {
   HandleScope scope(thread_);
 
-  Code code(&scope, newEmptyCode());
   Object obj1(&scope, SmallInt::fromWord(1));
   Object obj2(&scope, SmallInt::fromWord(22));
   Object obj3(&scope, SmallInt::fromWord(333));
   Object obj4(&scope, SmallInt::fromWord(4444));
   Tuple consts(&scope, runtime_->newTupleWith4(obj1, obj2, obj3, obj4));
-  code.setConsts(*consts);
-  code.setNlocals(4);
+  Tuple names(&scope, runtime_->emptyTuple());
+  Locals locals;
+  locals.varcount = 4;
   const byte bytecode[] = {
       LOAD_CONST,  0, 0, 0, STORE_FAST_REVERSE, 0, 0, 0,
       LOAD_CONST,  1, 0, 0, STORE_FAST_REVERSE, 1, 0, 0,
@@ -2637,7 +2601,8 @@ TEST_F(InterpreterTest, DoStoreFastReverseStoresValue) {
       LOAD_FAST,   3, 0, 0,  // 1
       BUILD_TUPLE, 4, 0, 0, RETURN_VALUE,       0, 0, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConstsNamesLocals(bytecode, consts, names,
+                                                      &locals));
 
   Object result_obj(&scope, runCodeNoBytecodeRewriting(code));
   ASSERT_TRUE(result_obj.isTuple());
@@ -2694,7 +2659,6 @@ del b[5]
 TEST_F(InterpreterTest, DoDeleteSubscrDoesntPushToStack) {
   HandleScope scope(thread_);
 
-  Code code(&scope, newEmptyCode());
   List list(&scope, runtime_->newList());
   Int one(&scope, runtime_->newInt(1));
   runtime_->listEnsureCapacity(thread_, list, 1);
@@ -2703,16 +2667,11 @@ TEST_F(InterpreterTest, DoDeleteSubscrDoesntPushToStack) {
   Object obj1(&scope, SmallInt::fromWord(42));
   Object obj3(&scope, SmallInt::fromWord(0));
   Tuple consts(&scope, runtime_->newTupleWith3(obj1, list, obj3));
-  code.setConsts(*consts);
-
-  Tuple varnames(&scope, runtime_->emptyTuple());
-  code.setVarnames(*varnames);
-  code.setNlocals(0);
   const byte bytecode[] = {
       LOAD_CONST,    0, LOAD_CONST,   1, LOAD_CONST, 2,
       DELETE_SUBSCR, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object result_obj(&scope, runCode(code));
   ASSERT_TRUE(result_obj.isInt());
@@ -2732,18 +2691,12 @@ seq = Sequence()
                    .isError());
   HandleScope scope(thread_);
 
-  Code code(&scope, newEmptyCode());
   Object obj(&scope, mainModuleAt(runtime_, "seq"));
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
-  code.setConsts(*consts);
-
-  Tuple varnames(&scope, runtime_->emptyTuple());
-  code.setVarnames(*varnames);
-  code.setNlocals(0);
   const byte bytecode[] = {
       LOAD_CONST, 0, GET_ITER, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object result_obj(&scope, runCode(code));
   EXPECT_TRUE(runtime_->isIterator(thread_, result_obj));
@@ -2976,7 +2929,7 @@ with Foo():
 
 TEST_F(InterpreterTest, StackCleanupAfterCallFunction) {
   // Build the following function
-  //    def foo(a=1, b=2):
+  //    def foo(arg0=1, arg1=2):
   //      return 42
   //
   // Then call as foo(1) and verify that the stack is cleaned up after
@@ -2984,21 +2937,14 @@ TEST_F(InterpreterTest, StackCleanupAfterCallFunction) {
   //
   HandleScope scope(thread_);
 
-  Code code(&scope, newEmptyCode());
-
   Object obj(&scope, SmallInt::fromWord(42));
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
-  code.setConsts(*consts);
-
-  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Tuple names(&scope, runtime_->newTupleWith1(name));
-  code.setNames(*names);
-  code.setArgcount(2);
-  code.setNlocals(2);
-  code.setStacksize(1);
-
+  Tuple names(&scope, runtime_->emptyTuple());
+  Locals locals;
+  locals.argcount = 2;
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConstsNamesLocals(bytecode, consts, names,
+                                                      &locals));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -3024,7 +2970,7 @@ TEST_F(InterpreterTest, StackCleanupAfterCallFunction) {
 
 TEST_F(InterpreterTest, StackCleanupAfterCallExFunction) {
   // Build the following function
-  //    def foo(a=1, b=2):
+  //    def foo(arg0=1, arg1=2):
   //      return 42
   //
   // Then call as "f=(2,); foo(*f)" and verify that the stack is cleaned up
@@ -3032,21 +2978,14 @@ TEST_F(InterpreterTest, StackCleanupAfterCallExFunction) {
   //
   HandleScope scope(thread_);
 
-  Code code(&scope, newEmptyCode());
-
   Object obj(&scope, SmallInt::fromWord(42));
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
-  code.setConsts(*consts);
-
-  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Tuple names(&scope, runtime_->newTupleWith1(name));
-  code.setNames(*names);
-  code.setArgcount(2);
-  code.setNlocals(2);
-  code.setStacksize(1);
-
+  Tuple names(&scope, runtime_->emptyTuple());
+  Locals locals;
+  locals.argcount = 2;
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConstsNamesLocals(bytecode, consts, names,
+                                                      &locals));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -3076,32 +3015,21 @@ TEST_F(InterpreterTest, StackCleanupAfterCallKwFunction) {
   HandleScope scope(thread_);
 
   // Build the following function
-  //    def foo(a=1, b=2):
+  //    def foo(arg0=1, arg1=2):
   //      return 42
   //
   // Then call as "foo(b=4)" and verify that the stack is cleaned up after
   // ex and default argument expansion
   //
 
-  Code code(&scope, newEmptyCode());
-
   Object obj(&scope, SmallInt::fromWord(42));
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
-  code.setConsts(*consts);
-
-  Object name(&scope, Runtime::internStrFromCStr(thread_, "foo"));
-  Tuple names(&scope, runtime_->newTupleWith1(name));
-  code.setNames(*names);
-  code.setArgcount(2);
-  code.setNlocals(2);
-  code.setStacksize(1);
-  Object name1(&scope, Runtime::internStrFromCStr(thread_, "a"));
-  Object name2(&scope, Runtime::internStrFromCStr(thread_, "b"));
-  Tuple varnames(&scope, runtime_->newTupleWith2(name1, name2));
-  code.setVarnames(*varnames);
-
+  Tuple names(&scope, runtime_->emptyTuple());
+  Locals locals;
+  locals.argcount = 2;
   const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConstsNamesLocals(bytecode, consts, names,
+                                                      &locals));
 
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
@@ -3116,7 +3044,7 @@ TEST_F(InterpreterTest, StackCleanupAfterCallKwFunction) {
   RawObject* value_stack_start = thread_->stackPointer();
 
   // Push function pointer and argument
-  Object arg(&scope, Runtime::internStrFromCStr(thread_, "b"));
+  Object arg(&scope, Runtime::internStrFromCStr(thread_, "arg1"));
   Tuple arg_names(&scope, runtime_->newTupleWith1(arg));
   thread_->stackPush(*callee);
   thread_->stackPush(SmallInt::fromWord(4));
@@ -3469,14 +3397,11 @@ sys.displayhook = my_displayhook
 
   Object unique(&scope, runtime_->newList());  // unique object
 
-  Code code(&scope, newEmptyCode());
   Object none(&scope, NoneType::object());
   Tuple consts(&scope, runtime_->newTupleWith2(unique, none));
-  code.setConsts(*consts);
-  code.setNlocals(0);
   const byte bytecode[] = {LOAD_CONST, 0, PRINT_EXPR,   0,
                            LOAD_CONST, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   ASSERT_TRUE(runCode(code).isNoneType());
 
@@ -3500,21 +3425,15 @@ sys.displayhook = my_displayhook
   )")
                    .isError());
 
-  Code code(&scope, newEmptyCode());
   Object obj1(&scope, SmallInt::fromWord(42));
   Object obj2(&scope, SmallInt::fromWord(0));
   Tuple consts(&scope, runtime_->newTupleWith2(obj1, obj2));
-  code.setConsts(*consts);
-
-  Tuple varnames(&scope, runtime_->emptyTuple());
-  code.setVarnames(*varnames);
-  code.setNlocals(0);
   // This bytecode loads 42 onto the stack, along with a value to print.
   // It then returns the top of the stack, which should be 42.
   const byte bytecode[] = {
       LOAD_CONST, 0, LOAD_CONST, 1, PRINT_EXPR, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object result_obj(&scope, runCode(code));
   EXPECT_TRUE(isIntEqualsWord(*result_obj, 42));
@@ -3533,11 +3452,9 @@ a = AsyncIterable()
 
   Object a(&scope, mainModuleAt(runtime_, "a"));
 
-  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_->newTupleWith1(a));
-  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object result(&scope, runCode(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 42));
@@ -3545,12 +3462,10 @@ a = AsyncIterable()
 
 TEST_F(InterpreterTest, GetAiterOnNonIterable) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Object obj(&scope, SmallInt::fromWord(123));
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
-  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AITER, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -3558,23 +3473,19 @@ TEST_F(InterpreterTest, GetAiterOnNonIterable) {
 
 TEST_F(InterpreterTest, BeginFinallyPushesNone) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_->emptyTuple());
-  code.setConsts(*consts);
   const byte bytecode[] = {BEGIN_FINALLY, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   Object result(&scope, runCode(code));
   EXPECT_TRUE(result.isNoneType());
 }
 
 TEST_F(InterpreterTest, CallFinallyPushesNextPC) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Object obj(&scope, SmallInt::fromWord(123));
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
-  code.setConsts(*consts);
   const byte bytecode[] = {CALL_FINALLY, 2, LOAD_CONST, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   Object result(&scope, runCode(code));
   // Address of LOAD_CONST
   EXPECT_TRUE(isIntEqualsWord(*result, kCodeUnitSize));
@@ -3582,13 +3493,11 @@ TEST_F(InterpreterTest, CallFinallyPushesNextPC) {
 
 TEST_F(InterpreterTest, CallFinallyJumpsWithArgDelta) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Object obj(&scope, SmallInt::fromWord(123));
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
-  code.setConsts(*consts);
   const byte bytecode[] = {CALL_FINALLY, 2, RETURN_VALUE, 0,
                            LOAD_CONST,   0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   Object result(&scope, runCode(code));
   // Result of LOAD_CONST
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
@@ -3596,30 +3505,26 @@ TEST_F(InterpreterTest, CallFinallyJumpsWithArgDelta) {
 
 TEST_F(InterpreterTest, PopFinallyWithNoneExcAndZeroArgPopsExc) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Object return_value(&scope, SmallInt::fromWord(123));
   Object exc(&scope, NoneType::object());
   Tuple consts(&scope, runtime_->newTupleWith2(return_value, exc));
-  code.setConsts(*consts);
   const byte bytecode[] = {// Load return value
                            LOAD_CONST, 0,
                            // Load exc
                            LOAD_CONST, 1,
                            // 0 means don't pop from the stack
                            POP_FINALLY, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   Object result(&scope, runCode(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
 TEST_F(InterpreterTest, PopFinallyWithNoneExcAndNonzeroArgPopsExc) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Object obj(&scope, SmallInt::fromWord(123));
   Object exc(&scope, NoneType::object());
   Object return_value(&scope, SmallInt::fromWord(456));
   Tuple consts(&scope, runtime_->newTupleWith3(obj, exc, return_value));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       // Load some random stuff onto the stack
       LOAD_CONST, 0,
@@ -3629,37 +3534,33 @@ TEST_F(InterpreterTest, PopFinallyWithNoneExcAndNonzeroArgPopsExc) {
       LOAD_CONST, 2,
       // 1 means pop first before fetching exc, and then push after
       POP_FINALLY, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   Object result(&scope, runCode(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 456));
 }
 
 TEST_F(InterpreterTest, PopFinallyWithIntExcAndZeroArgPopsExc) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Object return_value(&scope, SmallInt::fromWord(123));
   Object exc(&scope, SmallInt::fromWord(456));
   Tuple consts(&scope, runtime_->newTupleWith2(return_value, exc));
-  code.setConsts(*consts);
   const byte bytecode[] = {// Load return value
                            LOAD_CONST, 0,
                            // Load exc
                            LOAD_CONST, 1,
                            // 0 means don't pop from the stack
                            POP_FINALLY, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   Object result(&scope, runCode(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 123));
 }
 
 TEST_F(InterpreterTest, PopFinallyWithIntExcAndNonzeroArgPopsExc) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Object obj(&scope, SmallInt::fromWord(123));
   Object exc(&scope, SmallInt::fromWord(456));
   Object return_value(&scope, SmallInt::fromWord(789));
   Tuple consts(&scope, runtime_->newTupleWith3(obj, exc, return_value));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       // Load some random stuff onto the stack
       LOAD_CONST, 0,
@@ -3669,14 +3570,13 @@ TEST_F(InterpreterTest, PopFinallyWithIntExcAndNonzeroArgPopsExc) {
       LOAD_CONST, 2,
       // 1 means pop first before fetching exc, and then push after
       POP_FINALLY, 1, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   Object result(&scope, runCode(code));
   EXPECT_TRUE(isIntEqualsWord(*result, 789));
 }
 
 TEST_F(InterpreterTest, PopFinallyWithNonExceptHandlerRaisesSystemError) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Object obj1(&scope, SmallInt::fromWord(1));
   Object obj2(&scope, SmallInt::fromWord(2));
   Object exc_type(&scope, SmallInt::fromWord(3));
@@ -3687,7 +3587,6 @@ TEST_F(InterpreterTest, PopFinallyWithNonExceptHandlerRaisesSystemError) {
   Tuple consts(&scope,
                runtime_->newTupleWithN(7, &obj1, &obj2, &exc_type, &exc_value,
                                        &exc_tb, &exc, &return_value));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       // Load return value
       LOAD_CONST, 6,
@@ -3705,7 +3604,7 @@ TEST_F(InterpreterTest, PopFinallyWithNonExceptHandlerRaisesSystemError) {
       LOAD_CONST, 5,
       // Push a non-ExceptHandler TryBlock on the block stack
       SETUP_FINALLY, 0, POP_FINALLY, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kSystemError,
                             "popped block is not an except handler"));
 }
@@ -3723,9 +3622,7 @@ TEST_F(InterpreterTest, EndAsyncForWithExceptionRaises) {
   Object exc_value(&scope, runtime_->newStrFromCStr("exc message"));
   Tuple consts(&scope,
                runtime_->newTupleWith3(exc_traceback, exc_value, exc_type));
-  Code code(&scope, newEmptyCode());
-  code.setConsts(*consts);
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   EXPECT_TRUE(
       raisedWithStr(runCode(code), LayoutId::kUserWarning, "exc message"));
 }
@@ -3752,9 +3649,7 @@ TEST_F(InterpreterTest, EndAsyncForWithStopAsyncIterationContinues) {
   Tuple consts(&scope,
                runtime_->newTupleWithN(6, &exc_traceback, &exc_value, &exc_type,
                                        &stop_async_iteration, &value, &dummy));
-  Code code(&scope, newEmptyCode());
-  code.setConsts(*consts);
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   EXPECT_TRUE(isIntEqualsWord(runCode(code), 42));
 }
 
@@ -3779,23 +3674,14 @@ manager = M()
   Object manager(&scope, mainModuleAt(runtime_, "manager"));
   Object main_obj(&scope, findMainModule(runtime_));
   ASSERT_TRUE(main_obj.isModule());
-  Module main(&scope, *main_obj);
 
-  Code code(&scope, newEmptyCode());
-  code.setNlocals(0);
   Object obj(&scope, SmallInt::fromWord(42));
   Tuple consts(&scope, runtime_->newTupleWith2(obj, manager));
-  code.setConsts(*consts);
-  Object name(&scope, Runtime::internStrFromCStr(thread_, "manager"));
-  Tuple names(&scope, runtime_->newTupleWith1(name));
-  code.setNames(*names);
   const byte bytecode[] = {LOAD_CONST, 1, BEFORE_ASYNC_WITH, 0, POP_TOP, 0,
                            LOAD_CONST, 0, RETURN_VALUE,      0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
-  code.setFlags(Code::Flags::kNofree);
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
-  Dict locals(&scope, runtime_->newDict());
-  EXPECT_TRUE(isIntEqualsWord(thread_->exec(code, main, locals), 42));
+  EXPECT_TRUE(isIntEqualsWord(runCode(code), 42));
   Object enter(&scope, mainModuleAt(runtime_, "enter"));
   EXPECT_EQ(*enter, *manager);
   Object exit(&scope, mainModuleAt(runtime_, "exit"));
@@ -3812,14 +3698,10 @@ manager = M()
   )")
                    .isError());
 
-  Code code(&scope, newEmptyCode());
-  code.setNlocals(0);
   Object manager(&scope, mainModuleAt(runtime_, "manager"));
-  code.setConsts(runtime_->newTupleWith1(manager));
-  Object name(&scope, Runtime::internStrFromCStr(thread_, "manager"));
-  code.setNames(runtime_->newTupleWith1(name));
+  Tuple consts(&scope, runtime_->newTupleWith1(manager));
   const byte bytecode[] = {LOAD_CONST, 0, BEFORE_ASYNC_WITH, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kAttributeError,
                             "'M' object has no attribute '__aexit__'"));
@@ -3836,14 +3718,10 @@ manager = M()
   )")
                    .isError());
 
-  Code code(&scope, newEmptyCode());
-  code.setNlocals(0);
   Object manager(&scope, mainModuleAt(runtime_, "manager"));
-  code.setConsts(runtime_->newTupleWith1(manager));
-  Object name(&scope, Runtime::internStrFromCStr(thread_, "manager"));
-  code.setNames(runtime_->newTupleWith1(name));
+  Tuple consts(&scope, runtime_->newTupleWith1(manager));
   const byte bytecode[] = {LOAD_CONST, 0, BEFORE_ASYNC_WITH, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kAttributeError,
                             "'M' object has no attribute '__aenter__'"));
@@ -3867,14 +3745,10 @@ manager = M()
   )")
                    .isError());
 
-  Code code(&scope, newEmptyCode());
-  code.setNlocals(0);
   Object manager(&scope, mainModuleAt(runtime_, "manager"));
-  code.setConsts(runtime_->newTupleWith1(manager));
-  Object name(&scope, Runtime::internStrFromCStr(thread_, "manager"));
-  code.setNames(runtime_->newTupleWith1(name));
+  Tuple consts(&scope, runtime_->newTupleWith1(manager));
   const byte bytecode[] = {LOAD_CONST, 0, BEFORE_ASYNC_WITH, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kRuntimeError, "foo"));
 }
@@ -3897,28 +3771,22 @@ manager = M()
   )")
                    .isError());
 
-  Code code(&scope, newEmptyCode());
-  code.setNlocals(0);
   Object manager(&scope, mainModuleAt(runtime_, "manager"));
-  code.setConsts(runtime_->newTupleWith1(manager));
-  Object name(&scope, Runtime::internStrFromCStr(thread_, "manager"));
-  code.setNames(runtime_->newTupleWith1(name));
+  Tuple consts(&scope, runtime_->newTupleWith1(manager));
   const byte bytecode[] = {LOAD_CONST, 0, BEFORE_ASYNC_WITH, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   EXPECT_TRUE(raisedWithStr(runCode(code), LayoutId::kRuntimeError, "foo"));
 }
 
 TEST_F(InterpreterTest, SetupAsyncWithPushesBlock) {
   HandleScope scope(thread_);
-
-  Code code(&scope, newEmptyCode());
   Object obj(&scope, SmallInt::fromWord(42));
-  code.setConsts(runtime_->newTupleWith1(obj));
+  Tuple consts(&scope, runtime_->newTupleWith1(obj));
   const byte bytecode[] = {
       LOAD_CONST, 0, SETUP_ASYNC_WITH, 0, POP_BLOCK, 0, RETURN_VALUE, 0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   EXPECT_EQ(runCode(code), SmallInt::fromWord(42));
 }
 
@@ -4511,12 +4379,10 @@ a = AsyncIterator()
                    .isError());
   Object a(&scope, mainModuleAt(runtime_, "a"));
 
-  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_->newTupleWith1(a));
-  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,  0, GET_ANEXT,    0,
                            BUILD_TUPLE, 2, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Tuple result(&scope, runCode(code));
   EXPECT_EQ(*a, result.at(0));
@@ -4547,12 +4413,10 @@ async_it = AsyncIterator()
   // The async generator object instance should not have an __await__() method.
   ASSERT_TRUE(Interpreter::lookupMethod(thread_, async_gen, ID(__await__))
                   .isErrorNotFound());
-  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_->newTupleWith1(async_it));
-  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST,  0, GET_ANEXT,    0,
                            BUILD_TUPLE, 2, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   Tuple result(&scope, runCode(code));
   EXPECT_EQ(*async_it, result.at(0));
   EXPECT_EQ(runtime_->typeOf(result.at(1)),
@@ -4561,12 +4425,10 @@ async_it = AsyncIterator()
 
 TEST_F(InterpreterTest, GetAnextOnNonIterable) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Object obj(&scope, SmallInt::fromWord(123));
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
-  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -4584,11 +4446,9 @@ a = AsyncIterator()
                    .isError());
   Object a(&scope, mainModuleAt(runtime_, "a"));
 
-  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_->newTupleWith1(a));
-  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_ANEXT, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Object result(&scope, runCode(code));
   EXPECT_TRUE(raised(*result, LayoutId::kTypeError));
@@ -4598,11 +4458,9 @@ static RawObject runCodeCallingGetAwaitableOnObject(Thread* thread,
                                                     const Object& obj) {
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime->newTupleWith1(obj));
-  code.setConsts(*consts);
   const byte bytecode[] = {LOAD_CONST, 0, GET_AWAITABLE, 0, RETURN_VALUE, 0};
-  code.setCode(runtime->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   return runCode(code);
 }
 
@@ -5121,9 +4979,7 @@ foo = Foo()
   Object foo(&scope, mainModuleAt(runtime_, "foo"));
 
   // Create a code object and set the foo instance as a const
-  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_->newTupleWith1(foo));
-  code.setConsts(*consts);
 
   // Python code:
   // foo = Foo()
@@ -5134,7 +4990,7 @@ foo = Foo()
       GET_YIELD_FROM_ITER, 0,  // iter(foo)
       RETURN_VALUE,        0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   // Confirm that the returned value is the iterator of Foo
   Object result(&scope, runCode(code));
@@ -5157,9 +5013,7 @@ foo = FooSequence()
   Object foo(&scope, mainModuleAt(runtime_, "foo"));
 
   // Create a code object and set the foo instance as a const
-  Code code(&scope, newEmptyCode());
   Tuple consts(&scope, runtime_->newTupleWith1(foo));
-  code.setConsts(*consts);
 
   // Python code:
   // foo = FooSequence()
@@ -5170,7 +5024,7 @@ foo = FooSequence()
       GET_YIELD_FROM_ITER, 0,  // iter(foo)
       RETURN_VALUE,        0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   // Confirm that the returned value is a sequence iterator
   Object result(&scope, runCode(code));
@@ -5645,15 +5499,13 @@ TEST_F(InterpreterTest, LoadAttrWithoutAttrUnwindsAttributeException) {
   HandleScope scope(thread_);
 
   // Set up a code object that runs: {}.foo
-  Code code(&scope, newEmptyCode());
   Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
   Tuple names(&scope, runtime_->newTupleWith1(foo));
-  code.setNames(*names);
+  Tuple consts(&scope, runtime_->emptyTuple());
 
   // load arguments and execute the code
   const byte bytecode[] = {BUILD_MAP, 0, LOAD_ATTR, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
-  code.setStacksize(1);
+  Code code(&scope, newCodeWithBytesConstsNames(bytecode, consts, names));
 
   // Execute the code and make sure to get the unwinded Error
   EXPECT_TRUE(runCode(code).isError());
@@ -6978,17 +6830,15 @@ TEST_F(JitTest, CompileFunctionSetsEntryAsm) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
   Object obj1(&scope, NoneType::object());
   Tuple consts(&scope, runtime_->newTupleWith1(obj1));
-  code.setConsts(*consts);
   const byte bytecode[] = {
       LOAD_CONST,
       0,
       RETURN_VALUE,
       0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   Object qualname(&scope, Str::empty());
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -7004,21 +6854,20 @@ TEST_F(JitTest, CompileFunctionSetsEntryAsm) {
 // without rewriting the bytecode.
 static RawObject createTrampolineFunction(Thread* thread) {
   HandleScope scope(thread);
-  Code code(&scope, newEmptyCode());
   Str foo(&scope, Runtime::internStrFromCStr(thread, "foo"));
   Runtime* runtime = thread->runtime();
   Tuple names(&scope, runtime->newTupleWith1(foo));
-  code.setNames(*names);
-  const byte bytecode_src[] = {
+  Tuple consts(&scope, runtime->emptyTuple());
+  const byte bytecode[] = {
       LOAD_GLOBAL, 0, CALL_FUNCTION, 0, RETURN_VALUE, 0,
   };
-  Bytes bytecode(&scope, runtime->newBytesWithAll(bytecode_src));
-  code.setCode(*bytecode);
+  Code code(&scope, newCodeWithBytesConstsNames(bytecode, consts, names));
   Str qualname(&scope, runtime->newStrFromCStr("qualname"));
   Module module(&scope, findMainModule(runtime));
   Function function(
       &scope, runtime->newFunctionWithCode(thread, qualname, code, module));
-  MutableBytes rewritten(&scope, expandBytecode(thread, bytecode));
+  Bytes bytecode_bytes(&scope, runtime->newBytesWithAll(bytecode));
+  MutableBytes rewritten(&scope, expandBytecode(thread, bytecode_bytes));
   function.setRewrittenBytecode(*rewritten);
   return *function;
 }
@@ -7030,23 +6879,20 @@ static RawObject createTrampolineFunction(Thread* thread) {
 // the bytecode.
 static RawObject createTrampolineFunction1(Thread* thread, const Object& obj) {
   HandleScope scope(thread);
-  Code code(&scope, newEmptyCode());
   Str foo(&scope, Runtime::internStrFromCStr(thread, "foo"));
   Runtime* runtime = thread->runtime();
   Tuple names(&scope, runtime->newTupleWith1(foo));
-  code.setNames(*names);
   Tuple consts(&scope, runtime->newTupleWith1(obj));
-  code.setConsts(*consts);
-  const byte bytecode_src[] = {
+  const byte bytecode[] = {
       LOAD_GLOBAL, 0, LOAD_CONST, 0, CALL_FUNCTION, 1, RETURN_VALUE, 0,
   };
-  Bytes bytecode(&scope, runtime->newBytesWithAll(bytecode_src));
-  code.setCode(*bytecode);
+  Code code(&scope, newCodeWithBytesConstsNames(bytecode, consts, names));
   Str qualname(&scope, runtime->newStrFromCStr("qualname"));
   Module module(&scope, findMainModule(runtime));
   Function function(
       &scope, runtime->newFunctionWithCode(thread, qualname, code, module));
-  MutableBytes rewritten(&scope, expandBytecode(thread, bytecode));
+  Bytes bytecode_bytes(&scope, runtime->newBytesWithAll(bytecode));
+  MutableBytes rewritten(&scope, expandBytecode(thread, bytecode_bytes));
   function.setRewrittenBytecode(*rewritten);
   return *function;
 }
@@ -7059,24 +6905,21 @@ static RawObject createTrampolineFunction1(Thread* thread, const Object& obj) {
 static RawObject createTrampolineFunction2(Thread* thread, const Object& left,
                                            const Object& right) {
   HandleScope scope(thread);
-  Code code(&scope, newEmptyCode());
   Str foo(&scope, Runtime::internStrFromCStr(thread, "foo"));
   Runtime* runtime = thread->runtime();
   Tuple names(&scope, runtime->newTupleWith1(foo));
-  code.setNames(*names);
   Tuple consts(&scope, runtime->newTupleWith2(left, right));
-  code.setConsts(*consts);
-  const byte bytecode_src[] = {
+  const byte bytecode[] = {
       LOAD_GLOBAL,   0, LOAD_CONST,   0, LOAD_CONST, 1,
       CALL_FUNCTION, 2, RETURN_VALUE, 0,
   };
-  Bytes bytecode(&scope, runtime->newBytesWithAll(bytecode_src));
-  code.setCode(*bytecode);
+  Code code(&scope, newCodeWithBytesConstsNames(bytecode, consts, names));
   Str qualname(&scope, runtime->newStrFromCStr("qualname"));
   Module module(&scope, findMainModule(runtime));
   Function function(
       &scope, runtime->newFunctionWithCode(thread, qualname, code, module));
-  MutableBytes rewritten(&scope, expandBytecode(thread, bytecode));
+  Bytes bytecode_bytes(&scope, runtime->newBytesWithAll(bytecode));
+  MutableBytes rewritten(&scope, expandBytecode(thread, bytecode_bytes));
   function.setRewrittenBytecode(*rewritten);
   return *function;
 }
@@ -7901,17 +7744,15 @@ TEST_F(JitTest, JumpAbsoluteJumps) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        JUMP_ABSOLUTE, 4,  // to LOAD_CONST, 1
-        LOAD_CONST,    0, LOAD_CONST, 1, RETURN_VALUE, 0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object none(&scope, NoneType::object());
-    Object one(&scope, SmallInt::fromWord(1));
-    code.setConsts(runtime_->newTupleWith2(none, one));
-  }
+  const byte bytecode[] = {
+      JUMP_ABSOLUTE, 4,  // to LOAD_CONST, 1
+      LOAD_CONST,    0, LOAD_CONST, 1, RETURN_VALUE, 0,
+  };
+  Object none(&scope, NoneType::object());
+  Object one(&scope, SmallInt::fromWord(1));
+  Tuple consts(&scope, runtime_->newTupleWith2(none, one));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -7926,17 +7767,15 @@ TEST_F(JitTest, JumpForwardJumps) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        JUMP_FORWARD, 2,  // to LOAD_CONST, 1
-        LOAD_CONST,   0, LOAD_CONST, 1, RETURN_VALUE, 0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object none(&scope, NoneType::object());
-    Object one(&scope, SmallInt::fromWord(1));
-    code.setConsts(runtime_->newTupleWith2(none, one));
-  }
+  const byte bytecode[] = {
+      JUMP_FORWARD, 2,  // to LOAD_CONST, 1
+      LOAD_CONST,   0, LOAD_CONST, 1, RETURN_VALUE, 0,
+  };
+  Object none(&scope, NoneType::object());
+  Object one(&scope, SmallInt::fromWord(1));
+  Tuple consts(&scope, runtime_->newTupleWith2(none, one));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -7951,19 +7790,17 @@ TEST_F(JitTest, PopJumpIfTrueJumpsIfTrue) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        LOAD_CONST, 2, POP_JUMP_IF_TRUE, 8,  // to LOAD_CONST, 1
-        LOAD_CONST, 0, JUMP_FORWARD,     2,  // to RETURN_VALUE
-        LOAD_CONST, 1, RETURN_VALUE,     0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object none(&scope, NoneType::object());
-    Object one(&scope, SmallInt::fromWord(1));
-    Object truthy(&scope, Bool::trueObj());
-    code.setConsts(runtime_->newTupleWith3(none, one, truthy));
-  }
+  const byte bytecode[] = {
+      LOAD_CONST, 2, POP_JUMP_IF_TRUE, 8,  // to LOAD_CONST, 1
+      LOAD_CONST, 0, JUMP_FORWARD,     2,  // to RETURN_VALUE
+      LOAD_CONST, 1, RETURN_VALUE,     0,
+  };
+  Object none(&scope, NoneType::object());
+  Object one(&scope, SmallInt::fromWord(1));
+  Object truthy(&scope, Bool::trueObj());
+  Tuple consts(&scope, runtime_->newTupleWith3(none, one, truthy));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -7978,19 +7815,17 @@ TEST_F(JitTest, PopJumpIfTrueJumpsIfTrueNonBool) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        LOAD_CONST, 2, POP_JUMP_IF_TRUE, 8,  // to LOAD_CONST, 1
-        LOAD_CONST, 0, JUMP_FORWARD,     2,  // to RETURN_VALUE
-        LOAD_CONST, 1, RETURN_VALUE,     0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object none(&scope, NoneType::object());
-    Object one(&scope, SmallInt::fromWord(1));
-    Object truthy(&scope, runtime_->newTupleWith1(one));
-    code.setConsts(runtime_->newTupleWith3(none, one, truthy));
-  }
+  const byte bytecode[] = {
+      LOAD_CONST, 2, POP_JUMP_IF_TRUE, 8,  // to LOAD_CONST, 1
+      LOAD_CONST, 0, JUMP_FORWARD,     2,  // to RETURN_VALUE
+      LOAD_CONST, 1, RETURN_VALUE,     0,
+  };
+  Object none(&scope, NoneType::object());
+  Object one(&scope, SmallInt::fromWord(1));
+  Object truthy(&scope, runtime_->newTupleWith1(one));
+  Tuple consts(&scope, runtime_->newTupleWith3(none, one, truthy));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -8007,19 +7842,17 @@ TEST_F(JitTest, PopJumpIfTrueDoesNotJumpIfFalse) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        LOAD_CONST, 2, POP_JUMP_IF_TRUE, 8,  // to LOAD_CONST, 1
-        LOAD_CONST, 0, JUMP_FORWARD,     2,  // to RETURN_VALUE
-        LOAD_CONST, 1, RETURN_VALUE,     0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object none(&scope, NoneType::object());
-    Object one(&scope, SmallInt::fromWord(1));
-    Object falsy(&scope, Bool::falseObj());
-    code.setConsts(runtime_->newTupleWith3(none, one, falsy));
-  }
+  const byte bytecode[] = {
+      LOAD_CONST, 2, POP_JUMP_IF_TRUE, 8,  // to LOAD_CONST, 1
+      LOAD_CONST, 0, JUMP_FORWARD,     2,  // to RETURN_VALUE
+      LOAD_CONST, 1, RETURN_VALUE,     0,
+  };
+  Object none(&scope, NoneType::object());
+  Object one(&scope, SmallInt::fromWord(1));
+  Object falsy(&scope, Bool::falseObj());
+  Tuple consts(&scope, runtime_->newTupleWith3(none, one, falsy));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -8034,19 +7867,17 @@ TEST_F(JitTest, PopJumpIfFalseJumpsIfFalse) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        LOAD_CONST, 2, POP_JUMP_IF_FALSE, 8,  // to LOAD_CONST, 1
-        LOAD_CONST, 0, JUMP_FORWARD,      2,  // to RETURN_VALUE
-        LOAD_CONST, 1, RETURN_VALUE,      0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object none(&scope, NoneType::object());
-    Object one(&scope, SmallInt::fromWord(1));
-    Object falsy(&scope, Bool::falseObj());
-    code.setConsts(runtime_->newTupleWith3(none, one, falsy));
-  }
+  const byte bytecode[] = {
+      LOAD_CONST, 2, POP_JUMP_IF_FALSE, 8,  // to LOAD_CONST, 1
+      LOAD_CONST, 0, JUMP_FORWARD,      2,  // to RETURN_VALUE
+      LOAD_CONST, 1, RETURN_VALUE,      0,
+  };
+  Object none(&scope, NoneType::object());
+  Object one(&scope, SmallInt::fromWord(1));
+  Object falsy(&scope, Bool::falseObj());
+  Tuple consts(&scope, runtime_->newTupleWith3(none, one, falsy));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -8061,19 +7892,17 @@ TEST_F(JitTest, PopJumpIfFalseDoesNotJumpIfTrue) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        LOAD_CONST, 2, POP_JUMP_IF_FALSE, 8,  // to LOAD_CONST, 1
-        LOAD_CONST, 0, JUMP_FORWARD,      2,  // to RETURN_VALUE
-        LOAD_CONST, 1, RETURN_VALUE,      0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object none(&scope, NoneType::object());
-    Object one(&scope, SmallInt::fromWord(1));
-    Object truthy(&scope, Bool::trueObj());
-    code.setConsts(runtime_->newTupleWith3(none, one, truthy));
-  }
+  const byte bytecode[] = {
+      LOAD_CONST, 2, POP_JUMP_IF_FALSE, 8,  // to LOAD_CONST, 1
+      LOAD_CONST, 0, JUMP_FORWARD,      2,  // to RETURN_VALUE
+      LOAD_CONST, 1, RETURN_VALUE,      0,
+  };
+  Object none(&scope, NoneType::object());
+  Object one(&scope, SmallInt::fromWord(1));
+  Object truthy(&scope, Bool::trueObj());
+  Tuple consts(&scope, runtime_->newTupleWith3(none, one, truthy));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -8088,17 +7917,15 @@ TEST_F(JitTest, JumpIfTrueOrPopJumpsIfTrue) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        LOAD_CONST, 1, JUMP_IF_TRUE_OR_POP, 6,  // to RETURN_VALUE
-        LOAD_CONST, 0, RETURN_VALUE,        0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object none(&scope, NoneType::object());
-    Object truthy(&scope, Bool::trueObj());
-    code.setConsts(runtime_->newTupleWith2(none, truthy));
-  }
+  const byte bytecode[] = {
+      LOAD_CONST, 1, JUMP_IF_TRUE_OR_POP, 6,  // to RETURN_VALUE
+      LOAD_CONST, 0, RETURN_VALUE,        0,
+  };
+  Object none(&scope, NoneType::object());
+  Object truthy(&scope, Bool::trueObj());
+  Tuple consts(&scope, runtime_->newTupleWith2(none, truthy));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -8113,17 +7940,15 @@ TEST_F(JitTest, JumpIfTrueOrPopPopsIfFalse) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        LOAD_CONST, 1, JUMP_IF_TRUE_OR_POP, 6,  // to RETURN_VALUE
-        LOAD_CONST, 0, RETURN_VALUE,        0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object none(&scope, NoneType::object());
-    Object falsy(&scope, Bool::falseObj());
-    code.setConsts(runtime_->newTupleWith2(none, falsy));
-  }
+  const byte bytecode[] = {
+      LOAD_CONST, 1, JUMP_IF_TRUE_OR_POP, 6,  // to RETURN_VALUE
+      LOAD_CONST, 0, RETURN_VALUE,        0,
+  };
+  Object none(&scope, NoneType::object());
+  Object falsy(&scope, Bool::falseObj());
+  Tuple consts(&scope, runtime_->newTupleWith2(none, falsy));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -8138,17 +7963,15 @@ TEST_F(JitTest, JumpIfFalseOrPopJumpsIfFalse) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        LOAD_CONST, 1, JUMP_IF_FALSE_OR_POP, 6,  // to RETURN_VALUE
-        LOAD_CONST, 0, RETURN_VALUE,         0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object none(&scope, NoneType::object());
-    Object falsy(&scope, Bool::falseObj());
-    code.setConsts(runtime_->newTupleWith2(none, falsy));
-  }
+  const byte bytecode[] = {
+      LOAD_CONST, 1, JUMP_IF_FALSE_OR_POP, 6,  // to RETURN_VALUE
+      LOAD_CONST, 0, RETURN_VALUE,         0,
+  };
+  Object none(&scope, NoneType::object());
+  Object falsy(&scope, Bool::falseObj());
+  Tuple consts(&scope, runtime_->newTupleWith2(none, falsy));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -8163,17 +7986,15 @@ TEST_F(JitTest, JumpIfFalseOrPopPopsIfTrue) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        LOAD_CONST, 1, JUMP_IF_FALSE_OR_POP, 6,  // to RETURN_VALUE
-        LOAD_CONST, 0, RETURN_VALUE,         0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object none(&scope, NoneType::object());
-    Object truthy(&scope, Bool::trueObj());
-    code.setConsts(runtime_->newTupleWith2(none, truthy));
-  }
+  const byte bytecode[] = {
+      LOAD_CONST, 1, JUMP_IF_FALSE_OR_POP, 6,  // to RETURN_VALUE
+      LOAD_CONST, 0, RETURN_VALUE,         0,
+  };
+  Object none(&scope, NoneType::object());
+  Object truthy(&scope, Bool::trueObj());
+  Tuple consts(&scope, runtime_->newTupleWith2(none, truthy));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -8789,16 +8610,14 @@ TEST_F(JitTest, BuildStringReturnsString) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        LOAD_CONST, 0, LOAD_CONST, 1, BUILD_STRING, 2, RETURN_VALUE, 0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object left(&scope, SmallStr::fromCStr("hello"));
-    Object right(&scope, SmallStr::fromCStr(" world"));
-    code.setConsts(runtime_->newTupleWith2(left, right));
-  }
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, BUILD_STRING, 2, RETURN_VALUE, 0,
+  };
+  Object left(&scope, SmallStr::fromCStr("hello"));
+  Object right(&scope, SmallStr::fromCStr(" world"));
+  Tuple consts(&scope, runtime_->newTupleWith2(left, right));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -8830,17 +8649,15 @@ TEST_F(JitTest, DupTopTwoDuplicatesTwoTwoStackElements) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        LOAD_CONST, 0, LOAD_CONST,   1, DUP_TOP_TWO, 0,
-        BUILD_LIST, 4, RETURN_VALUE, 0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object left(&scope, SmallInt::fromWord(1));
-    Object right(&scope, SmallInt::fromWord(2));
-    code.setConsts(runtime_->newTupleWith2(left, right));
-  }
+  byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST,   1, DUP_TOP_TWO, 0,
+      BUILD_LIST, 4, RETURN_VALUE, 0,
+  };
+  Object left(&scope, SmallInt::fromWord(1));
+  Object right(&scope, SmallInt::fromWord(2));
+  Tuple consts(&scope, runtime_->newTupleWith2(left, right));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -8855,19 +8672,17 @@ TEST_F(JitTest, RotFourRotatesStackElements) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST,   2, LOAD_CONST, 3,
-        ROT_FOUR,   0, BUILD_LIST, 4, RETURN_VALUE, 0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object obj1(&scope, SmallInt::fromWord(1));
-    Object obj2(&scope, SmallInt::fromWord(2));
-    Object obj3(&scope, SmallInt::fromWord(3));
-    Object obj4(&scope, SmallInt::fromWord(4));
-    code.setConsts(runtime_->newTupleWith4(obj1, obj2, obj3, obj4));
-  }
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST,   2, LOAD_CONST, 3,
+      ROT_FOUR,   0, BUILD_LIST, 4, RETURN_VALUE, 0,
+  };
+  Object obj1(&scope, SmallInt::fromWord(1));
+  Object obj2(&scope, SmallInt::fromWord(2));
+  Object obj3(&scope, SmallInt::fromWord(3));
+  Object obj4(&scope, SmallInt::fromWord(4));
+  Tuple consts(&scope, runtime_->newTupleWith4(obj1, obj2, obj3, obj4));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(
@@ -8882,18 +8697,16 @@ TEST_F(JitTest, RotThreeRotatesStackElements) {
     GTEST_SKIP();
   }
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
-  {
-    byte code_bytes[] = {
-        LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST,   2,
-        ROT_THREE,  0, BUILD_LIST, 3, RETURN_VALUE, 0,
-    };
-    code.setCode(runtime_->newBytesWithAll(code_bytes));
-    Object obj1(&scope, SmallInt::fromWord(1));
-    Object obj2(&scope, SmallInt::fromWord(2));
-    Object obj3(&scope, SmallInt::fromWord(3));
-    code.setConsts(runtime_->newTupleWith3(obj1, obj2, obj3));
-  }
+  const byte bytecode[] = {
+      LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST,   2,
+      ROT_THREE,  0, BUILD_LIST, 3, RETURN_VALUE, 0,
+  };
+  Object obj1(&scope, SmallInt::fromWord(1));
+  Object obj2(&scope, SmallInt::fromWord(2));
+  Object obj3(&scope, SmallInt::fromWord(3));
+  Tuple consts(&scope, runtime_->newTupleWith3(obj1, obj2, obj3));
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
+
   Str qualname(&scope, SmallStr::fromCStr("foo"));
   Module module(&scope, findMainModule(runtime_));
   Function function(

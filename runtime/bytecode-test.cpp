@@ -12,10 +12,11 @@ using BytecodeTest = RuntimeFixture;
 
 TEST_F(BytecodeTest, NextBytecodeOpReturnsNextBytecodeOpPair) {
   HandleScope scope(thread_);
-  byte bytecode_raw[] = {NOP,          99,   0, 0, EXTENDED_ARG, 0xca, 0, 0,
-                         LOAD_ATTR,    0xfe, 0, 0, LOAD_GLOBAL,  10,   0, 0,
-                         EXTENDED_ARG, 1,    0, 0, EXTENDED_ARG, 2,    0, 0,
-                         EXTENDED_ARG, 3,    0, 0, LOAD_ATTR,    4,    0, 0};
+  const byte bytecode_raw[] = {
+      NOP,          99,   0, 0, EXTENDED_ARG, 0xca, 0, 0,
+      LOAD_ATTR,    0xfe, 0, 0, LOAD_GLOBAL,  10,   0, 0,
+      EXTENDED_ARG, 1,    0, 0, EXTENDED_ARG, 2,    0, 0,
+      EXTENDED_ARG, 3,    0, 0, LOAD_ATTR,    4,    0, 0};
   Bytes original_bytecode(&scope, runtime_->newBytesWithAll(bytecode_raw));
   MutableBytes bytecode(
       &scope, runtime_->mutableBytesFromBytes(thread_, original_bytecode));
@@ -57,7 +58,6 @@ TEST_F(BytecodeTest, OpargFromObject) {
 TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
   static const int cache_limit = 65536;
   byte bytecode[(cache_limit + 2) * kCompilerCodeUnitSize];
   std::memset(bytecode, 0, sizeof bytecode);
@@ -84,10 +84,14 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
   rewritten_bytecode[(cache_limit + 1) * kCodeUnitSize] = LOAD_GLOBAL;
   rewritten_bytecode[(cache_limit + 1) * kCodeUnitSize + 1] = 15;
 
-  code.setCode(runtime_->newBytesWithAll(bytecode));
   word global_names_length = 600;
-  Tuple names(&scope, newTupleWithNone(global_names_length));
-  code.setNames(*names);
+  Tuple consts(&scope, runtime_->emptyTuple());
+  MutableTuple names(&scope, runtime_->newMutableTuple(global_names_length));
+  for (word i = 0; i < global_names_length; i++) {
+    names.atPut(i, runtime_->newStrFromFmt("g%w", i));
+  }
+  Tuple names_tuple(&scope, names.becomeImmutable());
+  Code code(&scope, newCodeWithBytesConstsNames(bytecode, consts, names_tuple));
 
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
@@ -105,13 +109,12 @@ TEST_F(BytecodeTest, RewriteBytecodeWithMoreThanCacheLimitCapsRewriting) {
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
-  byte bytecode[] = {
+  const byte bytecode[] = {
       NOP,          99,  EXTENDED_ARG, 0xca, LOAD_ATTR,    0xfe,
       NOP,          106, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
       EXTENDED_ARG, 3,   LOAD_ATTR,    4,    LOAD_ATTR,    77,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytes(bytecode));
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
@@ -169,10 +172,8 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadAttrOperations) {
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
-  byte bytecode[] = {LOAD_CONST, 0,          LOAD_CONST, 1,          LOAD_CONST,
-                     2,          LOAD_CONST, 3,          LOAD_CONST, 4};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST, 1, LOAD_CONST, 2,
+                           LOAD_CONST, 3, LOAD_CONST, 4};
 
   // Immediate objects.
   Object obj0(&scope, NoneType::object());
@@ -184,7 +185,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
   Object obj4(&scope, runtime_->newList());
   Tuple consts(&scope,
                runtime_->newTupleWithN(5, &obj0, &obj1, &obj2, &obj3, &obj4));
-  code.setConsts(*consts);
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
@@ -219,15 +220,13 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstOperations) {
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstToLoadBool) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
-  byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST, 1};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  const byte bytecode[] = {LOAD_CONST, 0, LOAD_CONST, 1};
 
   // Immediate objects.
   Object obj0(&scope, Bool::trueObj());
   Object obj1(&scope, Bool::falseObj());
   Tuple consts(&scope, runtime_->newTupleWith2(obj0, obj1));
-  code.setConsts(*consts);
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
 
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
@@ -243,13 +242,13 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadConstToLoadBool) {
 TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadMethodOperations) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
-  byte bytecode[] = {
+  const byte bytecode[] = {
       NOP,          99,  EXTENDED_ARG, 0xca, LOAD_METHOD,  0xfe,
       NOP,          160, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
       EXTENDED_ARG, 3,   LOAD_METHOD,  4,    LOAD_METHOD,  77,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytes(bytecode));
+
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
@@ -307,9 +306,9 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadMethodOperations) {
 TEST_F(BytecodeTest, RewriteBytecodeRewritesStoreAttr) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
-  byte bytecode[] = {STORE_ATTR, 48};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  const byte bytecode[] = {STORE_ATTR, 48};
+  Code code(&scope, newCodeWithBytes(bytecode));
+
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
@@ -328,8 +327,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesStoreAttr) {
 TEST_F(BytecodeTest, RewriteBytecodeRewritesBinaryOpcodes) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
-  byte bytecode[] = {
+  const byte bytecode[] = {
       BINARY_MATRIX_MULTIPLY,
       0,
       BINARY_POWER,
@@ -357,7 +355,8 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesBinaryOpcodes) {
       BINARY_OR,
       0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytes(bytecode));
+
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
@@ -424,8 +423,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesBinaryOpcodes) {
 TEST_F(BytecodeTest, RewriteBytecodeRewritesInplaceOpcodes) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
-  byte bytecode[] = {
+  const byte bytecode[] = {
       INPLACE_MATRIX_MULTIPLY,
       0,
       INPLACE_POWER,
@@ -453,7 +451,8 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesInplaceOpcodes) {
       INPLACE_OR,
       0,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytes(bytecode));
+
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
@@ -520,8 +519,7 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesInplaceOpcodes) {
 TEST_F(BytecodeTest, RewriteBytecodeRewritesCompareOpOpcodes) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
-  byte bytecode[] = {
+  const byte bytecode[] = {
       COMPARE_OP, CompareOp::LT,        COMPARE_OP, CompareOp::LE,
       COMPARE_OP, CompareOp::EQ,        COMPARE_OP, CompareOp::NE,
       COMPARE_OP, CompareOp::GT,        COMPARE_OP, CompareOp::GE,
@@ -529,7 +527,8 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesCompareOpOpcodes) {
       COMPARE_OP, CompareOp::IS,        COMPARE_OP, CompareOp::IS_NOT,
       COMPARE_OP, CompareOp::EXC_MATCH,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytes(bytecode));
+
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
@@ -588,14 +587,18 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesCompareOpOpcodes) {
 TEST_F(BytecodeTest, RewriteBytecodeRewritesReservesCachesForGlobalVariables) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
-  byte bytecode[] = {
+  const byte bytecode[] = {
       LOAD_GLOBAL, 0, STORE_GLOBAL, 1, LOAD_ATTR, 9, DELETE_GLOBAL, 2,
       STORE_NAME,  3, DELETE_NAME,  4, LOAD_ATTR, 9, LOAD_NAME,     5,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
-  code.setNames(
-      MutableTuple::cast(runtime_->newMutableTuple(12)).becomeImmutable());
+  Tuple consts(&scope, runtime_->emptyTuple());
+  MutableTuple names(&scope, runtime_->newMutableTuple(12));
+  for (word i = 0; i < 12; i++) {
+    names.atPut(i, runtime_->newStrFromFmt("g%w", i));
+  }
+  Tuple names_tuple(&scope, names.becomeImmutable());
+  Code code(&scope, newCodeWithBytesConstsNames(bytecode, consts, names_tuple));
+
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));
@@ -669,15 +672,15 @@ TEST_F(
   Object empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_string(&scope, Str::empty());
   Object lnotab(&scope, Bytes::empty());
+  word flags = Code::Flags::kOptimized | Code::Flags::kNewlocals;
   Code code(&scope,
             runtime_->newCode(argcount, /*posonlyargcount=*/0,
                               /*kwonlyargcount=*/0, nlocals,
-                              /*stacksize=*/0, /*flags=*/0, code_code,
+                              /*stacksize=*/0, /*flags=*/flags, code_code,
                               /*consts=*/empty_tuple, /*names=*/empty_tuple,
                               varnames, freevars, cellvars,
                               /*filename=*/empty_string, /*name=*/empty_string,
                               /*firstlineno=*/0, lnotab));
-  code.setFlags(code.flags() | Code::Flags::kOptimized);
 
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope, runtime_->newFunctionWithCode(thread_, empty_string,
@@ -714,15 +717,15 @@ TEST_F(BytecodeTest, RewriteBytecodeRewritesLoadFastAndStoreFastOpcodes) {
   Object empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_string(&scope, Str::empty());
   Object lnotab(&scope, Bytes::empty());
+  word flags = Code::Flags::kOptimized | Code::Flags::kNewlocals;
   Code code(&scope,
             runtime_->newCode(argcount, /*posonlyargcount=*/0,
                               /*kwonlyargcount=*/0, nlocals,
-                              /*stacksize=*/0, /*flags=*/0, code_code,
+                              /*stacksize=*/0, /*flags=*/flags, code_code,
                               /*consts=*/empty_tuple, /*names=*/empty_tuple,
                               varnames, freevars, cellvars,
                               /*filename=*/empty_string, /*name=*/empty_string,
                               /*firstlineno=*/0, lnotab));
-  code.setFlags(code.flags() | Code::Flags::kOptimized);
 
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope, runtime_->newFunctionWithCode(thread_, empty_string,
@@ -760,15 +763,15 @@ TEST_F(BytecodeTest,
   Object empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_string(&scope, Str::empty());
   Object lnotab(&scope, Bytes::empty());
+  word flags = Code::Flags::kOptimized | Code::Flags::kNewlocals;
   Code code(&scope,
             runtime_->newCode(argcount, /*posonlyargcount=*/0,
                               /*kwonlyargcount=*/0, nlocals,
-                              /*stacksize=*/0, /*flags=*/0, code_code,
+                              /*stacksize=*/0, /*flags=*/flags, code_code,
                               /*consts=*/empty_tuple, /*names=*/empty_tuple,
                               varnames, freevars, cellvars,
                               /*filename=*/empty_string, /*name=*/empty_string,
                               /*firstlineno=*/0, lnotab));
-  code.setFlags(code.flags() | Code::Flags::kOptimized);
 
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope, runtime_->newFunctionWithCode(thread_, empty_string,
@@ -799,7 +802,7 @@ TEST_F(
   Tuple cellvars(&scope, runtime_->newTupleWith1(cellvar0));
   word argcount = 1;
   word nlocals = 3;
-  byte bytecode[] = {
+  const byte bytecode[] = {
       LOAD_FAST,  2, LOAD_FAST,  1, LOAD_FAST,   0, STORE_FAST, 2,
       STORE_FAST, 1, STORE_FAST, 0, DELETE_FAST, 0,
   };
@@ -807,15 +810,15 @@ TEST_F(
   Object empty_tuple(&scope, runtime_->emptyTuple());
   Object empty_string(&scope, Str::empty());
   Object lnotab(&scope, Bytes::empty());
+  word flags = Code::Flags::kOptimized | Code::Flags::kNewlocals;
   Code code(&scope,
             runtime_->newCode(argcount, /*posonlyargcount=*/0,
                               /*kwonlyargcount=*/0, nlocals,
-                              /*stacksize=*/0, /*flags=*/0, code_code,
+                              /*stacksize=*/0, /*flags=*/flags, code_code,
                               /*consts=*/empty_tuple, /*names=*/empty_tuple,
                               varnames, freevars, cellvars,
                               /*filename=*/empty_string, /*name=*/empty_string,
                               /*firstlineno=*/0, lnotab));
-  code.setFlags(code.flags() | Code::Flags::kOptimized);
 
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope, runtime_->newFunctionWithCode(thread_, empty_string,
@@ -837,15 +840,16 @@ TEST_F(BytecodeTest,
        RewriteBytecodeDoesNotRewriteFunctionsWithNoOptimizedNorNewLocalsFlag) {
   HandleScope scope(thread_);
   Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
-  byte bytecode[] = {
+  Tuple consts(&scope, runtime_->emptyTuple());
+  Tuple names(&scope, runtime_->emptyTuple());
+  const byte bytecode[] = {
       NOP,          99,  EXTENDED_ARG, 0xca, LOAD_ATTR,    0xfe,
       NOP,          106, EXTENDED_ARG, 1,    EXTENDED_ARG, 2,
       EXTENDED_ARG, 3,   LOAD_ATTR,    4,    LOAD_ATTR,    77,
   };
-  code.setCode(runtime_->newBytesWithAll(bytecode));
-  code.setFlags(code.flags() & ~Code::Flags::kOptimized &
-                ~Code::Flags::kNewlocals);
+  Code code(&scope,
+            newCodeWithBytesConstsNamesFlags(bytecode, consts, names, 0));
+
   Module module(&scope, findMainModule(runtime_));
   Function function(&scope,
                     runtime_->newFunctionWithCode(thread_, name, code, module));

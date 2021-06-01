@@ -695,8 +695,12 @@ static RawObject testingFunctionCachingAttributes(
     Thread* thread, const Object& attribute_name) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
+  Tuple consts(&scope, runtime->emptyTuple());
   Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
+  Tuple names(&scope, runtime->newTupleWith2(attribute_name, name));
+  Code code(&scope,
+            newCodeWithBytesConstsNames(View<byte>(nullptr, 0), consts, names));
+
   MutableBytes rewritten_bytecode(&scope,
                                   runtime->newMutableBytesUninitialized(8));
   rewrittenBytecodeOpAtPut(rewritten_bytecode, 0, LOAD_ATTR_ANAMORPHIC);
@@ -707,11 +711,6 @@ static RawObject testingFunctionCachingAttributes(
   Function function(&scope,
                     runtime->newFunctionWithCode(thread, name, code, module));
   function.setRewrittenBytecode(*rewritten_bytecode);
-
-  Object none(&scope, NoneType::object());
-
-  Tuple names(&scope, runtime->newTupleWith2(attribute_name, none));
-  code.setNames(*names);
 
   MutableTuple caches(&scope,
                       runtime->newMutableTuple(2 * kIcPointersPerEntry));
@@ -1417,7 +1416,10 @@ static RawObject testingFunction(Thread* thread) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
   Object name(&scope, Str::empty());
-  Code code(&scope, newEmptyCode());
+  Tuple consts(&scope, runtime->emptyTuple());
+  Tuple names(&scope, runtime->newTupleWith2(name, name));
+  Code code(&scope,
+            newCodeWithBytesConstsNames(View<byte>(nullptr, 0), consts, names));
   MutableBytes rewritten_bytecode(
       &scope, runtime->newMutableBytesUninitialized(4 * kCodeUnitSize));
   rewrittenBytecodeOpAtPut(rewritten_bytecode, 0, LOAD_GLOBAL);
@@ -1434,7 +1436,6 @@ static RawObject testingFunction(Thread* thread) {
                     runtime->newFunctionWithCode(thread, name, code, module));
   function.setRewrittenBytecode(*rewritten_bytecode);
 
-  code.setNames(newTupleWithNone(2));
   MutableTuple caches(&scope, runtime->newMutableTuple(2));
   caches.fill(NoneType::object());
   function.setCaches(*caches);

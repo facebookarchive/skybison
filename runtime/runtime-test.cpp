@@ -49,12 +49,10 @@ RawObject makeTestFunction() {
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Runtime* runtime = thread->runtime();
-  Code code(&scope, newEmptyCode());
-  const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
-  code.setCode(runtime->newBytesWithAll(bytecode));
   Object obj(&scope, NoneType::object());
   Tuple consts(&scope, runtime->newTupleWith1(obj));
-  code.setConsts(*consts);
+  const byte bytecode[] = {LOAD_CONST, 0, RETURN_VALUE, 0};
+  Code code(&scope, newCodeWithBytesConsts(bytecode, consts));
   Object qualname(&scope, runtime->newStrFromCStr("foo"));
   Module module(&scope, findMainModule(runtime));
   return runtime->newFunctionWithCode(thread, qualname, code, module);
@@ -1379,7 +1377,6 @@ TEST_F(RuntimeTest, CollectAttributes) {
   Str foo(&scope, runtime_->newStrFromCStr("foo"));
   Str bar(&scope, runtime_->newStrFromCStr("bar"));
   Str baz(&scope, runtime_->newStrFromCStr("baz"));
-
   Tuple names(&scope, runtime_->newTupleWith3(foo, bar, baz));
 
   Object obj1(&scope, SmallInt::fromWord(100));
@@ -1388,9 +1385,9 @@ TEST_F(RuntimeTest, CollectAttributes) {
   Object obj4(&scope, NoneType::object());
   Tuple consts(&scope, runtime_->newTupleWith4(obj1, obj2, obj3, obj4));
 
-  Code code(&scope, newEmptyCode());
-  code.setConsts(*consts);
-  code.setNames(*names);
+  Locals locals;
+  locals.argcount = 1;
+
   // Bytecode for the snippet:
   //
   //   def __init__(self):
@@ -1399,13 +1396,14 @@ TEST_F(RuntimeTest, CollectAttributes) {
   //
   // The assignment to self.foo is intentionally duplicated to ensure that we
   // only record a single attribute name.
-  const byte bytecode[] = {LOAD_CONST,   0, LOAD_FAST, 0, STORE_ATTR, 0,
-                           LOAD_CONST,   1, LOAD_FAST, 0, STORE_ATTR, 0,
-                           RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  const byte bytecode0[] = {LOAD_CONST,   0, LOAD_FAST, 0, STORE_ATTR, 0,
+                            LOAD_CONST,   1, LOAD_FAST, 0, STORE_ATTR, 0,
+                            RETURN_VALUE, 0};
+  Code code0(&scope, newCodeWithBytesConstsNamesLocals(bytecode0, consts, names,
+                                                       &locals));
 
   Dict attributes(&scope, runtime_->newDict());
-  runtime_->collectAttributes(code, attributes);
+  runtime_->collectAttributes(code0, attributes);
 
   // We should have collected a single attribute: 'foo'
   EXPECT_EQ(attributes.numItems(), 1);
@@ -1420,11 +1418,12 @@ TEST_F(RuntimeTest, CollectAttributes) {
   //   def __init__(self):
   //       self.bar = 200
   //       self.baz = 300
-  const byte bc2[] = {LOAD_CONST,   1, LOAD_FAST, 0, STORE_ATTR, 1,
-                      LOAD_CONST,   2, LOAD_FAST, 0, STORE_ATTR, 2,
-                      RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bc2));
-  runtime_->collectAttributes(code, attributes);
+  const byte bytecode1[] = {LOAD_CONST,   1, LOAD_FAST, 0, STORE_ATTR, 1,
+                            LOAD_CONST,   2, LOAD_FAST, 0, STORE_ATTR, 2,
+                            RETURN_VALUE, 0};
+  Code code1(&scope, newCodeWithBytesConstsNamesLocals(bytecode1, consts, names,
+                                                       &locals));
+  runtime_->collectAttributes(code1, attributes);
 
   // We should have collected a two more attributes: 'bar' and 'baz'
   EXPECT_EQ(attributes.numItems(), 3);
@@ -1445,15 +1444,15 @@ TEST_F(RuntimeTest, CollectAttributesWithExtendedArg) {
 
   Str foo(&scope, runtime_->newStrFromCStr("foo"));
   Str bar(&scope, runtime_->newStrFromCStr("bar"));
-
   Tuple names(&scope, runtime_->newTupleWith2(foo, bar));
 
   Object obj(&scope, NoneType::object());
   Tuple consts(&scope, runtime_->newTupleWith1(obj));
 
-  Code code(&scope, newEmptyCode());
-  code.setConsts(*consts);
-  code.setNames(*names);
+  Locals locals;
+  locals.argcount = 1;
+  locals.varcount = 300;
+
   // Bytecode for the snippet:
   //
   //   def __init__(self):
@@ -1461,10 +1460,11 @@ TEST_F(RuntimeTest, CollectAttributesWithExtendedArg) {
   //
   // There is an additional LOAD_FAST that is preceded by an EXTENDED_ARG
   // that must be skipped.
-  const byte bytecode[] = {LOAD_CONST, 0, EXTENDED_ARG, 10, LOAD_FAST, 0,
-                           STORE_ATTR, 1, LOAD_CONST,   0,  LOAD_FAST, 0,
+  const byte bytecode[] = {LOAD_CONST, 0, EXTENDED_ARG, 1, LOAD_FAST, 0,
+                           STORE_ATTR, 1, LOAD_CONST,   0, LOAD_FAST, 0,
                            STORE_ATTR, 0, RETURN_VALUE, 0};
-  code.setCode(runtime_->newBytesWithAll(bytecode));
+  Code code(&scope, newCodeWithBytesConstsNamesLocals(bytecode, consts, names,
+                                                      &locals));
 
   Dict attributes(&scope, runtime_->newDict());
   runtime_->collectAttributes(code, attributes);

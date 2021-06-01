@@ -170,29 +170,5 @@ Expected: four)";
   EXPECT_STREQ(bad_str.message(), str_msg);
 }
 
-TEST_F(TestUtils, NewEmptyCode) {
-  HandleScope scope(thread_);
-
-  Code code(&scope, newEmptyCode());
-  EXPECT_EQ(code.argcount(), 0);
-  EXPECT_TRUE(code.cell2arg().isNoneType());
-  ASSERT_TRUE(code.cellvars().isTuple());
-  EXPECT_EQ(Tuple::cast(code.cellvars()).length(), 0);
-  EXPECT_TRUE(code.code().isBytes());
-  EXPECT_TRUE(code.consts().isTuple());
-  EXPECT_TRUE(code.filename().isStr());
-  EXPECT_EQ(code.firstlineno(), 0);
-  EXPECT_EQ(code.flags(), Code::Flags::kNofree | Code::Flags::kOptimized |
-                              Code::Flags::kNewlocals);
-  ASSERT_TRUE(code.freevars().isTuple());
-  EXPECT_EQ(Tuple::cast(code.freevars()).length(), 0);
-  EXPECT_EQ(code.kwonlyargcount(), 0);
-  EXPECT_TRUE(code.lnotab().isBytes());
-  EXPECT_TRUE(code.name().isStr());
-  EXPECT_EQ(code.nlocals(), 0);
-  EXPECT_EQ(code.stacksize(), 0);
-  EXPECT_TRUE(code.varnames().isTuple());
-}
-
 }  // namespace testing
 }  // namespace py

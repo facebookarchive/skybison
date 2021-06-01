@@ -142,7 +142,23 @@ std::string typeName(Runtime* runtime, RawObject obj);
 
 RawObject typeValueCellAt(RawType type, RawObject name);
 
-RawCode newEmptyCode();
+struct Locals {
+  word varcount = 0;
+  word argcount = 0;
+  word kwonlyargcount = 0;
+  word posonlyargcount = 0;
+  bool varargs = false;
+  bool varkeyargs = false;
+};
+
+RawCode newCodeWithBytes(View<byte> bytes);
+RawCode newCodeWithBytesConsts(View<byte> bytes, const Tuple& consts);
+RawCode newCodeWithBytesConstsNames(View<byte> bytes, const Tuple& consts,
+                                    const Tuple& names);
+RawCode newCodeWithBytesConstsNamesFlags(View<byte> bytes, const Tuple& consts,
+                                         const Tuple& names, word flags);
+RawCode newCodeWithBytesConstsNamesLocals(View<byte> bytes, const Tuple& consts,
+                                          const Tuple& names, Locals* locals);
 
 RawFunction newEmptyFunction();
 

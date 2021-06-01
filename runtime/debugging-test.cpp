@@ -471,7 +471,7 @@ TEST_F(DebuggingTests, FormatBytearray) {
 
 TEST_F(DebuggingTests, FormatCode) {
   HandleScope scope(thread_);
-  Code code(&scope, newEmptyCode());
+  Code code(&scope, newCodeWithBytes(View<byte>(nullptr, 0)));
   code.setName(runtime_->newStrFromCStr("foobar"));
   std::stringstream ss;
   ss << code;
