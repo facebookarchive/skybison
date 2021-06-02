@@ -2779,8 +2779,9 @@ bool isSupportedInJIT(Bytecode bc) {
     case BINARY_LSHIFT:
     case BINARY_MATRIX_MULTIPLY:
     case BINARY_MODULO:
-    case BINARY_MUL_SMALLINT:
     case BINARY_MULTIPLY:
+    case BINARY_MUL_SMALLINT:
+    case BINARY_OP_MONOMORPHIC:
     case BINARY_OR:
     case BINARY_OR_SMALLINT:
     case BINARY_POWER:

@@ -9113,5 +9113,75 @@ instance.attr = "blah"
   EXPECT_EQ(function.entryAsm(), entry_before);
 }
 
+TEST_F(JitTest, BinaryOpMonomorphicCallsCachedFunction) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __mul__(self, other):
+    return other * 10
+
+def foo(left, right):
+  return left * right
+
+# Rewrite BINARY_OP_ANAMORPHIC to BINARY_OP_MONOMORPHIC
+foo(C(), 1)
+instance = C()
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BINARY_OP_MONOMORPHIC));
+  // Don't use compileAndCallJITFunction2 in this function because the C++
+  // handler needs to be able to read the cache index off the bytecode.
+  compileFunction(thread_, function);
+  Object left(&scope, mainModuleAt(runtime_, "instance"));
+  Object right(&scope, SmallInt::fromWord(5));
+  Function caller(&scope, createTrampolineFunction2(thread_, left, right));
+  Object result(&scope, Interpreter::call0(thread_, caller));
+  EXPECT_TRUE(isIntEqualsWord(*result, 50));
+}
+
+TEST_F(JitTest, BinaryOpMonomorphicWithNewTypeDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  // Don't use compileAndCallJITFunction2 in this function because we want to
+  // test deoptimizing back into the interpreter. This requires valid bytecode.
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __mul__(self, other):
+    return other * 10
+
+class D(C):
+  pass
+
+def foo(left, right):
+  return left * right
+
+# Rewrite BINARY_OP_ANAMORPHIC to BINARY_MUL_SMALLINT
+foo(C(), 1)
+instance = D()
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, BINARY_OP_MONOMORPHIC));
+  void* entry_before = function.entryAsm();
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Object left(&scope, mainModuleAt(runtime_, "instance"));
+  Object right(&scope, SmallInt::fromWord(2));
+  Function deopt_caller(&scope,
+                        createTrampolineFunction2(thread_, left, right));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_TRUE(containsBytecode(function, BINARY_OP_POLYMORPHIC));
+  EXPECT_TRUE(isIntEqualsWord(*result, 20));
+  EXPECT_EQ(function.entryAsm(), entry_before);
+}
+
 }  // namespace testing
 }  // namespace py
