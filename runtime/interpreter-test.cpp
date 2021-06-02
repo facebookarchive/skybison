@@ -9049,5 +9049,69 @@ instance = D()
   EXPECT_EQ(function.entryAsm(), entry_before);
 }
 
+TEST_F(JitTest, StoreAttrInstanceUpdateWithInstanceStoresAttribute) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self, value):
+    self.bar = value
+
+foo = C.__init__
+
+# Rewrite STORE_ATTR_ANAMORPHIC to STORE_ATTR_INSTANCE_UPDATE
+instance = C(10)
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, STORE_ATTR_INSTANCE_UPDATE));
+  // Don't use compileAndCallJITFunction2 in this function because the C++
+  // handler needs to be able to read the cache index off the bytecode.
+  compileFunction(thread_, function);
+  Object self(&scope, mainModuleAt(runtime_, "instance"));
+  Object value(&scope, SmallInt::fromWord(10));
+  Function caller(&scope, createTrampolineFunction2(thread_, self, value));
+  Object result(&scope, Interpreter::call0(thread_, caller));
+  EXPECT_TRUE(result.isNoneType());
+}
+
+TEST_F(JitTest, StoreAttrInstanceUpdateWithNewTypeDeoptimizes) {
+  if (useCppInterpreter()) {
+    GTEST_SKIP();
+  }
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+class C:
+  def __init__(self, value):
+    self.bar = value
+
+foo = C.__init__
+
+# Rewrite STORE_ATTR_ANAMORPHIC to STORE_ATTR_INSTANCE_UPDATE
+instance = C(10)
+# Change the layout of `instance'
+instance.attr = "blah"
+)")
+                   .isError());
+
+  HandleScope scope(thread_);
+  Function function(&scope, mainModuleAt(runtime_, "foo"));
+  EXPECT_TRUE(containsBytecode(function, STORE_ATTR_INSTANCE_UPDATE));
+  void* entry_before = function.entryAsm();
+  // Don't use compileAndCallJITFunction2 in this function because we want to
+  // test deoptimizing back into the interpreter. This requires valid bytecode.
+  compileFunction(thread_, function);
+  EXPECT_NE(function.entryAsm(), entry_before);
+  Object self(&scope, mainModuleAt(runtime_, "instance"));
+  Object value(&scope, SmallInt::fromWord(10));
+  Function deopt_caller(&scope,
+                        createTrampolineFunction2(thread_, self, value));
+  Object result(&scope, Interpreter::call0(thread_, deopt_caller));
+  EXPECT_TRUE(result.isNoneType());
+  EXPECT_TRUE(containsBytecode(function, STORE_ATTR_INSTANCE));
+  EXPECT_EQ(function.entryAsm(), entry_before);
+}
+
 }  // namespace testing
 }  // namespace py

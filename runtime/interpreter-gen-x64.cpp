@@ -2882,6 +2882,7 @@ bool isSupportedInJIT(Bytecode bc) {
     case STORE_ATTR:
     case STORE_ATTR_INSTANCE:
     case STORE_ATTR_INSTANCE_OVERFLOW:
+    case STORE_ATTR_INSTANCE_UPDATE:
     case STORE_ATTR_POLYMORPHIC:
     case STORE_FAST:
     case STORE_FAST_REVERSE:
