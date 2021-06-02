@@ -99,7 +99,6 @@ void DisassembleToMemory::print(const char* format, ...) {
 void Disassembler::disassemble(uword start, uword end,
                                DisassemblyFormatter* formatter,
                                const CodeComments* comments) {
-  DCHECK(comments != nullptr, "comments must not be null");
   DCHECK(formatter != nullptr, "");
   char hex_buffer[kHexadecimalBufferSize];  // Instruction in hexadecimal form.
   char human_buffer[kUserReadableBufferSize];  // Human-readable instruction.
@@ -107,7 +106,7 @@ void Disassembler::disassemble(uword start, uword end,
   intptr_t comment_finger = 0;
   while (pc < end) {
     const intptr_t offset = pc - start;
-    while (comment_finger < comments->length() &&
+    while (comments && comment_finger < comments->length() &&
            comments->offsetAt(comment_finger) <= offset) {
       formatter->print("        ;; %s\n", comments->commentAt(comment_finger));
       comment_finger++;

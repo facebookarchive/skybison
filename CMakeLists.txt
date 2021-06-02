@@ -1101,6 +1101,7 @@ add_library(
   runtime/debugging-test.cpp
   runtime/descriptor-builtins-test.cpp
   runtime/dict-builtins-test.cpp
+  runtime/disassembler-x64-test.cpp
   runtime/exception-builtins-test.cpp
   runtime/faulthandler-module-test.cpp
   runtime/float-builtins-test.cpp

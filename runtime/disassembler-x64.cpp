@@ -1573,6 +1573,8 @@ int DisassemblerX64::twoByteOpcodeInstruction(uint8_t* data) {
     current += printRightOperand(current);
     uint8_t bit = *current++;
     print(",%d", bit);
+  } else if (opcode == 0x0B) {
+    print("ud2");
   } else {
     unimplementedInstruction();
   }
@@ -1908,6 +1910,11 @@ int DisassemblerX64::instructionDecode(uword pc) {
         FALLTHROUGH;
       case 0xF7:
         data += f6F7Instruction(data);
+        break;
+
+      case 0x0c:
+      case 0x3c:
+        data += printImmediateOp(data);
         break;
 
       // These encodings for inc and dec are IA32 only, but we don't get here
