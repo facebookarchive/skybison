@@ -131,15 +131,12 @@ PY_EXPORT PyObject* PyModule_GetNameObject(PyObject* mod) {
 
 PY_EXPORT void* PyModule_GetState(PyObject* mod) {
   Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
-  ApiHandle* handle = ApiHandle::fromPyObject(mod);
-  Object module_obj(&scope, handle->asObject());
-  if (!thread->runtime()->isInstanceOfModule(*module_obj)) {
+  RawObject module_obj = ApiHandle::fromPyObject(mod)->asObject();
+  if (!thread->runtime()->isInstanceOfModule(module_obj)) {
     thread->raiseBadArgument();
     return nullptr;
   }
-  Module module(&scope, *module_obj);
+  RawModule module = module_obj.rawCast<RawModule>();
   return Int::cast(module.state()).asCPtr();
 }
 
