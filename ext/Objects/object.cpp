@@ -91,9 +91,10 @@ PY_EXPORT void Py_DECREF_Func(PyObject* obj) {
   ApiHandle* handle = ApiHandle::fromPyObject(obj);
   if (handle->isImmediate()) return;
   handle->decrefNoImmediate();
-  if (handle->ob_refcnt == 0) {
-    _Py_Dealloc(obj);
-  }
+  DCHECK(handle->refcnt() > 0 ||
+             !Thread::current()->runtime()->isInstanceOfNativeProxy(
+                 ApiHandle::fromPyObject(obj)->asObjectNoImmediate()),
+         "native proxies should not reach refcount 0 without GC");
 }
 
 PY_EXPORT Py_ssize_t* Py_SIZE_Func(PyVarObject* obj) {
