@@ -81,16 +81,21 @@ TEST_F(TupleExtensionApiTest, GetItemFromNonTupleReturnsNull) {
   EXPECT_EQ(nullptr, pytuple);
 }
 
-TEST_F(TupleExtensionApiTest, GetItemOutOfBoundsReturnsMinusOne) {
+TEST_F(TupleExtensionApiTest, GetItemOutOfBoundsRaisesIndexError) {
   Py_ssize_t length = 5;
   PyObjectPtr pytuple(PyTuple_New(length));
 
   // Get item out of bounds
   PyObject* pyresult = PyTuple_GetItem(pytuple, -1);
   EXPECT_EQ(nullptr, pyresult);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
 
+  PyErr_Clear();
   pyresult = PyTuple_GetItem(pytuple, length);
   EXPECT_EQ(nullptr, pyresult);
+  ASSERT_NE(PyErr_Occurred(), nullptr);
+  EXPECT_TRUE(PyErr_ExceptionMatches(PyExc_IndexError));
 }
 
 TEST_F(TupleExtensionApiTest, GetItemReturnsSameItem) {

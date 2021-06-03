@@ -204,7 +204,10 @@ PyAPI_FUNC_DECL(PyObject* PyStructSequence_SET_ITEM_Func(PyObject*, Py_ssize_t,
 PyAPI_FUNC_DECL(int PyTraceBack_Check_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyTuple_CheckExact_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyTuple_Check_Func(PyObject*));
-PyAPI_FUNC_DECL(int PyTuple_SET_ITEM_Func(PyObject*, Py_ssize_t, PyObject*));
+PyAPI_FUNC_DECL(PyObject* PyTuple_GET_ITEM_Func(PyObject*, Py_ssize_t));
+PyAPI_FUNC_DECL(Py_ssize_t PyTuple_GET_SIZE_Func(PyObject*));
+PyAPI_FUNC_DECL(PyObject* PyTuple_SET_ITEM_Func(PyObject*, Py_ssize_t,
+                                                PyObject*));
 PyAPI_FUNC_DECL(int PyType_CheckExact_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyType_Check_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyUnicode_CheckExact_Func(PyObject*));
@@ -1576,8 +1579,8 @@ PyAPI_FUNC_DECL(Py_ssize_t _Py_write_noraise(int, const void*, size_t));
 
 #define PySet_GET_SIZE(op) PySet_Size((PyObject*)op)
 
-#define PyTuple_GET_SIZE(op) PyTuple_Size((PyObject*)op)
-#define PyTuple_GET_ITEM(op, i) PyTuple_GetItem((PyObject*)op, i)
+#define PyTuple_GET_ITEM(op, i) PyTuple_GET_ITEM_Func((PyObject*)op, i)
+#define PyTuple_GET_SIZE(op) PyTuple_GET_SIZE_Func((PyObject*)op)
 #define PyTuple_SET_ITEM(op, i, v) PyTuple_SET_ITEM_Func((PyObject*)op, i, v)
 
 #define PyType_HasFeature(t, f) ((PyType_GetFlags(t) & (f)) != 0)

@@ -34,93 +34,92 @@ PY_EXPORT int PyTuple_Check_Func(PyObject* obj) {
       ApiHandle::fromPyObject(obj)->asObject());
 }
 
-PY_EXPORT Py_ssize_t PyTuple_Size(PyObject* pytuple) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
-  Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfTuple(*tupleobj)) {
-    thread->raiseBadInternalCall();
-    return -1;
-  }
-
-  Tuple tuple(&scope, tupleUnderlying(*tupleobj));
-  return tuple.length();
+PY_EXPORT PyObject* PyTuple_GET_ITEM_Func(PyObject* pytuple, Py_ssize_t pos) {
+  Runtime* runtime = Thread::current()->runtime();
+  RawObject obj = ApiHandle::fromPyObject(pytuple)->asObjectNoImmediate();
+  DCHECK(runtime->isInstanceOfTuple(obj),
+         "non-tuple argument to PyTuple_GET_ITEM");
+  RawTuple tuple = tupleUnderlying(obj);
+  DCHECK_INDEX(pos, tuple.length());
+  return ApiHandle::borrowedReference(runtime, tuple.at(pos));
 }
 
-PY_EXPORT int PyTuple_SET_ITEM_Func(PyObject* pytuple, Py_ssize_t pos,
-                                    PyObject* pyitem) {
+PY_EXPORT Py_ssize_t PyTuple_GET_SIZE_Func(PyObject* pytuple) {
+  RawObject obj = ApiHandle::fromPyObject(pytuple)->asObjectNoImmediate();
+  DCHECK(Thread::current()->runtime()->isInstanceOfTuple(obj),
+         "non-tuple argument to PyTuple_GET_SIZE");
+  return tupleUnderlying(obj).length();
+}
+
+PY_EXPORT PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
   Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
-  Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
   Runtime* runtime = thread->runtime();
-  Object newitem(&scope, pyitem == nullptr ? NoneType::object()
-                                           : ApiHandle::stealReference(pyitem));
-  if (!runtime->isInstanceOfTuple(*tupleobj)) {
+  RawObject obj = ApiHandle::fromPyObject(pytuple)->asObject();
+  if (!runtime->isInstanceOfTuple(obj)) {
     thread->raiseBadInternalCall();
-    return -1;
+    return nullptr;
   }
 
-  Tuple tuple(&scope, tupleUnderlying(*tupleobj));
+  RawTuple tuple = tupleUnderlying(obj);
   if (pos < 0 || pos >= tuple.length()) {
-    thread->raiseWithFmt(LayoutId::kIndexError,
-                         "tuple assignment index out of range");
-    return -1;
+    thread->raiseWithFmt(LayoutId::kIndexError, "tuple index out of range");
+    return nullptr;
   }
 
-  tuple.atPut(pos, *newitem);
-  return 0;
+  return ApiHandle::borrowedReference(runtime, tuple.at(pos));
+}
+
+PY_EXPORT PyObject* PyTuple_SET_ITEM_Func(PyObject* pytuple, Py_ssize_t pos,
+                                          PyObject* pyitem) {
+  RawObject obj = ApiHandle::fromPyObject(pytuple)->asObjectNoImmediate();
+  RawObject item = pyitem == nullptr ? NoneType::object()
+                                     : ApiHandle::stealReference(pyitem);
+  DCHECK(Thread::current()->runtime()->isInstanceOfTuple(obj),
+         "non-tuple argument to PyTuple_SET_ITEM");
+  RawTuple tuple = tupleUnderlying(obj);
+  DCHECK_INDEX(pos, tuple.length());
+  tuple.atPut(pos, item);
+  return pyitem;
 }
 
 PY_EXPORT int PyTuple_SetItem(PyObject* pytuple, Py_ssize_t pos,
                               PyObject* pyitem) {
   Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
-  Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
   Runtime* runtime = thread->runtime();
-  Object newitem(&scope, pyitem == nullptr ? NoneType::object()
-                                           : ApiHandle::stealReference(pyitem));
-  if (!runtime->isInstanceOfTuple(*tupleobj)) {
+  RawObject obj = ApiHandle::fromPyObject(pytuple)->asObject();
+  RawObject item = pyitem == nullptr ? NoneType::object()
+                                     : ApiHandle::stealReference(pyitem);
+  if (!runtime->isInstanceOfTuple(obj)) {
     thread->raiseBadInternalCall();
     return -1;
   }
 
-  Tuple tuple(&scope, tupleUnderlying(*tupleobj));
+  RawTuple tuple = tupleUnderlying(obj);
   if (pos < 0 || pos >= tuple.length()) {
     thread->raiseWithFmt(LayoutId::kIndexError,
                          "tuple assignment index out of range");
     return -1;
   }
 
-  tuple.atPut(pos, *newitem);
+  tuple.atPut(pos, item);
   return 0;
+}
+
+PY_EXPORT Py_ssize_t PyTuple_Size(PyObject* pytuple) {
+  Thread* thread = Thread::current();
+  Runtime* runtime = thread->runtime();
+  RawObject obj = ApiHandle::fromPyObject(pytuple)->asObject();
+  if (!runtime->isInstanceOfTuple(obj)) {
+    thread->raiseBadInternalCall();
+    return -1;
+  }
+  return tupleUnderlying(obj).length();
 }
 
 PY_EXPORT PyTypeObject* PyTuple_Type_Ptr() {
   Runtime* runtime = Thread::current()->runtime();
   return reinterpret_cast<PyTypeObject*>(
       ApiHandle::borrowedReference(runtime, runtime->typeAt(LayoutId::kTuple)));
-}
-
-PY_EXPORT PyObject* PyTuple_GetItem(PyObject* pytuple, Py_ssize_t pos) {
-  Thread* thread = Thread::current();
-  HandleScope scope(thread);
-
-  Object tupleobj(&scope, ApiHandle::fromPyObject(pytuple)->asObject());
-  Runtime* runtime = thread->runtime();
-  if (!runtime->isInstanceOfTuple(*tupleobj)) {
-    return nullptr;
-  }
-
-  Tuple tuple(&scope, tupleUnderlying(*tupleobj));
-  if (pos < 0 || pos >= tuple.length()) {
-    return nullptr;
-  }
-
-  return ApiHandle::borrowedReference(runtime, tuple.at(pos));
 }
 
 PY_EXPORT PyObject* PyTuple_Pack(Py_ssize_t n, ...) {
