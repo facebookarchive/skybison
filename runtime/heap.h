@@ -25,7 +25,6 @@ class Heap {
   Space* immortal() { return immortal_; }
 
   void setSpace(Space* new_space) { space_ = new_space; }
-  void makeImmortal();
 
   bool isImmortal(uword address) const {
     return immortal_->isAllocated(address);
