@@ -213,6 +213,7 @@ PyAPI_FUNC_DECL(int PyType_Check_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyUnicode_CheckExact_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyUnicode_Check_Func(PyObject*));
 PyAPI_FUNC_DECL(void* PyUnicode_DATA_Func(PyObject*));
+PyAPI_FUNC_DECL(Py_ssize_t PyUnicode_GET_LENGTH_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyUnicode_IS_ASCII_Func(PyObject*));
 PyAPI_FUNC_DECL(int PyUnicode_KIND_Func(PyObject*));
 PyAPI_FUNC_DECL(Py_UCS4 PyUnicode_READ_CHAR_Func(PyObject*, Py_ssize_t));
@@ -1591,7 +1592,7 @@ PyAPI_FUNC_DECL(Py_ssize_t _Py_write_noraise(int, const void*, size_t));
 #define PyStructSequence_SET_ITEM(op, i, v)                                    \
   PyStructSequence_SET_ITEM_Func((PyObject*)op, i, v)
 
-#define PyUnicode_GET_LENGTH(op) PyUnicode_GetLength((PyObject*)op)
+#define PyUnicode_GET_LENGTH(op) PyUnicode_GET_LENGTH_Func((PyObject*)op)
 #define PyUnicode_GET_SIZE(op) PyUnicode_GetSize((PyObject*)op)
 #define PyUnicode_IS_READY(op) 1
 #define PyUnicode_KIND(op) PyUnicode_KIND_Func((PyObject*)op)

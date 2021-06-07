@@ -1791,20 +1791,25 @@ PY_EXPORT PyObject* PyUnicode_FromWideChar(const wchar_t* buffer,
              : ApiHandle::newReference(thread->runtime(), result);
 }
 
+PY_EXPORT Py_ssize_t PyUnicode_GET_LENGTH_Func(PyObject* pyobj) {
+  RawObject obj = ApiHandle::fromPyObject(pyobj)->asObjectNoImmediate();
+  DCHECK(Thread::current()->runtime()->isInstanceOfStr(obj),
+         "non-str argument to PyUnicode_GET_LENGTH");
+  return strUnderlying(obj).codePointLength();
+}
+
 PY_EXPORT const char* PyUnicode_GetDefaultEncoding() {
   return Py_FileSystemDefaultEncoding;
 }
 
 PY_EXPORT Py_ssize_t PyUnicode_GetLength(PyObject* pyobj) {
   Thread* thread = Thread::current();
-  HandleScope scope(thread);
-  Object obj(&scope, ApiHandle::fromPyObject(pyobj)->asObject());
-  if (!thread->runtime()->isInstanceOfStr(*obj)) {
+  RawObject obj = ApiHandle::fromPyObject(pyobj)->asObject();
+  if (!thread->runtime()->isInstanceOfStr(obj)) {
     thread->raiseBadArgument();
     return -1;
   }
-  Str str(&scope, strUnderlying(*obj));
-  return str.codePointLength();
+  return strUnderlying(obj).codePointLength();
 }
 
 PY_EXPORT Py_ssize_t PyUnicode_GetSize(PyObject* pyobj) {
