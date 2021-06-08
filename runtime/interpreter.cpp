@@ -2695,41 +2695,28 @@ HANDLER_INLINE Continue Interpreter::doDeleteName(Thread* thread, word arg) {
   return Continue::NEXT;
 }
 
-static HANDLER_INLINE Continue unpackSequenceWithLength(Thread* thread,
-                                                        const Tuple& tuple,
-                                                        word count,
-                                                        word length) {
-  if (length < count) {
-    thread->raiseWithFmt(LayoutId::kValueError, "not enough values to unpack");
-    return Continue::UNWIND;
-  }
-  if (length > count) {
-    thread->raiseWithFmt(LayoutId::kValueError, "too many values to unpack");
-    return Continue::UNWIND;
-  }
-  for (word i = length - 1; i >= 0; i--) {
-    thread->stackPush(tuple.at(i));
-  }
-  return Continue::NEXT;
-}
-
-HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
-                                                      word arg) {
+static NEVER_INLINE RawObject unpackSequenceIterable(Thread* thread,
+                                                     word length,
+                                                     RawObject iterable_raw) {
   HandleScope scope(thread);
-  Object iterable(&scope, thread->stackPop());
-  if (iterable.isTuple()) {
-    Tuple tuple(&scope, *iterable);
-    return unpackSequenceWithLength(thread, tuple, arg, tuple.length());
+  Object iterable(&scope, iterable_raw);
+  Object iterator(&scope, Interpreter::createIterator(thread, iterable));
+  if (iterator.isErrorException()) {
+    Runtime* runtime = thread->runtime();
+    if (thread->pendingExceptionMatches(LayoutId::kTypeError) &&
+        typeLookupInMroById(thread, runtime->typeOf(*iterable), ID(__iter__))
+            .isErrorNotFound() &&
+        !runtime->isSequence(thread, iterable)) {
+      thread->clearPendingException();
+      return thread->raiseWithFmt(LayoutId::kTypeError,
+                                  "cannot unpack non-iterable %T object",
+                                  &iterable);
+    }
+    return *iterator;
   }
-  if (iterable.isList()) {
-    List list(&scope, *iterable);
-    Tuple tuple(&scope, list.items());
-    return unpackSequenceWithLength(thread, tuple, arg, list.numItems());
-  }
-  Object iterator(&scope, createIterator(thread, iterable));
-  if (iterator.isErrorException()) return Continue::UNWIND;
 
-  Object next_method(&scope, lookupMethod(thread, iterator, ID(__next__)));
+  Object next_method(&scope,
+                     Interpreter::lookupMethod(thread, iterator, ID(__next__)));
   if (next_method.isError()) {
     if (next_method.isErrorException()) {
       thread->clearPendingException();
@@ -2737,24 +2724,24 @@ HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
       DCHECK(next_method.isErrorNotFound(),
              "expected Error::exception() or Error::notFound()");
     }
-    thread->raiseWithFmt(LayoutId::kTypeError, "iter() returned non-iterator");
-    return Continue::UNWIND;
+    return thread->raiseWithFmt(LayoutId::kTypeError,
+                                "iter() returned non-iterator");
   }
   word num_pushed = 0;
   Object value(&scope, RawNoneType::object());
   for (;;) {
-    value = callMethod1(thread, next_method, iterator);
+    value = Interpreter::callMethod1(thread, next_method, iterator);
     if (value.isErrorException()) {
       if (thread->clearPendingStopIteration()) {
-        if (num_pushed == arg) break;
-        thread->raiseWithFmt(LayoutId::kValueError,
-                             "not enough values to unpack");
+        if (num_pushed == length) break;
+        return thread->raiseWithFmt(LayoutId::kValueError,
+                                    "not enough values to unpack");
       }
-      return Continue::UNWIND;
+      return *value;
     }
-    if (num_pushed == arg) {
-      thread->raiseWithFmt(LayoutId::kValueError, "too many values to unpack");
-      return Continue::UNWIND;
+    if (num_pushed == length) {
+      return thread->raiseWithFmt(LayoutId::kValueError,
+                                  "too many values to unpack");
     }
     thread->stackPush(*value);
     ++num_pushed;
@@ -2767,6 +2754,38 @@ HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
     tmp = thread->stackPeek(i);
     thread->stackSetAt(i, thread->stackPeek(j));
     thread->stackSetAt(j, *tmp);
+  }
+  return NoneType::object();
+}
+
+HANDLER_INLINE USED RawObject Interpreter::unpackSequence(Thread* thread,
+                                                          word length,
+                                                          RawObject iterable) {
+  word count;
+  if (iterable.isTuple()) {
+    count = Tuple::cast(iterable).length();
+  } else if (iterable.isList()) {
+    count = List::cast(iterable).numItems();
+    iterable = List::cast(iterable).items();
+  } else {
+    return unpackSequenceIterable(thread, length, iterable);
+  }
+  if (count != length) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                count < length ? "not enough values to unpack"
+                                               : "too many values to unpack");
+  }
+  for (word i = count - 1; i >= 0; i--) {
+    thread->stackPush(Tuple::cast(iterable).at(i));
+  }
+  return NoneType::object();
+}
+
+HANDLER_INLINE Continue Interpreter::doUnpackSequence(Thread* thread,
+                                                      word arg) {
+  RawObject iterable = thread->stackPop();
+  if (unpackSequence(thread, arg, iterable).isErrorException()) {
+    return Continue::UNWIND;
   }
   return Continue::NEXT;
 }

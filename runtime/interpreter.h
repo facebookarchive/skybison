@@ -280,6 +280,9 @@ class Interpreter {
                                              const Object& container,
                                              Object* method_out);
 
+  static RawObject unpackSequence(Thread* thread, word length,
+                                  RawObject iterable);
+
   static RawObject loadAttrWithLocation(Thread* thread, RawObject receiver,
                                         RawObject location);
 

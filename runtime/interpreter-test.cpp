@@ -3277,15 +3277,6 @@ result = c(42)
   EXPECT_EQ(*result, SmallInt::fromWord(42));
 }
 
-TEST_F(InterpreterTest, IterateOnNonIterable) {
-  const char* src = R"(
-# Try to iterate on a None object which isn't iterable
-a, b = None
-)";
-  EXPECT_TRUE(raisedWithStr(runFromCStr(runtime_, src), LayoutId::kTypeError,
-                            "'NoneType' object is not iterable"));
-}
-
 TEST_F(InterpreterTest, DunderIterReturnsNonIterable) {
   const char* src = R"(
 class Foo:

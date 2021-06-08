@@ -665,6 +665,13 @@ class IntepreterTest(unittest.TestCase):
         result = cache_attribute(c)
         self.assertIs(result, 200)
 
+    def test_unpack_sequence_raises_type_error(self):
+        class Foo:
+            pass
+
+        with self.assertRaisesRegex(TypeError, "cannot unpack non-iterable Foo object"):
+            a, b = Foo()
+
 
 class InlineCacheTests(unittest.TestCase):
     def test_load_slot_descriptor(self):
