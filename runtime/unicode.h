@@ -335,6 +335,8 @@ class Unicode {
   // Conversion
   static int32_t combineSurrogates(int32_t high_code_point,
                                    int32_t low_code_point);
+  static int32_t highSurrogateFor(int32_t code_point);
+  static int32_t lowSurrogateFor(int32_t code_point);
   static int8_t toDecimal(int32_t code_point);
   static int8_t toDigit(int32_t code_point);
   static FullCasing toFolded(int32_t code_point);
@@ -670,6 +672,18 @@ inline int32_t Unicode::combineSurrogates(int32_t high_code_point,
                    0x10000;
   DCHECK(result <= kMaxUnicode, "result must be valid code point");
   return result;
+}
+
+inline int32_t Unicode::highSurrogateFor(int32_t code_point) {
+  DCHECK(0x10000 <= code_point && code_point <= kMaxUnicode,
+         "Codepoint must be valid unicode and require more than 16 bits");
+  return kHighSurrogateStart - (0x10000 >> 10) + (code_point >> 10);
+}
+
+inline int32_t Unicode::lowSurrogateFor(int32_t code_point) {
+  DCHECK(0x10000 <= code_point && code_point <= kMaxUnicode,
+         "Codepoint must be valid unicode and require more than 16 bits");
+  return kLowSurrogateStart + (code_point & kSurrogateMask);
 }
 
 inline int8_t Unicode::toDecimal(int32_t code_point) {

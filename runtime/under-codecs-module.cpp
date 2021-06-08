@@ -923,14 +923,6 @@ static void appendUtf16ToBytearray(Thread* thread, Runtime* runtime,
   }
 }
 
-static int32_t highSurrogate(int32_t codepoint) {
-  return Unicode::kHighSurrogateStart - (0x10000 >> 10) + (codepoint >> 10);
-}
-
-static int32_t lowSurrogate(int32_t codepoint) {
-  return Unicode::kLowSurrogateStart + (codepoint & 0x3FF);
-}
-
 RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -959,9 +951,10 @@ RawObject FUNC(_codecs, _utf_16_encode)(Thread* thread, Arguments args) {
         appendUtf16ToBytearray(thread, runtime, output, codepoint, endianness);
       } else {
         appendUtf16ToBytearray(thread, runtime, output,
-                               highSurrogate(codepoint), endianness);
-        appendUtf16ToBytearray(thread, runtime, output, lowSurrogate(codepoint),
+                               Unicode::highSurrogateFor(codepoint),
                                endianness);
+        appendUtf16ToBytearray(thread, runtime, output,
+                               Unicode::lowSurrogateFor(codepoint), endianness);
       }
     } else {
       switch (error_id) {
