@@ -1519,9 +1519,6 @@ class RawMutableBytes : public RawLargeBytes {
   // byte sequence, return the number of bytes read before the occurrence
   word indexOfAny(View<byte> needle, word start) const;
 
-  // Writes the hex representation of the byte at the given index.
-  void putHex(word index, byte value) const;
-
   // Replace the bytes from dst_start with count bytes from src
   void replaceFromWith(word dst_start, RawDataArray src, word count) const;
 
@@ -5592,12 +5589,6 @@ inline void RawMutableBytes::uint32AtPut(word index, uint32_t value) const {
   DCHECK_INDEX(index, length() - static_cast<word>(sizeof(value) - 1));
   std::memcpy(reinterpret_cast<char*>(address() + index), &value,
               sizeof(value));
-}
-
-inline void RawMutableBytes::putHex(word index, byte value) const {
-  DCHECK_INDEX(index, length());
-  DCHECK_INDEX(index + 1, length());
-  Utils::writeHexLowercase(reinterpret_cast<byte*>(address()) + index, value);
 }
 
 // RawArray

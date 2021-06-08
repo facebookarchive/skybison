@@ -2,6 +2,7 @@
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
 #include "byteslike.h"
+#include "formatter-utils.h"
 #include "frame.h"
 #include "int-builtins.h"
 #include "modules.h"
@@ -1113,12 +1114,12 @@ RawObject FUNC(_codecs, _raw_unicode_escape_encode)(Thread* thread,
       bytearrayAdd(thread, runtime, dst, '\\');
       bytearrayAdd(thread, runtime, dst, 'u');
       bytearrayAdd(thread, runtime, dst,
-                   Utils::kHexDigits[(codepoint >> 12) & 0xf]);
+                   lowerCaseHexDigit((codepoint >> 12) & 0xf));
       bytearrayAdd(thread, runtime, dst,
-                   Utils::kHexDigits[(codepoint >> 8) & 0xf]);
+                   lowerCaseHexDigit((codepoint >> 8) & 0xf));
       bytearrayAdd(thread, runtime, dst,
-                   Utils::kHexDigits[(codepoint >> 4) & 0xf]);
-      bytearrayAdd(thread, runtime, dst, Utils::kHexDigits[codepoint & 15]);
+                   lowerCaseHexDigit((codepoint >> 4) & 0xf));
+      bytearrayAdd(thread, runtime, dst, lowerCaseHexDigit(codepoint & 15));
     }
     // U+010000-U+10ffff range: Map 32-bit characters to '\U00HHHHHH'
     else {
@@ -1128,16 +1129,16 @@ RawObject FUNC(_codecs, _raw_unicode_escape_encode)(Thread* thread,
       bytearrayAdd(thread, runtime, dst, '0');
       bytearrayAdd(thread, runtime, dst, '0');
       bytearrayAdd(thread, runtime, dst,
-                   Utils::kHexDigits[(codepoint >> 20) & 0xf]);
+                   lowerCaseHexDigit((codepoint >> 20) & 0xf));
       bytearrayAdd(thread, runtime, dst,
-                   Utils::kHexDigits[(codepoint >> 16) & 0xf]);
+                   lowerCaseHexDigit((codepoint >> 16) & 0xf));
       bytearrayAdd(thread, runtime, dst,
-                   Utils::kHexDigits[(codepoint >> 12) & 0xf]);
+                   lowerCaseHexDigit((codepoint >> 12) & 0xf));
       bytearrayAdd(thread, runtime, dst,
-                   Utils::kHexDigits[(codepoint >> 8) & 0xf]);
+                   lowerCaseHexDigit((codepoint >> 8) & 0xf));
       bytearrayAdd(thread, runtime, dst,
-                   Utils::kHexDigits[(codepoint >> 4) & 0xf]);
-      bytearrayAdd(thread, runtime, dst, Utils::kHexDigits[codepoint & 15]);
+                   lowerCaseHexDigit((codepoint >> 4) & 0xf));
+      bytearrayAdd(thread, runtime, dst, lowerCaseHexDigit(codepoint & 15));
     }
   }
   Object output_bytes(&scope, bytearrayAsBytes(thread, dst));
@@ -1276,8 +1277,8 @@ RawObject FUNC(_codecs, backslashreplace_errors)(Thread* thread,
       byte b = bytes.byteAt(i);
       result.byteAtPut(pos++, '\\');
       result.byteAtPut(pos++, 'x');
-      result.byteAtPut(pos++, Utils::kHexDigits[(b >> 4) & 0xf]);
-      result.byteAtPut(pos++, Utils::kHexDigits[(b >> 0) & 0xf]);
+      uwordToHexadecimalWithMutableBytes(*result, pos, /*num_digits=*/2, b);
+      pos += 2;
     }
     DCHECK(pos == result.length(), "size mismatch");
     Object result_str(&scope, result.becomeStr());
@@ -1327,21 +1328,17 @@ RawObject FUNC(_codecs, backslashreplace_errors)(Thread* thread,
       result.byteAtPut(pos++, '\\');
       if (cp > kMaxUint16) {
         result.byteAtPut(pos++, 'U');
-        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 28) & 0xf]);
-        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 24) & 0xf]);
-        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 20) & 0xf]);
-        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 16) & 0xf]);
-        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 12) & 0xf]);
-        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 8) & 0xf]);
+        uwordToHexadecimalWithMutableBytes(*result, pos, /*num_digits=*/8, cp);
+        pos += 8;
       } else if (cp > kMaxByte) {
         result.byteAtPut(pos++, 'u');
-        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 12) & 0xf]);
-        result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 8) & 0xf]);
+        uwordToHexadecimalWithMutableBytes(*result, pos, /*num_digits=*/4, cp);
+        pos += 4;
       } else {
         result.byteAtPut(pos++, 'x');
+        uwordToHexadecimalWithMutableBytes(*result, pos, /*num_digits=*/2, cp);
+        pos += 2;
       }
-      result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 4) & 0xf]);
-      result.byteAtPut(pos++, Utils::kHexDigits[(cp >> 0) & 0xf]);
     }
     DCHECK(pos == result.length(), "size mismatch");
     Object result_bytes(&scope, result.becomeStr());

@@ -3,6 +3,7 @@
 #include "builtins.h"
 #include "bytearray-builtins.h"
 #include "byteslike.h"
+#include "formatter-utils.h"
 #include "frame.h"
 #include "int-builtins.h"
 #include "runtime.h"
@@ -74,7 +75,9 @@ RawObject bytesHex(Thread* thread, const Bytes& bytes, word length) {
   MutableBytes result(&scope,
                       runtime->newMutableBytesUninitialized(length * 2));
   for (word i = 0, j = 0; i < length; i++) {
-    result.putHex(j, bytes.byteAt(i));
+    byte b = bytes.byteAt(i);
+    uwordToHexadecimalWithMutableBytes(*result, /*index=*/j,
+                                       /*num_digits=*/2, b);
     j += 2;
   }
   return result.becomeStr();

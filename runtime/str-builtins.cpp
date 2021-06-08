@@ -4,6 +4,7 @@
 #include <cwchar>
 
 #include "builtins.h"
+#include "formatter-utils.h"
 #include "formatter.h"
 #include "frame.h"
 #include "globals.h"
@@ -1296,15 +1297,6 @@ RawObject METH(str, __iter__)(Thread* thread, Arguments args) {
   return runtime->newStrIterator(self);
 }
 
-// Convert a byte to its hex digits, and write them out to buf.
-// Increments buf to point after the written characters.
-static void byteToHex(const MutableBytes& buf, word index, byte convert) {
-  // Since convert is unsigned, the right shift will not propagate the sign
-  // bit, and the upper bits will be zero.
-  buf.byteAtPut(index, Utils::kHexDigits[convert >> 4]);
-  buf.byteAtPut(index + 1, Utils::kHexDigits[convert & 0x0f]);
-}
-
 RawObject METH(str, __repr__)(Thread* thread, Arguments args) {
   Runtime* runtime = thread->runtime();
   HandleScope scope(thread);
@@ -1386,7 +1378,8 @@ RawObject METH(str, __repr__)(Thread* thread, Arguments args) {
     } else if (code_point <= kMaxASCII) {
       buf.byteAtPut(out++, '\\');
       buf.byteAtPut(out++, 'x');
-      byteToHex(buf, out, code_point);
+      uwordToHexadecimalWithMutableBytes(*buf, /*index=*/out, /*num_digits=*/2,
+                                         code_point);
       out += 2;
     } else if (Unicode::isPrintable(code_point)) {
       for (word i = 0; i < char_len; i++) {
@@ -1396,20 +1389,21 @@ RawObject METH(str, __repr__)(Thread* thread, Arguments args) {
     } else if (code_point <= 0xff) {
       buf.byteAtPut(out++, '\\');
       buf.byteAtPut(out++, 'x');
-      byteToHex(buf, out, code_point);
+      uwordToHexadecimalWithMutableBytes(*buf, /*index=*/out, /*num_digits=*/2,
+                                         code_point);
       out += 2;
     } else if (code_point <= 0xffff) {
       buf.byteAtPut(out++, '\\');
       buf.byteAtPut(out++, 'u');
-      byteToHex(buf, out, code_point);
-      byteToHex(buf, out + 2, code_point >> kBitsPerByte);
+      uwordToHexadecimalWithMutableBytes(*buf, /*index=*/out, /*num_digits=*/4,
+                                         code_point);
       out += 4;
     } else {
       buf.byteAtPut(out++, '\\');
       buf.byteAtPut(out++, 'U');
-      for (word i = 0; i < 4; i++, out += 2) {
-        byteToHex(buf, out, code_point >> (i * kBitsPerByte));
-      }
+      uwordToHexadecimalWithMutableBytes(*buf, /*index=*/out,
+                                         /*num_digits=*/8, code_point);
+      out += 8;
     }
   }
   DCHECK(out == result_len - 1, "wrote %ld characters, expected %ld", out - 1,

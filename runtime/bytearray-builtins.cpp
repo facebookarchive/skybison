@@ -3,6 +3,7 @@
 #include "builtins.h"
 #include "bytes-builtins.h"
 #include "byteslike.h"
+#include "formatter-utils.h"
 #include "int-builtins.h"
 #include "runtime.h"
 #include "slice-builtins.h"
@@ -449,7 +450,8 @@ RawObject bytearrayRepr(Thread* thread, const Bytearray& array) {
         } else {
           result.byteAtPut(j++, '\\');
           result.byteAtPut(j++, 'x');
-          result.putHex(j, current);
+          uwordToHexadecimalWithMutableBytes(*result, /*index=*/j,
+                                             /*num_digits=*/2, current);
           j += 2;
         }
     }

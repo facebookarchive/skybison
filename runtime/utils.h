@@ -12,8 +12,6 @@ namespace py {
 
 class Utils {
  public:
-  static const byte kHexDigits[16];
-
   template <typename T>
   static bool isAligned(T x, int n) {
     DCHECK(isPowerOfTwo(n), "must be power of 2");
@@ -117,11 +115,6 @@ class Utils {
     T dest;
     std::memcpy(&dest, addr, sizeof(dest));
     return dest;
-  }
-
-  static void writeHexLowercase(byte* addr, byte value) {
-    *addr++ = Utils::kHexDigits[value >> kBitsPerHexDigit];
-    *addr = Utils::kHexDigits[value & 0xf];
   }
 
   // Print the current traceback, information about the pending exception, if

@@ -4,6 +4,7 @@
 
 #include "float-builtins.h"
 #include "float-conversion.h"
+#include "formatter-utils.h"
 #include "globals.h"
 #include "handles-decl.h"
 #include "objects.h"
@@ -13,6 +14,11 @@
 #include "unicode.h"
 
 namespace py {
+
+const byte kLowerCaseHexDigitArray[] = {'0', '1', '2', '3', '4', '5', '6', '7',
+                                        '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+const byte kUpperCaseHexDigitArray[] = {'0', '1', '2', '3', '4', '5', '6', '7',
+                                        '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
 struct FloatWidths {
   word left_padding;
@@ -549,19 +555,6 @@ static uword divIntSingleDigit(uword* digits_out, const uword* digits_in,
   return remainder;
 }
 
-// Converts an uword to ascii decimal digits. The digits can only be efficiently
-// produced from least to most significant without knowing the exact number of
-// digits upfront. Because of this the function takes a `buffer_end` argument
-// and writes the digit before it. Returns a pointer to the last byte written.
-static byte* uwordToDecimal(uword num, byte* buffer_end) {
-  byte* start = buffer_end;
-  do {
-    *--start = '0' + num % 10;
-    num /= 10;
-  } while (num > 0);
-  return start;
-}
-
 // Return upper bound on number of decimal digits to format large int `value`.
 static word estimateNumDecimalDigits(RawLargeInt value) {
   // Compute an upper bound on the number of decimal digits required for a
@@ -715,7 +708,7 @@ static void putBinaryDigits(Thread* thread, const MutableBytes& dest, word at,
 
 static void putHexadecimalDigitsImpl(Thread* thread, const MutableBytes& dest,
                                      word at, const Int& value, word num_digits,
-                                     const char* hex_digits) {
+                                     const byte* digits) {
   word idx = at + num_digits;
   uword last_digit;
   if (value.isLargeInt()) {
@@ -732,7 +725,7 @@ static void putHexadecimalDigitsImpl(Thread* thread, const MutableBytes& dest,
         carry = carry & (digit == 0);
       }
       for (word i = 0; i < hexdigits_per_word; i++) {
-        dest.byteAtPut(--idx, hex_digits[digit & 0xf]);
+        dest.byteAtPut(--idx, digits[digit & 0xf]);
         digit >>= kBitsPerHexDigit;
       }
     }
@@ -745,7 +738,7 @@ static void putHexadecimalDigitsImpl(Thread* thread, const MutableBytes& dest,
   }
 
   do {
-    dest.byteAtPut(--idx, hex_digits[last_digit & 0xf]);
+    dest.byteAtPut(--idx, digits[last_digit & 0xf]);
     last_digit >>= kBitsPerHexDigit;
   } while (last_digit != 0);
   DCHECK(idx == at, "unexpected number of digits");
@@ -755,14 +748,14 @@ static void putHexadecimalLowerCaseDigits(Thread* thread,
                                           const MutableBytes& dest, word at,
                                           const Int& value, word num_digits) {
   putHexadecimalDigitsImpl(thread, dest, at, value, num_digits,
-                           "0123456789abcdef");
+                           kLowerCaseHexDigitArray);
 }
 
 static void putHexadecimalUpperCaseDigits(Thread* thread,
                                           const MutableBytes& dest, word at,
                                           const Int& value, word num_digits) {
   putHexadecimalDigitsImpl(thread, dest, at, value, num_digits,
-                           "0123456789ABCDEF");
+                           kUpperCaseHexDigitArray);
 }
 
 static void putOctalDigits(Thread* thread, const MutableBytes& dest, word at,
@@ -1122,7 +1115,7 @@ RawObject formatDoubleHexadecimalSimple(Runtime* runtime, double value) {
   *--poutput = exponent_sign;
   *--poutput = 'p';
   for (int k = 0; k < kDoubleMantissaBits; k += 4) {
-    *--poutput = Utils::kHexDigits[(mantissa >> k) & 0xf];
+    *--poutput = lowerCaseHexDigit((mantissa >> k) & 0xf);
   }
 
   *--poutput = '.';

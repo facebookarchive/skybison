@@ -29,6 +29,7 @@
 #include "exception-builtins.h"
 #include "file.h"
 #include "float-builtins.h"
+#include "formatter-utils.h"
 #include "frame-proxy-builtins.h"
 #include "frame.h"
 #include "function-builtins.h"
@@ -1850,15 +1851,13 @@ RawObject Runtime::printTraceback(Thread* thread, word fd) {
 
       writeCStr(fd, line);
       if (!code.isNative() && code.lnotab().isBytes()) {
-        char buf[kUwordDigits10];
-        char* end = buf + kUwordDigits10;
-        char* start = end;
+        byte buf[kUwordDigits10];
+        byte* end = buf + kUwordDigits10;
+        byte* start = end;
         word pc = Utils::maximum(frame->virtualPC() - kCodeUnitSize, word{0});
         word linenum = code.offsetToLineNum(pc);
-        do {
-          *--start = '0' + (linenum % 10);
-          linenum /= 10;
-        } while (linenum > 0);
+        DCHECK(linenum > 0, "expected non-negative line number");
+        start = uwordToDecimal(static_cast<uword>(linenum), start);
         File::write(fd, start, end - start);
       } else {
         writeCStr(fd, unknown);
@@ -2523,7 +2522,7 @@ static void writeByteslikeRepr(const Byteslike& byteslike, byte* dst,
     } else {
       *ptr++ = '\\';
       *ptr++ = 'x';
-      Utils::writeHexLowercase(ptr, current);
+      uwordToHexadecimal(ptr, /*num_digits=*/2, current);
       ptr += 2;
     }
   }

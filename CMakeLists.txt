@@ -481,6 +481,7 @@ add_library(
   runtime/float-builtins.h
   runtime/float-conversion.cpp
   runtime/float-conversion.h
+  runtime/formatter-utils.h
   runtime/formatter.cpp
   runtime/formatter.h
   runtime/frame-proxy-builtins.cpp
