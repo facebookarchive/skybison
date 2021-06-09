@@ -29,8 +29,7 @@ def pthread_kill(thread_id, signalnum):
 
 
 def set_wakeup_fd(fd):
-    # TODO(T43321769) Return -1 until signals are fully implemented
-    return -1
+    _unimplemented()
 
 
 def setitimer(which, seconds, interval=0.0):
