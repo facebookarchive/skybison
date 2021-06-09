@@ -3575,6 +3575,9 @@ void Runtime::freeApiHandles() {
   // NativeProxy objects.
   dictClear(thread, modules);
 
+  // Dealloc modules referenced by modules_by_index.
+  freeExtensionModules(thread);
+
   // Process any native instance that is only referenced through the NativeProxy
   for (;;) {
     word before = numExtensionObjects(this) + numApiHandles(this);
@@ -3586,10 +3589,6 @@ void Runtime::freeApiHandles() {
       break;
     }
   }
-
-  // Dealloc modules referenced by modules_by_index.
-  freeExtensionModules(thread);
-
   collectGarbage();
 
   // Finally, skip trying to cleanly deallocate the object. Just free the
