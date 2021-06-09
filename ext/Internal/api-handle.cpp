@@ -50,14 +50,14 @@ static void indexAtPutTombstone(int32_t* indices, word index) {
 
 static void itemAtPut(RawObject* keys, void** values, int32_t index,
                       RawObject key, void* value) {
-  DCHECK(!key.isNoneType(), "None represents empty and tombstone");
+  DCHECK(key != SmallInt::fromWord(0), "0 represents empty and tombstone");
   DCHECK(value != nullptr, "key must be associated with a C-API handle");
   keys[index] = key;
   values[index] = value;
 }
 
 static void itemAtPutTombstone(RawObject* keys, void** values, int32_t index) {
-  keys[index] = NoneType::object();
+  keys[index] = SmallInt::fromWord(0);
   values[index] = nullptr;
 }
 
@@ -82,10 +82,8 @@ static int32_t* newIndices(word num_indices) {
 }
 
 static RawObject* newKeys(int32_t capacity) {
-  word size = capacity * sizeof(RawObject);
-  void* result = std::malloc(size);
+  void* result = std::calloc(capacity, sizeof(RawObject));
   DCHECK(result != nullptr, "malloc failed");
-  std::memset(result, -1, size);  // fill with NoneType::object()
   return reinterpret_cast<RawObject*>(result);
 }
 
@@ -99,7 +97,7 @@ static bool nextItem(RawObject* keys, void** values, int32_t* idx, int32_t end,
                      RawObject* key_out, void** value_out) {
   for (int32_t i = *idx; i < end; i++) {
     RawObject key = itemKeyAt(keys, i);
-    if (key.isNoneType()) continue;
+    if (key == SmallInt::fromWord(0)) continue;
     *key_out = key;
     *value_out = itemValueAt(values, i);
     *idx = i + 1;
@@ -145,7 +143,8 @@ void ApiHandleDict::atPut(RawObject key, void* value) {
 
 ALWAYS_INLINE bool ApiHandleDict::atPutLookup(RawObject key,
                                               int32_t* item_index) {
-  DCHECK(!key.isNoneType(), "NoneType key not allowed (used for tombstone)");
+  DCHECK(key != SmallInt::fromWord(0),
+         "0 key not allowed (used for tombstone)");
   uword hash = handleHash(key);
   int32_t* indices = this->indices();
   RawObject* keys = this->keys();
@@ -349,7 +348,7 @@ ApiHandle* ApiHandle::newReferenceWithManaged(Runtime* runtime, RawObject obj) {
   // Initialize an ApiHandle for a builtin object or runtime instance
   EVENT_ID(AllocateCAPIHandle, obj.layoutId());
   ApiHandle* handle = allocateHandle(runtime);
-  handle->reference_ = NoneType::object().raw();
+  handle->reference_ = SmallInt::fromWord(0).raw();
   handle->ob_refcnt = 1;
 
   handles->atPutValue(index, handle);
