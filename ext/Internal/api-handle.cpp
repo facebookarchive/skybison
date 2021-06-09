@@ -451,13 +451,6 @@ void disposeApiHandles(Runtime* runtime) {
   void* value;
   for (int32_t i = 0; nextItem(keys, values, &i, end, &key, &value);) {
     ApiHandle* handle = reinterpret_cast<ApiHandle*>(value);
-    if (!DCHECK_IS_ON()) {
-      // TODO(T91722776) Remove hack when extension code has been audited for
-      // global access after finalization. For now Set the refcnt to maxvalue so
-      // dispose won't be triggered again if any extension code still holds a
-      // reference and attempts to decref.
-      handle->ob_refcnt = std::numeric_limits<Py_ssize_t>::max();
-    }
     handle->disposeWithRuntime(runtime);
   }
 }
