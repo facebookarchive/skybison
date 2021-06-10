@@ -598,6 +598,54 @@ class FloatTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             float.hex("")
 
+    def test_as_integer_ratio_with_non_float_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            float.as_integer_ratio(4)
+
+    def test_as_integer_ratio_with_infinity_raises_overflow_error(self):
+        inf = float("inf")
+        with self.assertRaises(OverflowError):
+            float.as_integer_ratio(inf)
+
+    def test_as_integer_ratio_with_nan_raises_value_error(self):
+        nan = float("nan")
+        with self.assertRaises(ValueError):
+            float.as_integer_ratio(nan)
+
+    def test_as_integer_ratio_with_integer_returns_denominator_one(self):
+        result = float.as_integer_ratio(10.0)
+        self.assertIs(type(result), tuple)
+        self.assertEqual(result, (10, 1))
+
+    def test_as_integer_ratio_with_zero_returns_denominator_one(self):
+        result = float.as_integer_ratio(0.0)
+        self.assertIs(type(result), tuple)
+        self.assertEqual(result, (0, 1))
+
+    def test_as_integer_ratio_with_negative_zero_returns_denominator_one(self):
+        result = float.as_integer_ratio(-0.0)
+        self.assertIs(type(result), tuple)
+        self.assertEqual(result, (-0, 1))
+
+    def test_as_integer_ratio_with_negative_integer_returns_negative_numerator(self):
+        result = float.as_integer_ratio(-0.25)
+        self.assertIs(type(result), tuple)
+        self.assertEqual(result, (-1, 4))
+
+    def test_as_integer_ratio_ignores_dunder_float(self):
+        class C(float):
+            def __float__(self):
+                return 0.25
+
+        result = float.as_integer_ratio(C(3.0))
+        self.assertIs(type(result), tuple)
+        self.assertEqual(result, (3, 1))
+
+    def test_as_integer_ratio_with_close_value(self):
+        result = float.as_integer_ratio(-1.000000000000001)
+        self.assertIs(type(result), tuple)
+        self.assertEqual(result, (-0x10000000000005, 0x10000000000000))
+
     def test_is_integer_with_positive_zero_returns_true(self):
         self.assertEqual((0.0).is_integer(), True)
 

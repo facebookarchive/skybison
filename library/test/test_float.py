@@ -272,8 +272,6 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertFalse(float("nan").is_integer())
         self.assertFalse(float("inf").is_integer())
 
-    # TODO(T89802238): Implement `float.as_integer_ratio`
-    @cpython_only
     def test_floatasratio(self):
         for f, ratio in [
                 (0.875, (7, 8)),

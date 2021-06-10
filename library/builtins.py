@@ -3962,7 +3962,7 @@ class float(bootstrap=True):
         _builtin()
 
     def as_integer_ratio(self):
-        _unimplemented()
+        _builtin()
 
     def conjugate(self):
         _unimplemented()

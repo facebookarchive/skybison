@@ -844,6 +844,47 @@ static long floatHexParseExponent(const Str& str, word* pos) {
   return exponent;
 }
 
+RawObject METH(float, as_integer_ratio)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  Runtime* runtime = thread->runtime();
+  if (!runtime->isInstanceOfFloat(*self_obj)) {
+    return thread->raiseRequiresType(self_obj, ID(float));
+  }
+  Float self(&scope, floatUnderlying(*self_obj));
+  double value = self.value();
+  if (std::isinf(value)) {
+    return thread->raiseWithFmt(LayoutId::kOverflowError,
+                                "cannot convert Infinity to integer ratio");
+  }
+  if (std::isnan(value)) {
+    return thread->raiseWithFmt(LayoutId::kValueError,
+                                "cannot convert NaN to integer ratio");
+  }
+  int exponent;
+  double float_part = std::frexp(value, &exponent);
+  // If FLT_RADIX != 2, the 300 steps may leave a tiny fractional part to be
+  // truncated by intFromDouble.
+  for (word i = 0; i < 300 && float_part != std::floor(float_part); i++) {
+    float_part *= 2.0;
+    exponent--;
+  }
+  Object numerator_obj(&scope, intFromDouble(thread, float_part));
+  if (numerator_obj.isErrorException()) {
+    return *numerator_obj;
+  }
+  Int numerator(&scope, *numerator_obj);
+  Int denominator(&scope, SmallInt::fromWord(1));
+  if (exponent > 0) {
+    Int exponent_obj(&scope, SmallInt::fromWord(exponent));
+    numerator = runtime->intBinaryLshift(thread, numerator, exponent_obj);
+  } else {
+    Int exponent_obj(&scope, SmallInt::fromWord(-exponent));
+    denominator = runtime->intBinaryLshift(thread, denominator, exponent_obj);
+  }
+  return runtime->newTupleWith2(numerator, denominator);
+}
+
 RawObject METH(float, fromhex)(Thread* thread, Arguments args) {
   // Convert a hexadecimal string to a float.
   // Check the function arguments
