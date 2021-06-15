@@ -29,10 +29,10 @@ TypeError: '_type_init' for 'str' objects doesn't apply to a 'int' object
 - Object attributes must only have `str` names that do not override `__eq__` or
   `__hash__`. Identities of attribute names may not preserved.
 
-- `str.__add__` with a non-str other returns `NotImplemented` in PyRo and PyPy,
-  but raises a `TypeError` in CPython. This is because PyRo and PyPy do not
-  share CPython's notions of different types of slots (eg sequence vs number)
-  and that would make it very tricky to support this type of behavior.
+- `str.__add__` with a non-str other returns `NotImplemented` in Skybison but
+  raises a `TypeError` in CPython. This is because CPython splits the slots
+  into competing `nb_add` and `sq_concat` slots that don't exist here. PyPy
+  does something similar to Skybison.
 
 Interpreter
 -----------
