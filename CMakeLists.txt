@@ -370,7 +370,7 @@ else()
     OUTPUT
     ${FROZEN_MODULE_OUTPUT}
     COMMAND
-    ${PYTHON} util/freeze_modules.py ${FROZEN_MODULE_OUTPUT_DIR}
+    /usr/bin/python3.8 util/freeze_modules.py ${FROZEN_MODULE_OUTPUT_DIR}
       ${FROZEN_MODULE_INPUT}
     WORKING_DIRECTORY
     ${CMAKE_SOURCE_DIR}
