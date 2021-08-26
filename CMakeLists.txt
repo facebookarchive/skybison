@@ -634,8 +634,8 @@ target_link_libraries(
   PUBLIC
   capi-headers
   -pthread
-  dl
   PRIVATE
+  ${CMAKE_DL_LIBS}
   modules
   systemtap
   valgrind
@@ -1295,11 +1295,11 @@ if (ENABLE_CPYTHON_TESTS)
     PRIVATE
     -pthread
     benchmark
-    dl
     gmock
     gtest
     libcpython
-    util)
+    util
+    ${CMAKE_DL_LIBS})
   set_target_properties(
     cpython-tests
     PROPERTIES
