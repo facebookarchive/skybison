@@ -84,3 +84,7 @@ Set of standard Python benchmarks with an accompanying test-runner.
 ### `./doc`
 
 This folder contains documentation.
+
+## License
+
+Please see [LICENSE](LICENSE).
