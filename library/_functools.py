@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 from _thread import RLock
 from types import MethodType
 

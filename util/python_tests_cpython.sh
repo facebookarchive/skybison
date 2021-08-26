@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 
 if [[ -z $PYRO_BUILD_DIR ]]; then
   PYRO_BUILD_DIR="$(dirname "$0")/../build"

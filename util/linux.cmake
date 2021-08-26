@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 # Toolchain settings for a regular (non-Sandcastle) Linux build
 
 set(SYSCONFIGDATA ${CMAKE_CURRENT_LIST_DIR}/linux/_sysconfigdata__linux_.py)

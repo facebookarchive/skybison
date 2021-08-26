@@ -1,3 +1,4 @@
+/* Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com) */
 #ifndef STRUCTMEMBER_H
 #define STRUCTMEMBER_H
 #ifdef __cplusplus

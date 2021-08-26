@@ -1,3 +1,4 @@
+/* Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com) */
 #ifndef CPYTHON_FUNC_H
 #define CPYTHON_FUNC_H
 

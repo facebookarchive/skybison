@@ -1,3 +1,4 @@
+/* Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com) */
 #include "globals.h"
 #include "handles.h"
 #include "objects.h"

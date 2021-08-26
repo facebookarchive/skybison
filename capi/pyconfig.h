@@ -1,3 +1,4 @@
+/* Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com) */
 #if defined(__linux__)
 
 #include "pyconfig-linux.h"

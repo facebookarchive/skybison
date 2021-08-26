@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 import unittest
 from _string import formatter_field_name_split, formatter_parser
 

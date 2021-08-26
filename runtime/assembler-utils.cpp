@@ -1,3 +1,4 @@
+// Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 // Copyright (c) 2013, the Dart project authors and Facebook, Inc. and its
 // affiliates. Please see the AUTHORS-Dart file for details. All rights
 // reserved. Use of this source code is governed by a BSD-style license that

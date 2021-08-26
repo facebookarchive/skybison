@@ -1,3 +1,4 @@
+// Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 // clang-format off
 // This file is copy-pasted and inlined from CPython.
 // It makes a lot of assumptions about internal string represenations, and as

@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 # WARNING: This is a temporary copy of code from the cpython library to
 # facilitate bringup.
 #

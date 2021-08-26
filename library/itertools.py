@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 """Functional tools for creating and using iterators."""
 # TODO(T42113424) Replace stubs with an actual implementation
 

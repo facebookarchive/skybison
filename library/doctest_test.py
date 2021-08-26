@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 """
 The next line is meant for DoctestTest.test_testmod:
 >>> data.append(foo + 1)

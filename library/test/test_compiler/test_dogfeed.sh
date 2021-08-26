@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 #
 # Test compiler by compiling its own source code with itself.
 #

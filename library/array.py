@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 """Array.array module TODO(T55711876): provide an implemenation"""
 
 from builtins import _float, _index, _obj_as_int

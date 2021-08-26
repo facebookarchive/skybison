@@ -1,3 +1,4 @@
+// Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 #include "builtins.h"
 #include "bytecode.h"
 #include "dict-builtins.h"

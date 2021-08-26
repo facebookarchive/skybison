@@ -1,3 +1,4 @@
+// Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 

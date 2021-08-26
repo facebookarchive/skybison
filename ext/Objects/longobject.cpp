@@ -1,3 +1,4 @@
+// Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 // longobject.c implementation
 
 #include "cpython-data.h"

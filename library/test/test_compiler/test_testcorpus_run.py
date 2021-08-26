@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 #
 # Compare "compiler" package output against reference data produced
 # by test_testcorpus_prepare.py.

@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 fun(a, *b, c, *d)
 # EXPECTED:
 [

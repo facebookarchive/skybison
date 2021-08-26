@@ -1,4 +1,5 @@
 #!/usr/bin/env python3.7
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 """
 This script checks pyro/runtime/symbols.h for unused symbols.
 """

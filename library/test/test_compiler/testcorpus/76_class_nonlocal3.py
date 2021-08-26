@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 # Based on Python-3.4.3/Lib/test/test_scope.py
 
 def testNonLocalClass(self):

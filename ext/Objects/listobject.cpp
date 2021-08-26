@@ -1,3 +1,4 @@
+// Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 // listobject.c implementation
 
 #include "cpython-func.h"

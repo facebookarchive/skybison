@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 import ast
 from ast import AST
 from compiler import compile as compiler_compile

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 """_warnings provides basic warning filtering support."""
 
 from _builtins import _builtin

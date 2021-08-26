@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 """This is an internal module implementing __mod__ formatting for str and bytes"""
 
 from builtins import (

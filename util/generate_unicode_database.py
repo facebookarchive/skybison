@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Portions copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 """Generate Unicode name, property, and type databases.
 
 This script converts Unicode 3.2 and 11.0 database files into a Pyro-specific format.

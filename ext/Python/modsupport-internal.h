@@ -1,3 +1,4 @@
+/* Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com) */
 #pragma once
 
 // This exposes some modsupport code to abstract.cpp; it is not cpython API.

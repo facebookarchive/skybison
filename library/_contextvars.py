@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 
 from _builtins import _address, _builtin, _ContextVar_guard, _Token_guard, _Unbound
 

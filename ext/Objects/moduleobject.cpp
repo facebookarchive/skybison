@@ -1,3 +1,4 @@
+// Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 // moduleobject.c implementation
 #include "cpython-data.h"
 #include "cpython-func.h"

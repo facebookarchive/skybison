@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 """
 Utility script that provides default arguments for executing a command
 with various performance measurement tools.

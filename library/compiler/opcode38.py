@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 from .opcode37 import opcode as opcode37
 from .opcodebase import Opcode
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 """Core implementation of path-based import.
 
 This module is NOT meant to be directly imported! It has been designed such

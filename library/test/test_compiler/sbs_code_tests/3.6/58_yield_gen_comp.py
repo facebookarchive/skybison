@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 ((yield 42) for i in gen())
 # EXPECTED:
 [

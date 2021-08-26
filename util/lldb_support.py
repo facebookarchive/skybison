@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 
 # To enable, put something like this in ~/.lldbinit:
 #

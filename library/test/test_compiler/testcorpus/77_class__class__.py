@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 # From Python-3.4.3/Lib/test/test_super.py
 
 class Foo:

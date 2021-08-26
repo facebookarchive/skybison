@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 """Supporting definitions for the Python regression tests."""
 
 if __name__ != 'test.support':

@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 try:
     # These are PyRo-specific libraries
     import _bytecode_utils

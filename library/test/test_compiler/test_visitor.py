@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 import ast
 from compiler.unparse import to_expr
 from compiler.visitor import ASTRewriter

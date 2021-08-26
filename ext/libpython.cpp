@@ -1,3 +1,4 @@
+// Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 #define PyAPI_FUNC_DECL(DECL)                                                  \
   extern "C" __attribute__((visibility("default"))) __attribute__((weak))      \
   DECL {}

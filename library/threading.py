@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 
 import weakref as _weakref
 from _thread import RLock as _RLock, allocate_lock as _allocate_lock

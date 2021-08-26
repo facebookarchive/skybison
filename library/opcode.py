@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 __all__ = [  # noqa: F405
     "cmp_op",
     "hasconst",

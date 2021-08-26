@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 from .consts import PyCF_ONLY_AST, PyCF_DONT_IMPLY_DEDENT
 
 CO_FUTURE_DIVISION = 0x2000

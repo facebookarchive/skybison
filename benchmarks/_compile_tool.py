@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 """Load benchmark module file so bytecode is compiled and cached."""
 import os
 import py_compile

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 # In cpython this file contains a dump of all variables in the Makefile used
 # to build cpython. We just hardcode a selection of the values for our runtime
 # here.

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 # This is a copy of code from the cpython library. Do not unnecessarily deviate
 # from the upstream style so updating to newer cpython versions stays easy.
 # flake8: noqa

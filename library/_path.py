@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 """The _path module provides path facilities very early in the bootstrapping
 process. It is used primarily by the sys module before it is possible to bring
 up the usual CPython {posix|nt}path module."""

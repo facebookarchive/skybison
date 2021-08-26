@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 usdt:./build-debugopt/bin/python:python:InvalidateInlineCache_* {
   @ic_miss[probe]++;
 }

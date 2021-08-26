@@ -1,3 +1,4 @@
+// Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 #include <climits>
 #include <cstdarg>
 #include <cstdio>

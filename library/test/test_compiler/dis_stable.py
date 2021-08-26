@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 #
 # Dissassemble code objects:
 # a) recursively (like dis.dis() in Python3.7 behaves);

@@ -1,3 +1,4 @@
+/* Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com) */
 #ifndef CPYTHON_DATA_H
 #define CPYTHON_DATA_H
 

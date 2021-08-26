@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 from compiler.opcode38 import opcode as opcode38
 from compiler.opcodebase import Opcode
 

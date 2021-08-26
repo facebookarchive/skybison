@@ -1,3 +1,4 @@
+# Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 ((yield from abc) for x in iter)
 # EXPECTED:
 [

@@ -1,3 +1,4 @@
+// Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 #include "api-handle.h"
 #include "bytearray-builtins.h"
 #include "bytearrayobject-utils.h"

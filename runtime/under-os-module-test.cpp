@@ -1,3 +1,4 @@
+// Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>

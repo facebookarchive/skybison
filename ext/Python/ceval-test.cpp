@@ -1,3 +1,4 @@
+// Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 #include "Python.h"
 #include "gmock/gmock-matchers.h"
 #include "gtest/gtest.h"
