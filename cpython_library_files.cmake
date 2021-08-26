@@ -89,7 +89,6 @@ ctypes/macholib/__init__.py
 ctypes/macholib/dyld.py
 ctypes/macholib/dylib.py
 ctypes/macholib/fetch_macholib
-ctypes/macholib/fetch_macholib.bat
 ctypes/macholib/framework.py
 ctypes/test/__init__.py
 ctypes/test/__main__.py
@@ -498,7 +497,6 @@ idlelib/help.py
 idlelib/help_about.py
 idlelib/history.py
 idlelib/hyperparser.py
-idlelib/idle.bat
 idlelib/idle.py
 idlelib/idle.pyw
 idlelib/idle_test/README.txt
@@ -2067,8 +2065,6 @@ venv/__init__.py
 venv/__main__.py
 venv/scripts/common/Activate.ps1
 venv/scripts/common/activate
-venv/scripts/nt/activate.bat
-venv/scripts/nt/deactivate.bat
 venv/scripts/posix/activate.csh
 venv/scripts/posix/activate.fish
 warnings.py
