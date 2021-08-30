@@ -1,18 +1,18 @@
 # Welcome to Skybison!
 
-Skybison is an unmaintained and experimental performance-oriented greenfield
-implementation of Python 3.8. It contains a number of performance
-optimizations, including: small objects; a moving GC; hidden classes; bytecode
-inline caching; type-specialized bytecode; an experimental template JIT.
+Skybison is experimental performance-oriented greenfield implementation of
+Python 3.8. It contains a number of performance optimizations, including: small
+objects; a moving GC; hidden classes; bytecode inline caching; type-specialized
+bytecode; an experimental template JIT.
 
 ## Is this supported?
 
 No.
 
-Even though the project is no longer under active development, we've made
-Skybison publicly available in the hopes that people might find its history and
-internals interesting, or maybe even useful. It has not been polished or
-documented for anyone else's use.
+Even though the project is no longer under active development internally, we've
+made Skybison publicly available in the hopes that people might find its
+history and internals interesting, or maybe even useful. It has not been
+polished or documented for anyone else's use.
 
 We cannot commit to fixing external bug reports or reviewing pull requests.
 That said, if you have experience in dynamic language runtimes and have ideas
