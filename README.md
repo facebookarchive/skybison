@@ -85,6 +85,11 @@ Set of standard Python benchmarks with an accompanying test-runner.
 
 This folder contains documentation.
 
+## Other notes
+
+The repository has the name "pyro" sprinkled throughout the codebase. This is a
+holdover from an old internal codename.
+
 ## License
 
 Please see [LICENSE](LICENSE).
