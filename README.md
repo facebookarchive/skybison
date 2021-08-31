@@ -17,8 +17,7 @@ polished or documented for anyone else's use.
 We cannot commit to fixing external bug reports or reviewing pull requests.
 That said, if you have experience in dynamic language runtimes and have ideas
 to make Skybison faster; or if you work on CPython and want to use Skybison as
-inspiration for improvements in CPython, feel free to leave a note in a GitHub
-issue.
+inspiration for improvements in CPython, feel free to open a Pull Request.
 
 Instagram is now developing
 [Cinder](https://github.com/facebookincubator/cinder/).
