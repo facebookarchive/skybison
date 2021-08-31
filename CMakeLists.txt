@@ -43,8 +43,8 @@ option(ENABLE_CPYTHON_TESTS "Add cpython-tests target" ON)
 # Python to avoid circular dependencies in the third-party2 build.
 option(USE_PRECOMPILED_FROZEN_MODULES "Use pre-compiled frozen modules" OFF)
 
-# Add -DPYRO_ASAN=1 to the cmake command line to enable asan.
-if (${PYRO_ASAN})
+# Add -DSKYBISON_ASAN=1 to the cmake command line to enable asan.
+if (${SKYBISON_ASAN})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 endif()
 
