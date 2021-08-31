@@ -54,7 +54,7 @@ In Skybison, the list of bytecodes can be found in `runtime/bytecode.h` - and
 they are all mapped to interpreter functions implemented in
 `runtime/interpreter.cpp`.
 
-# # Interpreter
+## Interpreter
 
 Skybison has two implementations of its core interpreter loop (opcode dispatch
 and evaluation):
@@ -132,7 +132,7 @@ Object result(&scope, someFunction());
 if (result.isError()) return *result;
 ```
 
-Note that you should **return the** `Error` **object from the callee**, rather
+Note that you should **return** the `Error` object **from the callee**, rather
 than `Error::error()`. Although the various `Error` types are currently
 singletons, we have plans to encode information about the type of the exception
 into the `Error` object at some point. This will allow us to perform parts of
