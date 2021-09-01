@@ -288,7 +288,7 @@ def gettrace():
 
 
 implementation = _SimpleNamespace(
-    cache_tag=f"pyro-{_version.major}{_version.minor}", name="pyro", version=_version
+    cache_tag=f"skybison-{_version.major}{_version.minor}", name="skybison", version=_version
 )
 
 
@@ -318,10 +318,10 @@ platlibdir = "lib"
 prefix = None  # will be set by _init
 
 
-ps1 = ">>> "
+ps1 = "ypyp> "
 
 
-ps2 = "... "
+ps2 = "..... "
 
 
 pycache_prefix = None

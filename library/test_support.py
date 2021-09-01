@@ -12,5 +12,5 @@ def cpython_only(test):
 
 def pyro_only(test):
     return unittest.skipUnless(
-        sys.implementation.name == "pyro", "requires PyRo runtime"
+        sys.implementation.name == "skybison", "requires PyRo runtime"
     )(test)

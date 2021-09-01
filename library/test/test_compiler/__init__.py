@@ -14,7 +14,7 @@ from .test_visitor import VisitorTests
 
 # Skip side-by-side tests on Pyro where builtin.compile is just using the
 # `compiler` module anyway.
-if sys.implementation.name != "pyro":
+if sys.implementation.name != "skybison":
     from .test_corpus import SbsCorpusCompileTests
     from .test_sbs_stdlib import SbsCompileTests
 

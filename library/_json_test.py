@@ -6,7 +6,7 @@ import unittest
 from test_support import cpython_only
 
 
-if sys.implementation.name == "pyro":
+if sys.implementation.name == "skybison":
     from _json import loads, JSONDecodeError
 else:
     from json import loads, JSONDecodeError

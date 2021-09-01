@@ -317,7 +317,7 @@ PY_MAJOR_VERSION, PY_MINOR_VERSION, PY_MICRO_VERSION defines in
 ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}
 ")
 endif()
-set(IMPLEMENTATION_DIR pyro${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+set(IMPLEMENTATION_DIR skybison${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 set(BUILD_INCLUDE_DIR "${CMAKE_BINARY_DIR}/include/${IMPLEMENTATION_DIR}")
 string(
@@ -432,7 +432,7 @@ set_target_properties(
   libpython
   PROPERTIES
   OUTPUT_NAME
-  python.pyro3.8  # Produces libpython.pyro3.8.so
+  python.skybison3.8  # Produces libpython.skybison3.8.so
 )
 
 add_library(

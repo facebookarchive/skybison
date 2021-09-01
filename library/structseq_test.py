@@ -112,7 +112,7 @@ class StructSequenceTests(unittest.TestCase):
         )
 
     def test_repr_unnamed_field_bug_matches_cptyhon(self):
-        if sys.implementation.name == "pyro":
+        if sys.implementation.name == "skybison":
             # TODO(T64685580) This should use posix.stat_result, but the way
             # posixmodule replaces new does not work yet.
             stat_result = _structseq_new_type(

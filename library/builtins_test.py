@@ -488,7 +488,7 @@ class AsyncGeneratorAcloseTests(unittest.TestCase):
     _STATE_MAP = {"_STATE_INIT": 0, "_STATE_ITER": 1, "_STATE_CLOSED": 2}
 
     def _assertOpIterState(self, op_iter, state_str):
-        if sys.implementation.name == "pyro":
+        if sys.implementation.name == "skybison":
             state = _async_generator_op_iter_get_state(op_iter)
             self.assertEqual(state, AsyncGeneratorAcloseTests._STATE_MAP[state_str])
 
@@ -1040,7 +1040,7 @@ class AsyncGeneratorAsendTests(unittest.TestCase):
     _STATE_MAP = {"_STATE_INIT": 0, "_STATE_ITER": 1, "_STATE_CLOSED": 2}
 
     def _assertOpIterState(self, op_iter, state_str):
-        if sys.implementation.name == "pyro":
+        if sys.implementation.name == "skybison":
             state = _async_generator_op_iter_get_state(op_iter)
             self.assertEqual(state, AsyncGeneratorAsendTests._STATE_MAP[state_str])
 
@@ -1462,7 +1462,7 @@ class AsyncGeneratorAthrowTests(unittest.TestCase):
     _STATE_MAP = {"_STATE_INIT": 0, "_STATE_ITER": 1, "_STATE_CLOSED": 2}
 
     def _assertOpIterState(self, op_iter, state_str):
-        if sys.implementation.name == "pyro":
+        if sys.implementation.name == "skybison":
             state = _async_generator_op_iter_get_state(op_iter)
             self.assertEqual(state, AsyncGeneratorAthrowTests._STATE_MAP[state_str])
 
@@ -2695,7 +2695,7 @@ class CodeTests(unittest.TestCase):
 
     CodeType = type(foo.__code__)
 
-    if sys.implementation.name == "pyro" or sys.version_info >= (3, 8):
+    if sys.implementation.name == "skybison" or sys.version_info >= (3, 8):
         SAMPLE = CodeType(
             1,
             1,
@@ -13253,7 +13253,7 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(D.__subclasses__(), [])
 
     @unittest.skipIf(
-        sys.version_info < (3, 10) and sys.implementation.name != "pyro",
+        sys.version_info < (3, 10) and sys.implementation.name != "skybison",
         "Union requrires CPython 3.10",
     )
     def test_dunder_or_returns_union(self):
@@ -13270,7 +13270,7 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(t.__args__, (str, type(None)))
 
     @unittest.skipIf(
-        sys.version_info < (3, 10) and sys.implementation.name != "pyro",
+        sys.version_info < (3, 10) and sys.implementation.name != "skybison",
         "Union requrires CPython 3.10",
     )
     def test_dunder_ror_returns_union(self):
@@ -13877,7 +13877,7 @@ class UnderNumberCheckTests(unittest.TestCase):
 
 
 @unittest.skipIf(
-    sys.version_info < (3, 10) and sys.implementation.name != "pyro",
+    sys.version_info < (3, 10) and sys.implementation.name != "skybison",
     "Union requrires CPython 3.10",
 )
 class UnionTests(unittest.TestCase):

@@ -29,7 +29,7 @@ requires_getformat = unittest.skipUnless(have_getformat,
                                          "requires __getformat__")
 # TODO(T89800492)
 requires_setformat = unittest.skipUnless(hasattr(float, "__setformat__")
-                                         and sys.implementation.name != "pyro",
+                                         and sys.implementation.name != "skybison",
                                          "requires __setformat__")
 
 #locate file with float format test values
