@@ -44,10 +44,14 @@ modules, bytecode interpreter, and template JIT.
   to a module.
 * `interpreter.[h|cpp]` - Implementation of all opcodes. See
   [execution-model.md](doc/execution-model.md).
-* `runtime/interpreter-gen-x64.cpp` - Implementation of the assembly
+* `interpreter.[h|cpp]` - Bytecode interpreter.
+* `ic.[h|cpp]` - Inline cache implementation.
+* `interpreter-gen-x64.cpp` - Implementation of the assembly
   interpreter and template JIT.
-* `heap.[h|cpp]` - Class that manages managed objects. See
-  [garbage-collection.md](doc/garbage-collection.md).
+* `heap.[h|cpp]` - Class that manages managed objects.
+* `heap-profiler.[h|cpp]` - Tool for dumping the heap in a Java heap format for
+  later inspection.
+* `scavenger.[h|cpp]` - Garbage collector.
 * `runtime.[h|cpp]` - The Runtime. This is where everything starts.
 
 ### `./library`
