@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "benchmark/benchmark.h"
 #include "gtest/gtest.h"
 
 #include "attributedict.h"
@@ -9173,6 +9174,37 @@ instance = D()
   EXPECT_TRUE(containsBytecode(function, BINARY_OP_POLYMORPHIC));
   EXPECT_TRUE(isIntEqualsWord(*result, 20));
   EXPECT_EQ(function.entryAsm(), entry_before);
+}
+
+// Benchmarks
+class InterpreterBenchmark : public benchmark::Fixture {
+ public:
+  void SetUp(benchmark::State&) {
+    runtime_ = createTestRuntime();
+    thread_ = Thread::current();
+  }
+
+  void TearDown(benchmark::State&) { delete runtime_; }
+
+ protected:
+  Runtime* runtime_;
+  Thread* thread_;
+};
+
+BENCHMARK_F(InterpreterBenchmark, SimpleFunction)(benchmark::State& state) {
+  EXPECT_FALSE(runFromCStr(runtime_, R"(
+def foo():
+  x = 1
+  y = 2
+  return x + y
+)")
+                   .isError());
+  HandleScope scope(thread_);
+  Function foo(&scope, mainModuleAt(runtime_, "foo"));
+  for (auto _ : state) {
+    Object result(&scope, Interpreter::call0(thread_, foo));
+    static_cast<void>(result);
+  }
 }
 
 }  // namespace testing
