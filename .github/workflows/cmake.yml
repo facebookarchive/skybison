@@ -37,6 +37,10 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: ${{github.workspace}}/third-party/gtest-parallel/gtest-parallel ./bin/python-tests
 
+    - name: Run C++ tests with Skybison (C++ interpreter)
+      working-directory: ${{github.workspace}}/build
+      run: PYRO_CPP_INTERPRETER=1 ${{github.workspace}}/third-party/gtest-parallel/gtest-parallel ./bin/python-tests
+
     - name: Run C++ tests with CPython
       working-directory: ${{github.workspace}}/build
       run: ${{github.workspace}}/third-party/gtest-parallel/gtest-parallel ./bin/cpython-tests
@@ -44,6 +48,10 @@ jobs:
     - name: Run Python tests with Skybison
       working-directory: ${{github.workspace}}
       run: ./util/python_tests_pyro.sh
+
+    - name: Run Python tests with Skybison (C++ interpreter)
+      working-directory: ${{github.workspace}}
+      run: PYRO_CPP_INTERPRETER=1 ./util/python_tests_pyro.sh
 
     - name: Run Python tests with CPython
       working-directory: ${{github.workspace}}
