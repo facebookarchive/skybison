@@ -58,7 +58,7 @@ class WARN_UNUSED Handle : public T {
   // Let Handle<T> pretend to be a subtype of Handle<S> when T is a subtype of
   // S.
   template <typename S>
-  operator const Handle<S>&() const {
+  operator const Handle<S> &() const {
     static_assert(std::is_base_of<S, T>::value, "Only up-casts are permitted");
     return *reinterpret_cast<const Handle<S>*>(this);
   }
