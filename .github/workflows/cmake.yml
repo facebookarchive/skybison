@@ -74,3 +74,17 @@ jobs:
             repo: context.repo.repo,
             body: '${{matrix.BUILD_TYPE}} build results:\n```\n' + benchmark_results + '```',
           })
+
+  lint:
+    runs-on: ubuntu-latest
+    # TODO(max): Install and run Black on Python code
+    steps:
+    - name: Install clang-format
+      run: sudo apt install -y clang-format
+    - uses: actions/checkout@v2
+    - name: Run clang-format
+      working-directory: ${{github.workspace}}
+      run: |
+        find capi ext runtime -type f \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) \
+          ! -wholename 'runtime/unicode-db.cpp' \
+          -exec clang-format --dry-run --Werror '{}' ';'
