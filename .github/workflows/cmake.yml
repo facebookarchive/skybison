@@ -66,14 +66,16 @@ jobs:
       uses: actions/github-script@v5
       with:
         script: |
-          const { promises: fs } = require('fs');
-          const benchmark_results = await fs.readFile('build/benchmark-results.txt', 'utf8');
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: '${{matrix.BUILD_TYPE}} build results:\n```\n' + benchmark_results + '```',
-          })
+          if (context.issue) {
+            const { promises: fs } = require('fs');
+            const benchmark_results = await fs.readFile('build/benchmark-results.txt', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '${{matrix.BUILD_TYPE}} build results:\n```\n' + benchmark_results + '```',
+            })
+          }
 
   lint:
     runs-on: ubuntu-latest
