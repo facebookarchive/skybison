@@ -52,7 +52,7 @@ void initializeFloatType(Thread* thread) {
                  /*basetype=*/true);
 }
 
-static void digitsFromDigitsWithUnderscores(const char* s, char* dup,
+static bool digitsFromDigitsWithUnderscores(const char* s, char* dup,
                                             word* length) {
   char* end = dup;
   char prev = '\0';
@@ -62,23 +62,24 @@ static void digitsFromDigitsWithUnderscores(const char* s, char* dup,
     if (*p == '_') {
       // Underscores are only allowed after digits.
       if (!ASCII::isDigit(prev)) {
-        return;
+        return false;
       }
     } else {
       *end++ = *p;
       // Underscores are only allowed before digits.
       if (prev == '_' && !ASCII::isDigit(*p)) {
-        return;
+        return false;
       }
     }
     prev = *p;
   }
   // Underscores are not allowed at the end.
   if (prev == '_') {
-    return;
+    return false;
   }
   *end = '\0';
   *length = end - dup;
+  return true;
 }
 
 RawObject floatFromDigits(Thread* thread, const char* str, word length) {
@@ -92,8 +93,7 @@ RawObject floatFromDigits(Thread* thread, const char* str, word length) {
     word* new_length = &dup_length;
     release_memory = true;
     new_str = new char[length + 1];
-    digitsFromDigitsWithUnderscores(str, new_str, new_length);
-    if (new_str == nullptr) {
+    if (!digitsFromDigitsWithUnderscores(str, new_str, new_length)) {
       delete[] new_str;
       return thread->raiseWithFmt(LayoutId::kValueError,
                                   "could not convert string to float: '%s'",
