@@ -5,3 +5,6 @@
 /*build*
 .vscode
 __pycache__
+third-party/benchmark-1.5.1/src/generated/
+tags
+*.pyc
