@@ -85,7 +85,7 @@ static bool digitsFromDigitsWithUnderscores(const char* s, char* dup,
 RawObject floatFromDigits(Thread* thread, const char* str, word length) {
   // TODO(T57022841): follow full CPython conversion for strings
   char* end;
-  char* new_str;
+  char* new_str = nullptr;
   const char* dup = str;
   word dup_length = length;
   bool release_memory = false;
