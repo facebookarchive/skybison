@@ -7,6 +7,35 @@ on:
     branches: [ trunk ]
 
 jobs:
+  build-prev:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+    - run: git checkout HEAD^
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE=util/linux.cmake
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      run: make -j4
+    - name: Run benchmarks
+      working-directory: ${{github.workspace}}/build
+      run: ./bin/python-tests --benchmark_filter='.*' | tee benchmark-results.txt
+    - name: Comment on Pull Request
+      uses: actions/github-script@v5
+      with:
+        script: |
+          const { promises: fs } = require('fs');
+          const benchmark_results = await fs.readFile('${{github.workspace}}/build/benchmark-results.txt', 'utf8');
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: 'benchmark results (prev):\n```\n' + benchmark_results + '```',
+          })
+
   build:
     strategy:
       matrix:
@@ -19,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -58,6 +87,7 @@ jobs:
       run: PYRO_BUILD_DIR="build" ./util/python_tests_cpython.sh
 
     - name: Run benchmarks
+      if: ${{ github.event_name == 'pull_request' && matrix.BUILD_TYPE == 'RelWithDebInfo' }}
       working-directory: ${{github.workspace}}/build
       run: ./bin/python-tests --benchmark_filter='.*' | tee benchmark-results.txt
 
@@ -82,7 +112,7 @@ jobs:
     steps:
     - name: Install clang-format
       run: sudo apt install -y clang-format
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Run clang-format
       working-directory: ${{github.workspace}}
       run: |
