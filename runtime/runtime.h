@@ -632,6 +632,7 @@ class Runtime {
     return typeOf(obj).rawCast<RawType>().builtinBase() == LayoutId::k##ty;    \
   }
   DEFINE_IS_INSTANCE(Array)
+  DEFINE_IS_INSTANCE(BufferedRandom)
   DEFINE_IS_INSTANCE(BufferedReader)
   DEFINE_IS_INSTANCE(BufferedWriter)
   DEFINE_IS_INSTANCE(Bytearray)

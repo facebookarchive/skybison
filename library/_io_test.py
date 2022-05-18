@@ -438,6 +438,13 @@ class BufferedRandomTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "buffer size"):
                 _io.BufferedRandom(bytes_io, 0)
 
+    def test_dunder_init_allows_subclasses(self):
+        class C(_io.BufferedRandom):
+            pass
+
+        instance = C(_io.BytesIO(b""))
+        self.assertIsInstance(instance, _io.BufferedRandom)
+
     def test_flush_with_closed_raises_value_error(self):
         writer = _io.BufferedRandom(_io.BytesIO(b"hello"))
         writer.close()
@@ -629,6 +636,13 @@ class BufferedWriterTests(unittest.TestCase):
             self.assertEqual(
                 str(context.exception), "buffer size must be strictly positive"
             )
+
+    def test_dunder_init_allows_subclasses(self):
+        class C(_io.BufferedWriter):
+            pass
+
+        instance = C(_io.BytesIO(b""))
+        self.assertIsInstance(instance, _io.BufferedWriter)
 
     def test_flush_with_closed_raises_value_error(self):
         writer = _io.BufferedWriter(_io.BytesIO(b"hello"))
@@ -2516,6 +2530,13 @@ class BufferedReaderTests(unittest.TestCase):
             with self.assertRaises(OSError) as context:
                 _io.BufferedReader(file_reader)
         self.assertEqual(str(context.exception), "File or stream is not readable.")
+
+    def test_dunder_init_allows_subclasses(self):
+        class C(_io.BufferedReader):
+            pass
+
+        instance = C(_io.BytesIO(b""))
+        self.assertIsInstance(instance, _io.BufferedReader)
 
     def test_peek_returns_buffered_data(self):
         with _io.BufferedReader(_io.BytesIO(b"hello"), buffer_size=3) as buffered_io:

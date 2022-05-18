@@ -20,9 +20,6 @@ class Handle;
   V(AttributeDict)                                                             \
   V(Bool)                                                                      \
   V(BoundMethod)                                                               \
-  V(BufferedRandom)                                                            \
-  V(BufferedReader)                                                            \
-  V(BufferedWriter)                                                            \
   V(BytearrayIterator)                                                         \
   V(Bytes)                                                                     \
   V(BytesIterator)                                                             \
@@ -112,6 +109,9 @@ class Handle;
 #define SUBTYPE_HANDLE_TYPES(V)                                                \
   V(Array)                                                                     \
   V(BaseException)                                                             \
+  V(BufferedRandom)                                                            \
+  V(BufferedReader)                                                            \
+  V(BufferedWriter)                                                            \
   V(Bytearray)                                                                 \
   V(BytesIO)                                                                   \
   V(ClassMethod)                                                               \
