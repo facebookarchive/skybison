@@ -148,7 +148,7 @@ cp "$SOURCE_DIR/library/test_support.py" tests/
 if command -v parallel >/dev/null; then
     TEST_RUNNER=(parallel --will-cite -v --halt "now,fail=1")
 else
-    NUM_CPUS="$(python -c 'import multiprocessing; print(multiprocessing.cpu_count())')"
+    NUM_CPUS="$(python3 -c 'import multiprocessing; print(multiprocessing.cpu_count())')"
     TEST_RUNNER=(xargs -t -P "$NUM_CPUS")
 fi
 find "$PYRO_BUILD_DIR/tests/" -name "$TEST_RUNNING_FILTER" -print0 |
