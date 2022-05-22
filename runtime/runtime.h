@@ -46,9 +46,15 @@ struct RandomState {
 RandomState randomState();
 RandomState randomStateFromSeed(uint64_t seed);
 
+enum class StdioState {
+  kBuffered,
+  kUnbuffered,
+};
+
 class Runtime {
  public:
-  Runtime(word heap_size, Interpreter* interpreter, RandomState random_seed);
+  Runtime(word heap_size, Interpreter* interpreter, RandomState random_seed,
+          StdioState stdio_state);
   ~Runtime();
 
   // Completes the runtime initialization. Should be called after
@@ -876,6 +882,8 @@ class Runtime {
 
   void populateEntryAsm(const Function& function);
 
+  bool useBufferedStdio() { return stdio_state_ == StdioState::kBuffered; }
+
  private:
   Runtime(word heap_size);
 
@@ -1029,6 +1037,8 @@ class Runtime {
   static wchar_t module_search_path_[];
   static wchar_t prefix_[];
   static wchar_t program_name_[];
+
+  StdioState stdio_state_;
 
   DISALLOW_COPY_AND_ASSIGN(Runtime);
 };

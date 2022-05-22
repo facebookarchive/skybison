@@ -93,8 +93,8 @@ TEST(RuntimeTestNoFixture, AllocateAndCollectGarbage) {
       roundAllocationSize(array_length + HeapObject::headerSize(array_length));
   const word total_allocation_size = heap_size * 10;
   RandomState random_seed = randomStateFromSeed(0);
-  std::unique_ptr<Runtime> runtime(
-      new Runtime(heap_size, createCppInterpreter(), random_seed));
+  std::unique_ptr<Runtime> runtime(new Runtime(
+      heap_size, createCppInterpreter(), random_seed, StdioState::kBuffered));
 
   ASSERT_TRUE(runtime->heap()->verify());
   for (word i = 0; i < total_allocation_size; i += allocation_size) {
@@ -1169,14 +1169,14 @@ TEST_F(RuntimeTest, HashStr) {
 
 TEST(RuntimeTestNoFixture, InitializeRandomSetsRandomRandomRNGSeed) {
   word heap_size = 32 * kMiB;
-  std::unique_ptr<Runtime> runtime0(
-      new Runtime(heap_size, createCppInterpreter(), randomState()));
+  std::unique_ptr<Runtime> runtime0(new Runtime(
+      heap_size, createCppInterpreter(), randomState(), StdioState::kBuffered));
   uword r0 = runtime0->random();
-  std::unique_ptr<Runtime> runtime1(
-      new Runtime(heap_size, createCppInterpreter(), randomState()));
+  std::unique_ptr<Runtime> runtime1(new Runtime(
+      heap_size, createCppInterpreter(), randomState(), StdioState::kBuffered));
   uword r1 = runtime1->random();
-  std::unique_ptr<Runtime> runtime2(
-      new Runtime(heap_size, createCppInterpreter(), randomState()));
+  std::unique_ptr<Runtime> runtime2(new Runtime(
+      heap_size, createCppInterpreter(), randomState(), StdioState::kBuffered));
   uword r2 = runtime2->random();
   // Having 3 random numbers be the same will practically never happen.
   EXPECT_TRUE(r0 != r1 || r0 != r2);
@@ -1186,13 +1186,13 @@ TEST(RuntimeTestNoFixture,
      InitializeRandomWithPyroHashSeedEnvVarSetsDeterministicRNGSeed) {
   word heap_size = 32 * kMiB;
   RandomState seed = randomStateFromSeed(42);
-  std::unique_ptr<Runtime> runtime0(
-      new Runtime(heap_size, createCppInterpreter(), seed));
+  std::unique_ptr<Runtime> runtime0(new Runtime(
+      heap_size, createCppInterpreter(), seed, StdioState::kBuffered));
   uword r0_a = runtime0->random();
   uword r0_b = runtime0->random();
   EXPECT_NE(r0_a, r0_b);
-  std::unique_ptr<Runtime> runtime1(
-      new Runtime(heap_size, createCppInterpreter(), seed));
+  std::unique_ptr<Runtime> runtime1(new Runtime(
+      heap_size, createCppInterpreter(), seed, StdioState::kBuffered));
   uword r1_a = runtime1->random();
   uword r1_b = runtime1->random();
   EXPECT_EQ(r0_a, r1_a);

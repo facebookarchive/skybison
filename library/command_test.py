@@ -8,6 +8,10 @@ import zipfile
 from tempfile import TemporaryDirectory
 
 
+def with_pty(command):
+    return [sys.executable, '-c', 'import pty, sys; pty.spawn(sys.argv[1:])'] + command
+
+
 class OptionsTest(unittest.TestCase):
     def test_I_option_sets_isolated_no_user_site_ignore_environment_flags(self):
         result = subprocess.run(
@@ -258,6 +262,54 @@ class OptionsTest(unittest.TestCase):
             capture_output=True,
         )
         self.assertIn(b"quiet=1", result.stdout)
+
+    def test_no_u_option_in_pty_sets_buffered_stdio(self):
+        result = subprocess.run(
+                with_pty([sys.executable, "-c", "import sys;print(sys.stdout.line_buffering)"]),
+            check=True,
+            capture_output=True,
+        )
+        self.assertIn(b"True", result.stdout)
+
+    def test_no_u_option_no_pty_sets_unbuffered_stdio(self):
+        result = subprocess.run(
+            [sys.executable, "-c", "import sys;print(sys.stdout.line_buffering)"],
+            check=True,
+            capture_output=True,
+        )
+        self.assertIn(b"False", result.stdout)
+
+    def test_u_option_in_pty_sets_unbuffered_stdio(self):
+        result = subprocess.run(
+            with_pty([sys.executable, "-u", "-c", "import sys;print(sys.stdout.line_buffering)"]),
+            check=True,
+            capture_output=True,
+        )
+        self.assertIn(b"False", result.stdout)
+
+    def test_u_option_no_pty_sets_unbuffered_stdio(self):
+        result = subprocess.run(
+            [sys.executable, "-u", "-c", "import sys;print(sys.stdout.line_buffering)"],
+            check=True,
+            capture_output=True,
+        )
+        self.assertIn(b"False", result.stdout)
+
+    def test_u_option_in_pty_sets_unbuffered_stdin(self):
+        result = subprocess.run(
+            with_pty([sys.executable, "-u", "-c", "import sys;print(sys.stdin.line_buffering)"]),
+            check=True,
+            capture_output=True,
+        )
+        self.assertIn(b"False", result.stdout)
+
+    def test_u_option_sets_unbuffered_stdin(self):
+        result = subprocess.run(
+            [sys.executable, "-u", "-c", "import sys;print(sys.stdin.line_buffering)"],
+            check=True,
+            capture_output=True,
+        )
+        self.assertIn(b"False", result.stdout)
 
 
 class RunTest(unittest.TestCase):

@@ -91,6 +91,9 @@ void FUNC(sys, __init_module__)(Thread* thread, const Module& module,
   Object release_level(&scope, runtime->newStrFromCStr(kReleaseLevel));
   moduleAtPutById(thread, module, ID(_version_releaselevel), release_level);
 
+  Object buffered_stdio(&scope, Bool::fromBool(runtime->useBufferedStdio()));
+  moduleAtPutById(thread, module, ID(_use_buffered_stdio), buffered_stdio);
+
   executeFrozenModule(thread, module, bytecode);
 
   // Fill in hash_info.

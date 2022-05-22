@@ -13,6 +13,7 @@ from _builtins import (
     _unimplemented,
 )
 from _builtins import maxunicode  # noqa: F401
+from _io import TextIOWrapper
 from _path import dirname as _dirname, join as _join
 
 
@@ -23,6 +24,7 @@ _stdin_fd = _stdin_fd  # noqa: F821
 _stdout_fd = _stdout_fd  # noqa: F821
 _version_releaselevel = _version_releaselevel  # noqa: F821
 hexversion = hexversion  # noqa: F821
+_use_buffered_stdio = _use_buffered_stdio  # noqa: F821
 
 
 _Flags = _structseq_new_type(
@@ -153,13 +155,21 @@ def _init(
     warnoptions = _warnoptions
 
 
-__stderr__ = open(_stderr_fd, "w", buffering=True, closefd=False, encoding="utf-8")
+if _use_buffered_stdio:
+    __stderr__ = open(_stderr_fd, "w", buffering=-1, closefd=False, encoding="utf-8")
 
+    __stdin__ = open(_stdin_fd, "r", buffering=-1, closefd=False, encoding="utf-8")
 
-__stdin__ = open(_stdin_fd, "r", buffering=True, closefd=False, encoding="utf-8")
+    __stdout__ = open(_stdout_fd, "w", buffering=-1, closefd=False, encoding="utf-8")
+else:
+    __stderr__ = open(_stderr_fd, "wb", buffering=False, closefd=False)
+    __stderr__ = TextIOWrapper(__stderr__, encoding="utf-8", line_buffering=False)
 
+    __stdin__ = open(_stdin_fd, "rb", buffering=False, closefd=False)
+    __stdin__ = TextIOWrapper(__stdin__, encoding="utf-8", line_buffering=False)
 
-__stdout__ = open(_stdout_fd, "w", buffering=True, closefd=False, encoding="utf-8")
+    __stdout__ = open(_stdout_fd, "wb", buffering=False, closefd=False)
+    __stdout__ = TextIOWrapper(__stdout__, encoding="utf-8", line_buffering=False)
 
 
 _base_executable = None  # will be set by _init

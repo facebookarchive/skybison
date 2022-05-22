@@ -146,8 +146,11 @@ RandomState randomStateFromSeed(uint64_t seed) {
 }
 
 Runtime::Runtime(word heap_size, Interpreter* interpreter,
-                 RandomState random_seed)
-    : heap_(heap_size), interpreter_(interpreter), random_state_(random_seed) {
+                 RandomState random_seed, StdioState stdio_state)
+    : heap_(heap_size),
+      interpreter_(interpreter),
+      random_state_(random_seed),
+      stdio_state_(stdio_state) {
   Thread* thread = newThread();
   thread->begin();
   // This must be called before initializeTypes is called. Methods in

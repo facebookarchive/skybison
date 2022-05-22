@@ -82,7 +82,8 @@ Runtime* createTestRuntime() {
   Interpreter* interpreter =
       use_cpp_interpreter ? createCppInterpreter() : createAsmInterpreter();
   RandomState random_state = randomState();
-  Runtime* runtime = new Runtime(heap_size, interpreter, random_state);
+  Runtime* runtime =
+      new Runtime(heap_size, interpreter, random_state, StdioState::kBuffered);
   Thread* thread = Thread::current();
   CHECK(initializeSysWithDefaults(thread).isNoneType(),
         "initializeSys() failed");

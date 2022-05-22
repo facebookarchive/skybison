@@ -177,5 +177,59 @@ TEST(PylifecycleExtensionApiTestNoFixture,
   EXPECT_EQ(_Py_IsFinalizing(), 0);
 }
 
+TEST(PylifecycleExtensionApiTestNoFixture,
+     PyUnbufferedStdioFlagEqualsZeroSetsBufferedStdio) {
+  resetPythonEnv();
+  Py_UnbufferedStdioFlag = 0;
+  Py_Initialize();
+  {
+    PyObjectPtr sys_stdout(Borrowed(PySys_GetObject("stdout")));
+    ASSERT_NE(sys_stdout, nullptr);
+    ASSERT_EQ(PyErr_Occurred(), nullptr);
+    PyObjectPtr line_buffering(
+        PyObject_GetAttrString(sys_stdout, "line_buffering"));
+    ASSERT_NE(line_buffering, nullptr);
+    ASSERT_EQ(PyErr_Occurred(), nullptr);
+    EXPECT_EQ(line_buffering, Py_True);
+  }
+  Py_FinalizeEx();
+}
+
+TEST(PylifecycleExtensionApiTestNoFixture,
+     PyUnbufferedStdioFlagEqualsOneSetsUnbufferedStdio) {
+  resetPythonEnv();
+  Py_UnbufferedStdioFlag = 1;
+  Py_Initialize();
+  {
+    PyObjectPtr sys_stdout(Borrowed(PySys_GetObject("stdout")));
+    ASSERT_NE(sys_stdout, nullptr);
+    ASSERT_EQ(PyErr_Occurred(), nullptr);
+    PyObjectPtr line_buffering(
+        PyObject_GetAttrString(sys_stdout, "line_buffering"));
+    ASSERT_NE(line_buffering, nullptr);
+    ASSERT_EQ(PyErr_Occurred(), nullptr);
+    EXPECT_EQ(line_buffering, Py_False);
+  }
+  Py_FinalizeEx();
+}
+
+TEST(PylifecycleExtensionApiTestNoFixture,
+     PyUnbufferedStdioFlagEqualsOneSetsUnbufferedStdin) {
+  resetPythonEnv();
+  Py_UnbufferedStdioFlag = 1;
+  Py_Initialize();
+  {
+    PyObjectPtr sys_stdin(Borrowed(PySys_GetObject("stdin")));
+    ASSERT_NE(sys_stdin, nullptr);
+    ASSERT_EQ(PyErr_Occurred(), nullptr);
+    PyObjectPtr line_buffering(
+        PyObject_GetAttrString(sys_stdin, "line_buffering"));
+    ASSERT_NE(line_buffering, nullptr);
+    ASSERT_EQ(PyErr_Occurred(), nullptr);
+    EXPECT_EQ(line_buffering, Py_False);
+  }
+  Py_FinalizeEx();
+}
+
 }  // namespace testing
 }  // namespace py

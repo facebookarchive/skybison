@@ -381,7 +381,6 @@ PY_EXPORT void Py_InitializeEx(int initsigs) {
   CHECK(Py_BytesWarningFlag == 0, "Py_BytesWarningFlag != 0 not supported");
   CHECK(Py_DebugFlag == 0, "parser debug mode not supported");
   CHECK(Py_UTF8Mode == 1, "UTF8Mode != 1 not supported");
-  CHECK(Py_UnbufferedStdioFlag == 0, "Unbuffered stdio not supported");
   CHECK(initsigs == 1, "Skipping signal handler registration unimplemented");
   // TODO(T63603973): Reduce initial heap size once we can auto-grow the heap
   word heap_size = word{2} * kGiB;
@@ -404,10 +403,13 @@ PY_EXPORT void Py_InitializeEx(int initsigs) {
     random_seed = randomState();
     Py_HashRandomizationFlag = 1;
   }
+  StdioState stdio_state =
+      Py_UnbufferedStdioFlag ? StdioState::kUnbuffered : StdioState::kBuffered;
   Interpreter* interpreter = boolFromEnv("PYRO_CPP_INTERPRETER", false)
                                  ? createCppInterpreter()
                                  : createAsmInterpreter();
-  Runtime* runtime = new Runtime(heap_size, interpreter, random_seed);
+  Runtime* runtime =
+      new Runtime(heap_size, interpreter, random_seed, stdio_state);
   Thread* thread = Thread::current();
   initializeSysFromGlobals(thread);
   CHECK(runtime->initialize(thread).isNoneType(),

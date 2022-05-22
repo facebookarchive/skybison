@@ -235,7 +235,8 @@ class HandleBenchmark : public benchmark::Fixture {
     word heap_size = 32 * kMiB;
     Interpreter* interpreter = createCppInterpreter();
     RandomState random_state = randomStateFromSeed(0);
-    runtime_ = new Runtime(heap_size, interpreter, random_state);
+    runtime_ = new Runtime(heap_size, interpreter, random_state,
+                           StdioState::kBuffered);
   }
 
   void TearDown(benchmark::State&) { delete runtime_; }

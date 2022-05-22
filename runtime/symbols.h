@@ -534,6 +534,7 @@ class Runtime;
   V(_type_ctor)                                                                \
   V(_type_dunder_call)                                                         \
   V(_type_proxy__type)                                                         \
+  V(_use_buffered_stdio)                                                       \
   V(_unicode_escape_decode_stateful)                                           \
   V(_valuecell__dependency_link)                                               \
   V(_valuecell__value)                                                         \
