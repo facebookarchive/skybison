@@ -5469,7 +5469,7 @@ class memoryview(bootstrap=True):
         pass
 
     def tobytes(self):
-        _unimplemented()
+        _builtin()
 
     def tolist(self):
         _memoryview_guard(self)

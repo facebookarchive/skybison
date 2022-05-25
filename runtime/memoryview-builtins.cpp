@@ -649,4 +649,26 @@ RawObject METH(memoryview, __new__)(Thread* thread, Arguments args) {
       thread, object, bytes, Bytes::cast(*bytes).length(), ReadOnly::ReadOnly);
 }
 
+RawObject METH(memoryview, tobytes)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object self_obj(&scope, args.get(0));
+  if (!self_obj.isMemoryView()) {
+    return thread->raiseRequiresType(self_obj, ID(memoryview));
+  }
+  MemoryView self(&scope, *self_obj);
+  word length = self.length();
+  Runtime* runtime = thread->runtime();
+  Object buffer(&scope, self.buffer());
+  if (runtime->isInstanceOfBytes(*buffer)) {
+    MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
+    Bytes bytes(&scope, *buffer);
+    result.replaceFromWithBytes(0, *bytes, length);
+    return result.becomeImmutable();
+  }
+  DCHECK(buffer.isPointer(), "memoryview.__getitem__ with non bytes/memory");
+  void* cptr = Pointer::cast(*buffer).cptr();
+  DCHECK(length <= Pointer::cast(*buffer).length(), "invalid length");
+  return runtime->newBytesWithAll(View<byte>(static_cast<byte*>(cptr), length));
+}
+
 }  // namespace py
