@@ -677,6 +677,26 @@ RETURN_VALUE
         self.assertEqual(lambdas[0](), 14)
         self.assertEqual(lambdas[1](), 14)
 
+    def test_renamer_with_locals_in_list_comprehension_does_not_rename(self):
+        iterable = [1]
+        result = [locals().keys() for item in iterable][0]
+        self.assertEqual(sorted(result), [".0", "item"])
+
+    def test_renamer_with_locals_in_dict_comprehension_does_not_rename(self):
+        iterable = [1]
+        result = {"key": locals().keys() for item in iterable}["key"]
+        self.assertEqual(sorted(result), [".0", "item"])
+
+    def test_renamer_with_locals_in_set_comprehension_does_not_rename(self):
+        iterable = [1]
+        result = {locals().keys() for item in iterable}.pop()
+        self.assertEqual(sorted(result), [".0", "item"])
+
+    def test_renamer_with_locals_in_gen_comprehension_does_not_rename(self):
+        iterable = [1]
+        result = tuple(locals().keys() for item in iterable)[0]
+        self.assertEqual(sorted(result), [".0", "item"])
+
 
 if __name__ == "__main__":
     unittest.main()

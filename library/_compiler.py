@@ -238,8 +238,35 @@ class ComprehensionRenamer(ASTVisitor):
             node.arg = new_name
 
 
+class CollectNames(ASTVisitor):
+    def __init__(self):
+        super().__init__()
+        self.names = set()
+
+    def visitName(self, node):
+        self.names.add(node.id)
+
+    def visitarg(self, node):
+        self.names.add(node.arg)
+
+
+def _can_inline_comprehension(node):
+    can_inline = getattr(node, "can_inline", None)
+    # Bad heuristic: Stop inlining comprehensions when "locals" is used.
+    if can_inline is None:
+        # Do not rename if "locals" is used.
+        visitor = CollectNames()
+        visitor.visit(node)
+        can_inline = "locals" not in visitor.names
+        node.can_inline = can_inline
+    return can_inline
+
+
 class PyroSymbolVisitor(SymbolVisitor):
     def visitDictCompListCompSetComp(self, node, scope):
+        if not _can_inline_comprehension(node):
+            return super().visitGeneratorExp(node, scope)
+
         # Check for unexpected assignments.
         scope.comp_iter_expr += 1
         self.visit(node.generators[0].iter, scope)
@@ -311,14 +338,20 @@ class PyroCodeGenerator(Python38CodeGenerator):
             self.emit("COMPARE_OP", self._cmp_opcode[type(op)])
 
     def visitListComp(self, node):
+        if not _can_inline_comprehension(node):
+            return super().visitListComp(node)
         self.emit("BUILD_LIST")
         self.compile_comprehension_body(node.generators, 0, node.elt, None, type(node))
 
     def visitSetComp(self, node):
+        if not _can_inline_comprehension(node):
+            return super().visitSetComp(node)
         self.emit("BUILD_SET")
         self.compile_comprehension_body(node.generators, 0, node.elt, None, type(node))
 
     def visitDictComp(self, node):
+        if not _can_inline_comprehension(node):
+            return super().visitDictComp(node)
         self.emit("BUILD_MAP")
         self.compile_comprehension_body(
             node.generators, 0, node.key, node.value, type(node)
