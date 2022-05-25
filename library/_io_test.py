@@ -2576,6 +2576,13 @@ class BufferedReaderTests(unittest.TestCase):
             result = buffered.read(3)
             self.assertEqual(result, b"hel")
 
+    def test_readinto_writes_to_buffer(self):
+        with _io.BytesIO(b"hello") as bytes_io:
+            with _io.BufferedReader(bytes_io, buffer_size=4) as buffered:
+                ba = bytearray(b"XXXXXXXXXXXX")
+                buffered.readinto(ba)
+                self.assertEqual(ba, bytearray(b"helloXXXXXXX"))
+
     def test_read1_calls_read(self):
         with _io.BytesIO(b"hello") as bytes_io:
             buffered = _io.BufferedReader(bytes_io, buffer_size=10)
