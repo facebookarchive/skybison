@@ -1,10 +1,13 @@
 # Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 import ast
+from ast import AST
 from compiler import compile as compiler_compile
 from compiler.optimizer import BIN_OPS, is_const, get_const_value
 from compiler.py38.optimizer import AstOptimizer38
 from compiler.pyassem import PyFlowGraph38
 from compiler.pycodegen import Python38CodeGenerator
+from compiler.symbols import SymbolVisitor
+from compiler.visitor import ASTVisitor, walk
 
 import _compiler_opcode as opcodepyro
 
@@ -208,8 +211,92 @@ class PyroFlowGraph(PyFlowGraph38):
     opcode = opcodepyro.opcode
 
 
+class ComprehensionRenamer(ASTVisitor):
+    def __init__(self, scope):
+        super().__init__()
+        # We need a prefix that is unique per-scope for each renaming round.
+        index = getattr(scope, "last_comprehension_rename_index", -1) + 1
+        scope.last_comprehension_rename_index = index
+        self.prefix = f"_gen{str(index) if index > 0 else ''}$"
+        self.new_names = {}
+        self.is_target = False
+
+    def visitName(self, node):
+        if self.is_target and isinstance(node.ctx, (ast.Store, ast.Del)):
+            name = node.id
+            new_name = self.prefix + name
+            self.new_names[name] = new_name
+            node.id = new_name
+        else:
+            new_name = self.new_names.get(node.id)
+            if new_name is not None:
+                node.id = new_name
+
+    def visitarg(self, node):
+        new_name = self.new_names.get(node.arg)
+        if new_name is not None:
+            node.arg = new_name
+
+
+class PyroSymbolVisitor(SymbolVisitor):
+    def visitDictCompListCompSetComp(self, node, scope):
+        # Check for unexpected assignments.
+        scope.comp_iter_expr += 1
+        self.visit(node.generators[0].iter, scope)
+        scope.comp_iter_expr -= 1
+
+        renamer = ComprehensionRenamer(scope)
+        is_outer = True
+        for gen in node.generators:
+            renamer.visit(gen.iter)
+            renamer.is_target = True
+            renamer.visit(gen.target)
+            renamer.is_target = False
+            for if_node in gen.ifs:
+                renamer.visit(if_node)
+
+            self.visitcomprehension(gen, scope, is_outer)
+            is_outer = False
+
+        if isinstance(node, ast.DictComp):
+            renamer.visit(node.value)
+            renamer.visit(node.key)
+            self.visit(node.value, scope)
+            self.visit(node.key, scope)
+        else:
+            renamer.visit(node.elt)
+            self.visit(node.elt, scope)
+
+    visitDictComp = visitDictCompListCompSetComp
+    visitListComp = visitDictCompListCompSetComp
+    visitSetComp = visitDictCompListCompSetComp
+
+
 class PyroCodeGenerator(Python38CodeGenerator):
     flow_graph = PyroFlowGraph
+
+    @classmethod
+    def make_code_gen(
+        cls,
+        name: str,
+        tree: AST,
+        filename: str,
+        flags: int,
+        optimize: int,
+        peephole_enabled: bool = True,
+        ast_optimizer_enabled: bool = True,
+    ):
+        if ast_optimizer_enabled:
+            tree = cls.optimize_tree(optimize, tree)
+        s = PyroSymbolVisitor()
+        walk(tree, s)
+
+        graph = cls.flow_graph(
+            name, filename, s.scopes[tree], peephole_enabled=peephole_enabled
+        )
+        code_gen = cls(None, tree, s, graph, flags, optimize)
+        walk(tree, code_gen)
+        return code_gen
 
     @classmethod
     def optimize_tree(cls, optimize: int, tree: ast.AST):
@@ -222,6 +309,20 @@ class PyroCodeGenerator(Python38CodeGenerator):
             self.emit("COMPARE_IS_NOT")
         else:
             self.emit("COMPARE_OP", self._cmp_opcode[type(op)])
+
+    def visitListComp(self, node):
+        self.emit("BUILD_LIST")
+        self.compile_comprehension_body(node.generators, 0, node.elt, None, type(node))
+
+    def visitSetComp(self, node):
+        self.emit("BUILD_SET")
+        self.compile_comprehension_body(node.generators, 0, node.elt, None, type(node))
+
+    def visitDictComp(self, node):
+        self.emit("BUILD_MAP")
+        self.compile_comprehension_body(
+            node.generators, 0, node.key, node.value, type(node)
+        )
 
 
 def compile(source, filename, mode, flags, dont_inherit, optimize):

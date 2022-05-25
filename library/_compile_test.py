@@ -454,5 +454,229 @@ RETURN_VALUE
         )
 
 
+@pyro_only
+class InlineComprehensionTests(unittest.TestCase):
+    def test_list_comprehension_code_is_inline(self):
+        source = "[x for x in y]"
+        self.assertEqual(
+            dis(test_compile(source)),
+            """\
+BUILD_LIST 0
+LOAD_NAME y
+GET_ITER
+FOR_ITER 8
+STORE_NAME _gen$x
+LOAD_NAME _gen$x
+LIST_APPEND 2
+JUMP_ABSOLUTE 6
+RETURN_VALUE
+""",
+        )
+
+    @pyro_only
+    def test_list_comprehension_code_executes(self):
+        source = "[x for x in y]"
+        self.assertEqual(
+            eval(test_compile(source), {"y": range(4)}), [0, 1, 2, 3]  # noqa: P204
+        )
+
+    def test_set_comprehension_code_is_inline(self):
+        source = "{x for x in y}"
+        self.assertEqual(
+            dis(test_compile(source)),
+            """\
+BUILD_SET 0
+LOAD_NAME y
+GET_ITER
+FOR_ITER 8
+STORE_NAME _gen$x
+LOAD_NAME _gen$x
+SET_ADD 2
+JUMP_ABSOLUTE 6
+RETURN_VALUE
+""",
+        )
+
+    @pyro_only
+    def test_set_comprehension_code_executes(self):
+        source = "{x for x in y}"
+        self.assertEqual(
+            eval(test_compile(source), {"y": range(4)}), {0, 1, 2, 3}  # noqa: P204
+        )
+
+    def test_dict_comprehension_code_is_inline(self):
+        source = "{x:-x for x in y}"
+        self.assertEqual(
+            dis(test_compile(source)),
+            """\
+BUILD_MAP 0
+LOAD_NAME y
+GET_ITER
+FOR_ITER 12
+STORE_NAME _gen$x
+LOAD_NAME _gen$x
+LOAD_NAME _gen$x
+UNARY_NEGATIVE
+MAP_ADD 2
+JUMP_ABSOLUTE 6
+RETURN_VALUE
+""",
+        )
+
+    @pyro_only
+    def test_dict_comprehension_code_executes(self):
+        source = "{x:-x for x in y}"
+        self.assertEqual(
+            eval(test_compile(source), {"y": range(4)}),  # noqa: P204
+            {0: 0, 1: -1, 2: -2, 3: -3},
+        )
+
+    def test_nested_comprehension_in_iterator_code_is_inline(self):
+        source = "[-x for x in [x for x in x if x > 3]]"
+        self.assertEqual(
+            (dis(test_compile(source))),
+            """\
+BUILD_LIST 0
+BUILD_LIST 0
+LOAD_NAME x
+GET_ITER
+FOR_ITER 16
+STORE_NAME _gen$x
+LOAD_NAME _gen$x
+LOAD_CONST 3
+COMPARE_OP >
+POP_JUMP_IF_FALSE 8
+LOAD_NAME _gen$x
+LIST_APPEND 2
+JUMP_ABSOLUTE 8
+GET_ITER
+FOR_ITER 10
+STORE_NAME _gen1$x
+LOAD_NAME _gen1$x
+UNARY_NEGATIVE
+LIST_APPEND 2
+JUMP_ABSOLUTE 28
+RETURN_VALUE
+""",
+        )
+
+    @pyro_only
+    def test_nested_comprehension_in_iterator_executes(self):
+        source = "[-x for x in [x for x in x if x > 3]]"
+        self.assertEqual(
+            eval(test_compile(source), {"x": range(8)}), [-4, -5, -6, -7]  # noqa: P204
+        )
+
+    def test_nested_comprehension_in_element_code_is_inline(self):
+        source = "[[x for x in range(x) if x & 1 == 1] for x in x]"
+        self.assertEqual(
+            (dis(test_compile(source))),
+            """\
+BUILD_LIST 0
+LOAD_NAME x
+GET_ITER
+FOR_ITER 38
+STORE_NAME _gen$x
+BUILD_LIST 0
+LOAD_NAME range
+LOAD_NAME _gen$x
+CALL_FUNCTION 1
+GET_ITER
+FOR_ITER 20
+STORE_NAME _gen1$_gen$x
+LOAD_NAME _gen1$_gen$x
+LOAD_CONST 1
+BINARY_AND
+LOAD_CONST 1
+COMPARE_OP ==
+POP_JUMP_IF_FALSE 20
+LOAD_NAME _gen1$_gen$x
+LIST_APPEND 2
+JUMP_ABSOLUTE 20
+LIST_APPEND 2
+JUMP_ABSOLUTE 6
+RETURN_VALUE
+""",
+        )
+
+    @pyro_only
+    def test_nested_comprehension_in_element_executes(self):
+        source = "[[x for x in range(x) if x & 1 == 1] for x in x]"
+        self.assertEqual(
+            eval(test_compile(source), {"x": range(5)}),  # noqa: P204
+            [[], [], [1], [1], [1, 3]],
+        )
+
+    def test_nested_lambda_in_comprehension_has_arg_renamed(self):
+        source = "[lambda x: x for x in r]"
+        self.assertEqual(
+            (dis(test_compile(source))),
+            """\
+BUILD_LIST 0
+LOAD_NAME r
+GET_ITER
+FOR_ITER 12
+STORE_NAME _gen$x
+LOAD_CONST 0:code object <lambda>
+LOAD_CONST '<lambda>'
+MAKE_FUNCTION 0
+LIST_APPEND 2
+JUMP_ABSOLUTE 6
+RETURN_VALUE
+
+# 0:code object <lambda>
+LOAD_FAST _gen$x
+RETURN_VALUE
+""",
+        )
+
+    @pyro_only
+    def test_nested_lambda_in_comprehension_executes(self):
+        source = "[lambda x: x for x in r]"
+        lambdas = eval(test_compile(source), {"r": range(3)})  # noqa: P204
+        self.assertEqual(lambdas[0](22), 22)
+        self.assertEqual(lambdas[1]("foo"), "foo")
+        self.assertEqual(lambdas[2](int), int)
+
+    def test_multiple_comprehensions_use_unique_prefixes(self):
+        source = "[lambda: x for x in r], [x for x in (42,)]"
+        self.assertEqual(
+            (dis(test_compile(source))),
+            """\
+BUILD_LIST 0
+LOAD_NAME r
+GET_ITER
+FOR_ITER 12
+STORE_NAME _gen$x
+LOAD_CONST 0:code object <lambda>
+LOAD_CONST '<lambda>'
+MAKE_FUNCTION 0
+LIST_APPEND 2
+JUMP_ABSOLUTE 6
+BUILD_LIST 0
+LOAD_CONST (42,)
+GET_ITER
+FOR_ITER 8
+STORE_NAME _gen1$x
+LOAD_NAME _gen1$x
+LIST_APPEND 2
+JUMP_ABSOLUTE 26
+BUILD_TUPLE 2
+RETURN_VALUE
+
+# 0:code object <lambda>
+LOAD_GLOBAL _gen$x
+RETURN_VALUE
+""",
+        )
+
+    @pyro_only
+    def test_multiple_comprehensions_executes(self):
+        source = "[lambda: x for x in r], [x for x in (42,)]"
+        lambdas, dummy = eval(test_compile(source), {"r": range(13, 15)})  # noqa: P204
+        self.assertEqual(lambdas[0](), 14)
+        self.assertEqual(lambdas[1](), 14)
+
+
 if __name__ == "__main__":
     unittest.main()

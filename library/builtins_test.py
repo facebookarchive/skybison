@@ -7644,21 +7644,6 @@ class LocalsTests(unittest.TestCase):
         self.assertEqual(result_key, "result")
         self.assertIs(result_value, c)
 
-    def test_list_comprehension_with_locals_does_not_mangle(self):
-        things = ["thing"]
-        result = ["foo.{name}".format(**locals()) for name in things]
-        self.assertEqual(result, ["foo.thing"])
-
-    def test_set_comprehension_with_locals_does_not_mangle(self):
-        things = ["thing"]
-        result = {"foo.{name}".format(**locals()) for name in things}
-        self.assertEqual(result, {"foo.thing"})
-
-    def test_dict_comprehension_with_locals_does_not_mangle(self):
-        things = ["thing"]
-        result = {"foo.{name}".format(**locals()): 1 for name in things}
-        self.assertEqual(result, {"foo.thing": 1})
-
 
 class LongRangeIteratorTests(unittest.TestCase):
     def test_dunder_iter_returns_self(self):
