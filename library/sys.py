@@ -104,6 +104,8 @@ def _init(
 ):
     global executable
     executable = _executable
+    global _base_executable
+    _base_executable = _executable
 
     global prefix
     prefix = _join(_dirname(executable), "..")
@@ -136,6 +138,9 @@ __stdin__ = open(_stdin_fd, "r", buffering=True, closefd=False, encoding="utf-8"
 
 
 __stdout__ = open(_stdout_fd, "w", buffering=True, closefd=False, encoding="utf-8")
+
+
+_base_executable = None  # will be set by _init
 
 
 _framework = ""

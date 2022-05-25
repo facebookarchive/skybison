@@ -630,6 +630,12 @@ class SysTests(unittest.TestCase):
         self.assertEqual(hooks.firstiter, f1)
         self.assertEqual(hooks.finalizer, f2)
 
+    def test_executable_contains_python3(self):
+        self.assertIn("python", sys.executable)
+
+    def test_under_base_executable_contains_python3(self):
+        self.assertIn("python", sys._base_executable)
+
 
 if __name__ == "__main__":
     unittest.main()
