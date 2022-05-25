@@ -392,6 +392,13 @@ if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
   set(
     EXTENSION_OS_SOURCES
     ext/Python/pystrcmp-posix.cpp)
+  set(
+    EXTENSION_MODULES_OS_SOURCES
+    ${CPYTHON_DIR}/Modules/_scproxy.c)
+  set(
+    EXTENSION_MODULES_OS_LIBRARIES
+    "-framework SystemConfiguration"
+    "-framework CoreFoundation")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   set(
     RUNTIME_OS_SOURCES
@@ -815,7 +822,8 @@ add_library(
   capi/cpython-internal/pystrhex.h
   capi/cpython-internal/symtable.h
   capi/cpython-internal/token.h
-  capi/cpython-internal/ucnhash.h)
+  capi/cpython-internal/ucnhash.h
+  ${EXTENSION_MODULES_OS_SOURCES})
 target_include_directories(
   extension-modules
   PUBLIC
@@ -860,7 +868,8 @@ target_link_libraries(
   ${READLINE_LIBRARIES}
   ${SQLITE_LIBRARIES}
   ${XZ_LIBRARIES}
-  ${ZLIB_LIBRARIES})
+  ${ZLIB_LIBRARIES}
+  ${EXTENSION_MODULES_OS_LIBRARIES})
 
 add_library(
   extension

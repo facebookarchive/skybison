@@ -17,8 +17,11 @@ extern "C" PyObject* PyInit__multiprocessing();
 extern "C" PyObject* PyInit__parser();
 extern "C" PyObject* PyInit__posixsubprocess();
 extern "C" PyObject* PyInit__random();
-extern "C" PyObject* PyInit__socket();
+#ifdef __APPLE__
+extern "C" PyObject* PyInit__scproxy();
+#endif
 extern "C" PyObject* PyInit__sha3();
+extern "C" PyObject* PyInit__socket();
 extern "C" PyObject* PyInit__sqlite3();
 extern "C" PyObject* PyInit__sre();
 extern "C" PyObject* PyInit__ssl();
@@ -69,8 +72,11 @@ struct _inittab _PyImport_Inittab[] = {
     {"_parser", PyInit__parser},
     {"_posixsubprocess", PyInit__posixsubprocess},
     {"_random", PyInit__random},
-    {"_socket", PyInit__socket},
+#ifdef __APPLE__
+    {"_scproxy", PyInit__scproxy},
+#endif
     {"_sha3", PyInit__sha3},
+    {"_socket", PyInit__socket},
     {"_sqlite3", PyInit__sqlite3},
     {"_sre", PyInit__sre},
     {"_ssl", PyInit__ssl},
