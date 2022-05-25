@@ -253,6 +253,14 @@ extern "C" {
 PyMODINIT_FUNC
 PyInit__scproxy(void)
 {
+    PyObject *m;
+
+    m = PyState_FindModule(&mod_module);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
+
     return PyModule_Create(&mod_module);
 }
 
