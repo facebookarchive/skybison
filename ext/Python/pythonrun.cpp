@@ -4,6 +4,7 @@
 
 #include "api-handle.h"
 #include "builtins-module.h"
+#include "compile-utils.h"
 #include "exception-builtins.h"
 #include "fileutils.h"
 #include "marshal.h"

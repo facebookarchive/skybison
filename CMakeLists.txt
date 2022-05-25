@@ -468,6 +468,8 @@ add_library(
   runtime/capi.h
   runtime/code-builtins.cpp
   runtime/code-builtins.h
+  runtime/compile-utils.cpp
+  runtime/compile-utils.h
   runtime/complex-builtins.cpp
   runtime/complex-builtins.h
   runtime/debugging.cpp

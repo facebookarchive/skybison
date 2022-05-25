@@ -9,6 +9,7 @@
 #include "attributedict.h"
 #include "builtins-module.h"
 #include "bytecode.h"
+#include "compile-utils.h"
 #include "dict-builtins.h"
 #include "handles.h"
 #include "ic.h"

@@ -14,6 +14,7 @@
 #include "builtins-module.h"
 #include "bytearray-builtins.h"
 #include "bytes-builtins.h"
+#include "compile-utils.h"
 #include "debugging.h"
 #include "exception-builtins.h"
 #include "frame.h"

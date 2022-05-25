@@ -18,7 +18,4 @@ RawObject hasAttribute(Thread* thread, const Object& object,
 RawObject setAttribute(Thread* thread, const Object& object, const Object& name,
                        const Object& value);
 
-RawObject compile(Thread* thread, const Object& source, const Object& filename,
-                  SymbolId mode, word flags, int optimize);
-
 }  // namespace py

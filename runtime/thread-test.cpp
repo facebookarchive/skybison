@@ -7,6 +7,7 @@
 
 #include "builtins-module.h"
 #include "bytecode.h"
+#include "compile-utils.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"

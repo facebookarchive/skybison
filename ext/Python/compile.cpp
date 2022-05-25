@@ -5,6 +5,7 @@
 
 #include "api-handle.h"
 #include "builtins-module.h"
+#include "compile-utils.h"
 #include "globals.h"
 #include "runtime.h"
 #include "str-builtins.h"
@@ -32,48 +33,24 @@ namespace py {
 
 static_assert(Code::kCompileFlagsMask == PyCF_MASK, "flags mismatch");
 
-PY_EXPORT PyObject* _Py_Mangle(PyObject* pyprivateobj, PyObject* pyident) {
-  if (pyprivateobj == nullptr) {
-    ApiHandle::fromPyObject(pyident)->incref();
-    return pyident;
+PY_EXPORT PyObject* _Py_Mangle(PyObject* privateobj, PyObject* ident) {
+  if (privateobj == nullptr) {
+    Py_INCREF(ident);
+    return ident;
   }
   Thread* thread = Thread::current();
   HandleScope scope(thread);
   Object privateobj_obj(&scope,
-                        ApiHandle::fromPyObject(pyprivateobj)->asObject());
-  Object ident_obj(&scope, ApiHandle::fromPyObject(pyident)->asObject());
-  Str ident(&scope, strUnderlying(*ident_obj));
+                        ApiHandle::fromPyObject(privateobj)->asObject());
   Runtime* runtime = thread->runtime();
-  // Only mangle names that start with two underscores, but do not end with
-  // two underscores or contain a dot.
-  word ident_length = ident.length();
-  if (!runtime->isInstanceOfStr(*privateobj_obj) || ident_length < 2 ||
-      ident.byteAt(0) != '_' || ident.byteAt(1) != '_' ||
-      (ident.byteAt(ident_length - 2) == '_' &&
-       ident.byteAt(ident_length - 1) == '_') ||
-      strFindAsciiChar(ident, '.') >= 0) {
-    Py_INCREF(pyident);
-    return pyident;
+  Object ident_obj(&scope, ApiHandle::fromPyObject(ident)->asObject());
+  Str ident_str(&scope, strUnderlying(*ident_obj));
+  Object mangled(&scope, mangle(thread, privateobj_obj, ident_str));
+  if (mangled == ident_str) {
+    Py_INCREF(ident);
+    return ident;
   }
-
-  Str privateobj(&scope, strUnderlying(*privateobj_obj));
-  word privateobj_length = privateobj.length();
-  word begin = 0;
-  while (begin < privateobj_length && privateobj.byteAt(begin) == '_') {
-    begin++;
-  }
-  if (begin == privateobj_length) {
-    Py_INCREF(pyident);
-    return pyident;
-  }
-
-  word length0 = privateobj_length - begin;
-  word length = length0 + ident_length + 1;
-  MutableBytes result(&scope, runtime->newMutableBytesUninitialized(length));
-  result.byteAtPut(0, '_');
-  result.replaceFromWithStrStartAt(1, *privateobj, length0, begin);
-  result.replaceFromWithStr(1 + length0, *ident, ident_length);
-  return ApiHandle::newReference(runtime, result.becomeStr());
+  return ApiHandle::newReference(runtime, *mangled);
 }
 
 PY_EXPORT PyCodeObject* PyNode_Compile(_node* node, const char* filename) {
