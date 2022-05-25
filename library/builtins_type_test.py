@@ -1409,6 +1409,30 @@ class DunderSlotsTests(unittest.TestCase):
             "descriptor 'x' for 'C' objects doesn't apply to a 'E' object",
         )
 
+    def test_private_names_are_mangled(self):
+        class C:
+            __slots__ = ("__priv", "__priv_")
+
+            def __init__(self):
+                self.__priv = 42
+                self.__priv_ = 8
+
+        c = C()
+        self.assertEqual(c._C__priv, 42)
+        self.assertEqual(c._C__priv_, 8)
+
+    def test_names_are_not_mangled(self):
+        class C:
+            __slots__ = ("_notpriv", "__notpriv__")
+
+            def __init__(self):
+                self._notpriv = "foo"
+                self.__notpriv__ = "bar"
+
+        c = C()
+        self.assertEqual(c._notpriv, "foo")
+        self.assertEqual(c.__notpriv__, "bar")
+
 
 if __name__ == "__main__":
     unittest.main()

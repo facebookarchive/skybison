@@ -5,6 +5,7 @@
 #include "builtins.h"
 #include "bytecode.h"
 #include "capi.h"
+#include "compile-utils.h"
 #include "dict-builtins.h"
 #include "frame.h"
 #include "globals.h"
@@ -623,6 +624,7 @@ static RawObject validateSlots(Thread* thread, const Type& type,
   List result(&scope, runtime->newList());
   Object slot_obj(&scope, NoneType::object());
   Str slot_str(&scope, Str::empty());
+  Object type_name(&scope, type.name());
   for (word i = 0; i < slots_len; i++) {
     slot_obj = slots.at(i);
     if (!runtime->isInstanceOfStr(*slot_obj)) {
@@ -630,12 +632,13 @@ static RawObject validateSlots(Thread* thread, const Type& type,
                                   "__slots__ items must be strings, not '%T'",
                                   &slot_obj);
     }
-    slot_str = *slot_obj;
+    slot_str = strUnderlying(*slot_obj);
     if (!strIsIdentifier(slot_str)) {
       return thread->raiseWithFmt(LayoutId::kTypeError,
                                   "__slots__ must be identifiers");
     }
-    slot_str = attributeName(thread, slot_str);
+    slot_str = mangle(thread, type_name, slot_str);
+    slot_str = Runtime::internStr(thread, slot_str);
     if (slot_str == dunder_dict) {
       if (base_has_instance_dict || *add_instance_dict) {
         return thread->raiseWithFmt(
