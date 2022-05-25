@@ -422,7 +422,10 @@ def main(args=None):
                             action='store_true', dest='system_site',
                             help='Give the virtual environment access to the '
                                  'system site-packages dir.')
-        if os.name == 'nt':
+        # TODO(T61328507): Symlinking does not work properly yet since
+        # sys.prefix / sys.executable is currently set after resolving all
+        # symlinks. After fixing, drop special case for Skybison.
+        if os.name == 'nt' or sys.implementation.name == "skybison":
             use_symlinks = False
         else:
             use_symlinks = True
