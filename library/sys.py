@@ -107,20 +107,42 @@ def _init(
     global _base_executable
     _base_executable = _executable
 
+    executable_dir = _dirname(executable)
+    cfg = None
+    try:
+        cfg = open(_join(executable_dir, "pyvenv.cfg"), "r", encoding="utf-8")
+    except IOError as e:
+        try:
+            cfg = open(_join(executable_dir, "..", "pyvenv.cfg"), "r", encoding="utf-8")
+        except IOError as e:
+            pass
+
+    if cfg is not None:
+        with cfg:
+            for line in cfg:
+                if line[0] == "#":
+                    continue
+                tokens = line.split()
+                if len(tokens) >= 3 and tokens[0] == "home" and tokens[1] == "=":
+                    executable_dir = tokens[2]
+                    break
+
+    _prefix = _join(executable_dir, "..")
+
     global prefix
-    prefix = _join(_dirname(executable), "..")
+    prefix = _prefix
     global base_exec_prefix
-    base_exec_prefix = prefix
+    base_exec_prefix = _prefix
     global base_prefix
-    base_prefix = prefix
+    base_prefix = _prefix
     global exec_prefix
-    exec_prefix = prefix
+    exec_prefix = _prefix
 
     global path
     path = _python_path
     if extend_python_path_with_stdlib:
         stdlib_dir = _join(
-            prefix, "lib", f"{implementation.name}{_version.major}.{_version.minor}"
+            _prefix, "lib", f"{implementation.name}{_version.major}.{_version.minor}"
         )
         path.append(stdlib_dir)
 
