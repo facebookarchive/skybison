@@ -1,16 +1,11 @@
 #!/usr/bin/env python3
 # Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 
+import argparse
 import dis
 import inspect
 import sys
 import types
-
-
-filename = sys.argv[1]
-with open(filename) as f:
-    source = f.read()
-code = compile(source, filename, "exec")
 
 
 def header(text, width=80):
@@ -84,4 +79,15 @@ def dump_code(code):
         dump_code(c)
 
 
-dump_code(code)
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("infile", type=argparse.FileType(), nargs="?", default="-")
+    args = parser.parse_args()
+    with args.infile as infile:
+        source = infile.read()
+    code = compile(source, args.infile.name, "exec")
+    dump_code(code)
+
+
+if __name__ == "__main__":
+    main()
