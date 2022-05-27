@@ -4,7 +4,6 @@
 import argparse
 import dis
 import inspect
-import sys
 import types
 
 
