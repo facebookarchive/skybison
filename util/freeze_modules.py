@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.8
 # Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 
 # Add library directory so we can import the compiler.
