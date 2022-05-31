@@ -120,6 +120,8 @@ void Utils::printDebugInfoAndAbort() {
           Object stderr(&scope, stderr_cell.value());
           CHECK(!tracebackWrite(thread, traceback, stderr).isErrorException(),
                 "failed to print traceback");
+          CHECK(!thread->invokeMethod1(stderr, ID(flush)).isErrorException(),
+                "failed to flush");
         }
       }
     }
