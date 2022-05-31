@@ -153,7 +153,9 @@ RawObject moduleRemove(Thread* thread, const Module& module,
   ValueCell value_cell(&scope, *value_cell_obj);
   icInvalidateGlobalVar(thread, value_cell);
   if (value_cell.isPlaceholder()) return Error::notFound();
-  return value_cell.value();
+  Object previous_value(&scope, value_cell.value());
+  value_cell.makePlaceholder();
+  return *previous_value;
 }
 
 RawObject moduleValues(Thread* thread, const Module& module) {

@@ -327,6 +327,24 @@ TEST_F(ModuleBuiltinsTest, ModuleValuesFiltersOutPlaceholders) {
   EXPECT_TRUE(listContains(values, baz_value));
 }
 
+TEST_F(ModuleBuiltinsTest, ModuleDelAttrEmptiesValueCell) {
+  HandleScope scope(thread_);
+  Str module_name(&scope, runtime_->newStrFromCStr("mymodule"));
+  Module module(&scope, runtime_->newModule(module_name));
+
+  Object foo(&scope, Runtime::internStrFromCStr(thread_, "foo"));
+  Str foo_value(&scope, runtime_->newStrFromCStr("foo_value"));
+
+  moduleAtPut(thread_, module, foo, foo_value);
+
+  Object value_cell(&scope, NoneType::object());
+  EXPECT_TRUE(attributeValueCellAt(*module, *foo, &value_cell));
+  EXPECT_EQ(ValueCell::cast(*value_cell).value(), *foo_value);
+  moduleDeleteAttribute(thread_, module, foo);
+  EXPECT_NE(ValueCell::cast(*value_cell).value(), *foo_value);
+  EXPECT_TRUE(ValueCell::cast(*value_cell).isPlaceholder());
+}
+
 TEST_F(ModuleBuiltinsTest, ModuleGetAttributeReturnsInstanceValue) {
   HandleScope scope(thread_);
   ASSERT_FALSE(runFromCStr(runtime_, "x = 42").isError());
