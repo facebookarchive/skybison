@@ -1,5 +1,9 @@
 # Welcome to Skybison!
 
+## A note on development
+
+**Development has moved to [tekknolagi/skybison](https://github.com/tekknolagi/skybison)**
+
 Skybison is experimental performance-oriented greenfield implementation of
 Python 3.8. It contains a number of performance optimizations, including: small
 objects; a moving GC; hidden classes; bytecode inline caching; type-specialized
