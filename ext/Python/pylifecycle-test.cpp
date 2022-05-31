@@ -190,7 +190,8 @@ TEST(PylifecycleExtensionApiTestNoFixture,
         PyObject_GetAttrString(sys_stdout, "line_buffering"));
     ASSERT_NE(line_buffering, nullptr);
     ASSERT_EQ(PyErr_Occurred(), nullptr);
-    EXPECT_EQ(line_buffering, Py_True);
+    // TODO(emacs): Split this into multiple tests or fake a tty somehow.
+    EXPECT_EQ(line_buffering, ::isatty(fileno(stdout)) ? Py_True : Py_False);
   }
   Py_FinalizeEx();
 }
