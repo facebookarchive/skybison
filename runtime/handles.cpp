@@ -1,7 +1,6 @@
 // Copyright (c) Facebook, Inc. and its affiliates. (http://www.facebook.com)
 #include "handles.h"
 
-#include "frame.h"
 #include "objects.h"
 #include "runtime.h"
 
