@@ -358,6 +358,10 @@ def _compute_mro(type):
     _builtin()
 
 
+def _debug_dump(obj):
+    _builtin()
+
+
 def _deque_guard(obj):
     "$intrinsic$"
     _builtin()

@@ -3,6 +3,7 @@
 
 #include <cerrno>
 #include <cmath>
+#include <sstream>
 
 #include "attributedict.h"
 #include "builtins.h"
@@ -10,6 +11,7 @@
 #include "bytes-builtins.h"
 #include "byteslike.h"
 #include "capi.h"
+#include "debugging.h"
 #include "dict-builtins.h"
 #include "exception-builtins.h"
 #include "file.h"
@@ -2342,6 +2344,14 @@ RawObject FUNC(_builtins, _compute_mro)(Thread* thread, Arguments args) {
   HandleScope scope(thread);
   Type type(&scope, args.get(0));
   return computeMro(thread, type);
+}
+
+RawObject FUNC(_builtins, _debug_dump)(Thread* thread, Arguments args) {
+  HandleScope scope(thread);
+  Object object(&scope, args.get(0));
+  std::stringstream stream;
+  dumpExtended(stream, *object);
+  return thread->runtime()->newStrFromCStr(stream.str().c_str());
 }
 
 RawObject FUNC(_builtins, _deque_guard)(Thread* thread, Arguments args) {
