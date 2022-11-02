@@ -13,10 +13,6 @@ LEFT_ALIGN = " :----- "
 RIGHT_ALIGN = " -----: "
 METRICS_HEADER = (
     ("benchmark", LEFT_ALIGN),
-    ("task-clock", RIGHT_ALIGN),
-    ("instructions", RIGHT_ALIGN),
-    ("branch-misses", RIGHT_ALIGN),
-    ("L1-icache-load-misses", RIGHT_ALIGN),
     ("cg_instructions", RIGHT_ALIGN),
 )
 METRICS = [metric_name for metric_name, align in METRICS_HEADER]
@@ -29,10 +25,6 @@ SUMMARY_HEADER = (
 )
 SUMMARY_METRIC_NOISE_MAP = {
     "cg_instructions": "typically < 0.2% noise",
-    "task-clock": "typically 1-2% noise",
-    "branch-misses": "typically >10% noise",
-    "L1-icache-load-misses": "typically >10% noise",
-    "instructions": "typically 3% noise",
 }
 
 # Some hard-coded strings
@@ -43,14 +35,10 @@ INTERPRETER = "interpreter"
 CPYTHON_VARIANT = "fbcode-cpython"
 BASE_VARIANT = "python_base"
 NEW_VARIANT = "python_new"
-BASE_JIT_VARIANT = "python_base+jit"
-NEW_JIT_VARIANT = "python_new+jit"
 VARIANTS = (
     CPYTHON_VARIANT,
     BASE_VARIANT,
     NEW_VARIANT,
-    BASE_JIT_VARIANT,
-    NEW_JIT_VARIANT,
 )
 
 
@@ -212,7 +200,6 @@ if __name__ == "__main__":
             ),
         )
     )
-    print("[See also](https://www.internalfb.com/intern/wiki/Pyro/PerformanceResults)")
     print()
     print(
         generate_markdown_table(
@@ -220,28 +207,6 @@ if __name__ == "__main__":
             METRICS_HEADER,
             compare_metric(
                 variants[BASE_VARIANT], variants[NEW_VARIANT], "base vs new"
-            ),
-            is_percentage=True,
-        )
-    )
-    print()
-    print(
-        generate_markdown_table(
-            "Base (JIT) vs. New (JIT)",
-            METRICS_HEADER,
-            compare_metric(
-                variants[BASE_JIT_VARIANT], variants[NEW_JIT_VARIANT], "base vs new"
-            ),
-            is_percentage=True,
-        )
-    )
-    print()
-    print(
-        generate_markdown_table(
-            "Non-JIT vs. JIT",
-            METRICS_HEADER,
-            compare_metric(
-                variants[NEW_VARIANT], variants[NEW_JIT_VARIANT], "non-jit vs jit"
             ),
             is_percentage=True,
         )
@@ -260,16 +225,6 @@ if __name__ == "__main__":
     print()
     print(generate_markdown_table("Base", METRICS_HEADER, variants[BASE_VARIANT]))
     print()
-    print(
-        generate_markdown_table(
-            "Base (JIT)", METRICS_HEADER, variants[BASE_JIT_VARIANT]
-        )
-    )
-    print()
     print(generate_markdown_table("New", METRICS_HEADER, variants[NEW_VARIANT]))
-    print()
-    print(
-        generate_markdown_table("New (JIT)", METRICS_HEADER, variants[NEW_JIT_VARIANT])
-    )
     print()
     print(generate_markdown_table("CPython", METRICS_HEADER, variants[CPYTHON_VARIANT]))
