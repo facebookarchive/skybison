@@ -20,23 +20,16 @@ jobs:
     - name: Build
       working-directory: ${{github.workspace}}/build
       run: make -j4
-    - name: Run benchmarks
-      working-directory: ${{github.workspace}}/build
-      run: ./bin/python-tests --benchmark_filter='.*' | tee benchmark-results.txt
-    - name: Comment on Pull Request
-      uses: actions/github-script@v5
+    - name: Copy benchmarks into build dir
+      working-directory: ${{github.workspace}}
+      run: cp -r benchmarks build
+    - uses: actions/upload-artifact@v3
       with:
-        script: |
-          const { promises: fs } = require('fs');
-          const benchmark_results = await fs.readFile('${{github.workspace}}/build/benchmark-results.txt', 'utf8');
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: 'benchmark results (prev):\n```\n' + benchmark_results + '```',
-          })
+        name: prev-build
+        path: ${{github.workspace}}/build
 
   build:
+    needs: build-prev
     strategy:
       matrix:
         # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -49,6 +42,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/upload-artifact@v3
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -86,24 +80,59 @@ jobs:
       working-directory: ${{github.workspace}}
       run: PYRO_BUILD_DIR="build" ./util/python_tests_cpython.sh
 
-    - name: Run benchmarks
-      if: ${{ github.event_name == 'pull_request' && matrix.BUILD_TYPE == 'RelWithDebInfo' }}
-      working-directory: ${{github.workspace}}/build
-      run: ./bin/python-tests --benchmark_filter='.*' | tee benchmark-results.txt
+    - name: Copy benchmarks into build dir
+      working-directory: ${{github.workspace}}
+      run: cp -r benchmarks build
 
-    # Consider using https://github.com/marketplace/actions/continuous-benchmark
-    - name: Comment on Pull Request
+    - uses: actions/upload-artifact@v3
       if: ${{ github.event_name == 'pull_request' && matrix.BUILD_TYPE == 'RelWithDebInfo' }}
+      with:
+        name: curr-build
+        path: ${{github.workspace}}/build
+
+  benchmark:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    needs: [build, build-prev]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 1
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: prev-build
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: curr-build
+
+    - name: Run benchmarks
+      working-directory: ${{github.workspace}}
+      run: |
+        ./benchmarks/run.py --tool callgrind --json \
+          --interpreter prev-build/bin/python --interpreter-name python_base --path benchmarks/benchmarks \
+          --interpreter curr-build/bin/python --interpreter-name python_new --path benchmarks/benchmarks \
+          --interpreter $(which python3.8) --interpreter-name fbcode-cpython --path curr-build/benchmarks/benchmarks \
+          > benchmark-results.json
+
+    - name: Format benchmark results
+      working-directory: ${{github.workspace}}
+      run: |
+        ./benchmarks/format_results.py benchmark-results.json > benchmark-results.md
+
+    - name: Comment on Pull Request
       uses: actions/github-script@v5
       with:
         script: |
           const { promises: fs } = require('fs');
-          const benchmark_results = await fs.readFile('${{github.workspace}}/build/benchmark-results.txt', 'utf8');
+          const benchmark_results = await fs.readFile('${{github.workspace}}/benchmark-results.md', 'utf8');
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: 'benchmark results:\n```\n' + benchmark_results + '```',
+            body: benchmark_results,
           })
 
   lint:
